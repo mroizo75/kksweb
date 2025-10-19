@@ -1,0 +1,1567 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// Autentisering & Brukere
+// ========================================
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String?
+  hashedPassword String?
+  role           Role     @default(INSTRUCTOR)
+  image          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // 2FA (Two-Factor Authentication)
+  twoFactorEnabled Boolean  @default(false)
+  twoFactorSecret  String?  // TOTP secret (encrypted)
+  backupCodes      Json?    // Array av backup-koder (hashed)
+  
+  sessions Session[]
+  accounts Account[]
+
+  // Instruktør-relasjoner
+  sessionsAsInstructor CourseSession[]
+
+  // CRM-relasjoner
+  leads              Lead[]
+  deals              Deal[]
+  assignedActivities Activity[]    @relation("AssignedActivities")
+  createdActivities  Activity[]    @relation("CreatedActivities")
+  notes              Note[]
+  renewalTasks       RenewalTask[]
+
+  // QMS-relasjoner
+  ownedDocuments          QmsDocument[]          @relation("QmsDocOwner")
+  approvedDocuments       QmsDocument[]          @relation("QmsDocApprover")
+  createdDocuments        QmsDocument[]          @relation("QmsDocCreator")
+  documentAcknowledgments QmsDocAcknowledgment[]
+
+  reportedNonConformances QmsNonConformance[] @relation("NcReporter")
+  assignedNonConformances QmsNonConformance[] @relation("NcAssignee")
+  verifiedNonConformances QmsNonConformance[] @relation("NcVerifier")
+  closedNonConformances   QmsNonConformance[] @relation("NcCloser")
+
+  responsibleActions QmsCorrectiveAction[] @relation("ActionResponsible")
+  verifiedActions    QmsCorrectiveAction[] @relation("ActionVerifier")
+  createdActions     QmsCorrectiveAction[] @relation("ActionCreator")
+
+  ledAudits     QmsAudit[] @relation("AuditLead")
+  createdAudits QmsAudit[] @relation("AuditCreator")
+
+  ownedRisks   QmsRisk[] @relation("RiskOwner")
+  createdRisks QmsRisk[] @relation("RiskCreator")
+
+  ownedKpis       QmsKpi[]            @relation("KpiOwner")
+  createdKpis     QmsKpi[]            @relation("KpiCreator")
+  kpiMeasurements QmsKpiMeasurement[]
+
+  // ISO 27001 Security
+  twoFactorTokens     TwoFactorToken[]
+  reportedIncidents   SecurityIncident[] @relation("IncidentReporter")
+  assignedIncidents   SecurityIncident[] @relation("IncidentAssignee")
+  auditLogs           AuditLog[]
+  acknowledgedPolicies SecurityPolicyAcknowledgment[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+}
+
+// ========================================
+// Personer & Bedrifter
+// ========================================
+
+model Person {
+  id        String    @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  birthDate DateTime?
+  companyId String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Kompetansebevis-felter
+  profileImage String? // URL/S3-key til profilbilde
+  address      String?
+  postalCode   String?
+  city         String?
+
+  company     Company?     @relation(fields: [companyId], references: [id])
+  enrollments Enrollment[]
+  credentials Credential[]
+  assessments Assessment[]
+  cards       Card[]
+
+  // CRM-relasjoner
+  deals        Deal[]
+  activities   Activity[]
+  notes        Note[]
+  renewalTasks RenewalTask[]
+
+  // QMS-relasjoner
+  nonConformances QmsNonConformance[]
+
+  @@index([email])
+  @@index([companyId])
+  @@map("people")
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  orgNo     String?  @unique
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Lisenssystem
+  licenseStatus    LicenseStatus @default(TRIAL)
+  licenseStartDate DateTime?
+  licenseEndDate   DateTime?
+  gracePeriodDays  Int           @default(14)
+  maxUsers         Int?
+  suspendedAt      DateTime?
+  suspendedReason  String?       @db.Text
+  licenseNotes     String?       @db.Text
+
+  people            Person[]
+  contacts          Contact[]
+  enrollments       Enrollment[]
+  licenses          License[]
+  licenseActivities LicenseActivity[]
+
+  // CRM-relasjoner
+  deals      Deal[]
+  activities Activity[]
+  notes      Note[]
+
+  // QMS-relasjoner
+  nonConformances QmsNonConformance[]
+
+  @@index([orgNo])
+  @@index([licenseStatus])
+  @@index([licenseEndDate])
+  @@map("companies")
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  companyId String
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  role      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("contacts")
+}
+
+// ========================================
+// Kurs & Sesjoner
+// ========================================
+
+model Course {
+  id           String  @id @default(cuid())
+  title        String
+  slug         String  @unique
+  code         String  @unique
+  category     String
+  description  String? @db.Text
+  durationDays Int     @default(1)
+  price        Int     @default(0)
+  image        String?
+  published    Boolean @default(true)
+
+  // Gyldighet
+  validityPolicyId String?
+  validityPolicy   ValidityPolicy? @relation("CoursePolicy", fields: [validityPolicyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions        CourseSession[]
+  credentials     Credential[]
+  renewalTasks    RenewalTask[]
+  variants        CourseVariant[]
+  assessments     Assessment[]
+  renewalPolicies ValidityPolicy[] @relation("RenewalFor")
+
+  // QMS-relasjoner
+  nonConformances QmsNonConformance[]
+
+  @@index([category])
+  @@index([published])
+  @@index([validityPolicyId])
+  @@map("courses")
+}
+
+// Kursvarianter (digital, klasserom, bedriftsintern)
+model CourseVariant {
+  id          String      @id @default(cuid())
+  courseId    String
+  type        VariantType @default(CLASSROOM)
+  price       Int         @default(0)
+  description String?     @db.Text
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  course   Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sessions CourseSession[]
+
+  @@index([courseId])
+  @@index([type])
+  @@map("course_variants")
+}
+
+enum VariantType {
+  DIGITAL // Nettkurs/e-learning
+  CLASSROOM // Klasserom/teori+praksis
+  ONSITE // Bedriftsintern
+}
+
+model CourseSession {
+  id           String        @id @default(cuid())
+  courseId     String
+  variantId    String? // Hvilken variant denne sesjonen er for
+  startsAt     DateTime
+  endsAt       DateTime
+  location     String
+  capacity     Int           @default(12)
+  instructorId String?
+  status       SessionStatus @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  course      Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  variant     CourseVariant? @relation(fields: [variantId], references: [id])
+  instructor  User?          @relation(fields: [instructorId], references: [id])
+  enrollments Enrollment[]
+  assessments Assessment[]
+
+  // QMS-relasjoner
+  nonConformances QmsNonConformance[]
+
+  @@index([courseId])
+  @@index([variantId])
+  @@index([instructorId])
+  @@index([startsAt])
+  @@index([status])
+  @@map("course_sessions")
+}
+
+enum SessionStatus {
+  DRAFT
+  OPEN
+  FULL
+  COMPLETED
+  CANCELLED
+}
+
+model Enrollment {
+  id        String           @id @default(cuid())
+  sessionId String
+  personId  String
+  companyId String?
+  status    EnrollmentStatus @default(PENDING)
+  notes     String?          @db.Text
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  session CourseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  person  Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  company Company?      @relation(fields: [companyId], references: [id])
+
+  // For fremtidig bruk (Fase 2)
+  certificateId String?
+  Document      Document[]
+
+  @@index([sessionId])
+  @@index([personId])
+  @@index([companyId])
+  @@index([status])
+  @@map("enrollments")
+}
+
+enum EnrollmentStatus {
+  PENDING
+  CONFIRMED
+  WAITLIST
+  ATTENDED
+  NO_SHOW
+  CANCELLED
+}
+
+// ========================================
+// Fase 2 - Forberedelser
+// ========================================
+
+// Gyldighetsregler
+model ValidityPolicy {
+  id          String       @id @default(cuid())
+  name        String
+  kind        ValidityKind @default(FIXED_YEARS)
+  years       Int? // Antall år (f.eks 5 for Diisocyanater)
+  graceDays   Int? // Dager etter utløp før ugyldig
+  description String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Renewal course (oppfriskningskurs)
+  renewalCourseId String?
+  renewalCourse   Course? @relation("RenewalFor", fields: [renewalCourseId], references: [id])
+
+  courses     Course[]     @relation("CoursePolicy")
+  credentials Credential[]
+
+  @@index([kind])
+  @@map("validity_policies")
+}
+
+enum ValidityKind {
+  NONE // Ingen utløp (bedriftsopplæring, sertifiserte kurs)
+  FIXED_YEARS // Fast antall år (f.eks YSK 5 år, Diisocyanater 5 år)
+  CUSTOM_RULE // Egendefinert regel (implementeres senere)
+}
+
+// Credentials (sertifikater/kompetansebevis)
+enum CredentialType {
+  CERTIFIED // Sertifisert - med koder T1, T2, M1, osv.
+  DOCUMENTED // Dokumentert - uten spesielle koder
+  TEMPORARY // Midlertidig - 14 dager
+}
+
+model Credential {
+  id        String    @id @default(cuid())
+  personId  String
+  courseId  String
+  code      String    @unique
+  validFrom DateTime
+  validTo   DateTime?
+
+  // Type kompetansebevis
+  type CredentialType @default(DOCUMENTED)
+
+  // Kompetansekoder for sertifiserte bevis
+  // JSON array: ["T1", "T2", "M1", "G8", ...]
+  competenceCodes Json? @default("[]")
+
+  // Status
+  status String @default("ACTIVE") // ACTIVE, SUSPENDED, REVOKED
+
+  policyId String?
+  policy   ValidityPolicy? @relation(fields: [policyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  person       Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  course       Course        @relation(fields: [courseId], references: [id])
+  renewalTasks RenewalTask[]
+  documents    Document[]
+  cards        Card[]
+
+  @@index([personId])
+  @@index([courseId])
+  @@index([code])
+  @@index([validTo])
+  @@index([policyId])
+  @@index([type])
+  @@index([status])
+  @@map("credentials")
+}
+
+// ========================================
+// CRM
+// ========================================
+
+model Lead {
+  id           String     @id @default(cuid())
+  source       String?
+  name         String
+  email        String?
+  phone        String?
+  companyName  String?
+  status       LeadStatus @default(NEW)
+  assignedToId String?
+  notes        String?    @db.Text
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  assignedTo User?      @relation(fields: [assignedToId], references: [id])
+  activities Activity[]
+  notesList  Note[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@map("leads")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
+model Deal {
+  id                String    @id @default(cuid())
+  title             String
+  companyId         String?
+  personId          String?
+  value             Int       @default(0)
+  stage             DealStage @default(LEAD)
+  probability       Int       @default(0)
+  expectedCloseDate DateTime?
+  closedAt          DateTime?
+  assignedToId      String?
+  notes             String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  company    Company?   @relation(fields: [companyId], references: [id])
+  person     Person?    @relation(fields: [personId], references: [id])
+  assignedTo User?      @relation(fields: [assignedToId], references: [id])
+  activities Activity[]
+  notesList  Note[]
+
+  @@index([stage])
+  @@index([companyId])
+  @@index([personId])
+  @@index([assignedToId])
+  @@map("deals")
+}
+
+enum DealStage {
+  LEAD
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+model Activity {
+  id          String         @id @default(cuid())
+  type        ActivityType
+  subject     String
+  description String?        @db.Text
+  status      ActivityStatus @default(PENDING)
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  leadId    String?
+  dealId    String?
+  companyId String?
+  personId  String?
+
+  assignedToId String?
+  createdById  String
+
+  emailTo     String?
+  emailFrom   String?
+  emailSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lead       Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  deal       Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  company    Company? @relation(fields: [companyId], references: [id])
+  person     Person?  @relation(fields: [personId], references: [id])
+  assignedTo User?    @relation("AssignedActivities", fields: [assignedToId], references: [id])
+  createdBy  User     @relation("CreatedActivities", fields: [createdById], references: [id])
+
+  @@index([type])
+  @@index([status])
+  @@index([dueDate])
+  @@index([leadId])
+  @@index([dealId])
+  @@index([companyId])
+  @@index([personId])
+  @@index([createdById])
+  @@map("activities")
+}
+
+enum ActivityType {
+  TASK
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+}
+
+enum ActivityStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Note {
+  id      String @id @default(cuid())
+  content String @db.Text
+
+  leadId    String?
+  dealId    String?
+  companyId String?
+  personId  String?
+
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lead      Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  company   Company? @relation(fields: [companyId], references: [id])
+  person    Person?  @relation(fields: [personId], references: [id])
+  createdBy User     @relation(fields: [createdById], references: [id])
+
+  @@index([leadId])
+  @@index([dealId])
+  @@index([companyId])
+  @@index([personId])
+  @@index([createdById])
+  @@map("notes")
+}
+
+model RenewalTask {
+  id           String     @id @default(cuid())
+  personId     String
+  courseId     String
+  credentialId String?
+  dueDate      DateTime
+  status       TaskStatus @default(OPEN)
+  emailSentAt  DateTime?
+  assignedToId String?
+  notes        String?    @db.Text
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  person     Person      @relation(fields: [personId], references: [id])
+  course     Course      @relation(fields: [courseId], references: [id])
+  credential Credential? @relation(fields: [credentialId], references: [id])
+  assignedTo User?       @relation(fields: [assignedToId], references: [id])
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([personId])
+  @@index([courseId])
+  @@map("renewal_tasks")
+}
+
+enum TaskStatus {
+  OPEN
+  CONTACTED
+  COMPLETED
+  SKIPPED
+}
+
+// ========================================
+// Dokumenter & Maler
+// ========================================
+
+// Maler for diplom, sertifikat, kursbevis, plastkort
+model Template {
+  id          String       @id @default(cuid())
+  kind        TemplateKind
+  name        String
+  fileKey     String // S3/R2 nøkkel til PDF/PNG mal
+  variables   Json // Liste av variabler: ["person.fullName", "course.title", ...]
+  version     Int          @default(1)
+  active      Boolean      @default(true)
+  description String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  documents Document[]
+
+  @@index([kind])
+  @@index([active])
+  @@map("templates")
+}
+
+enum TemplateKind {
+  DIPLOMA // Diplom
+  TEMP_CERT // Midlertidig sertifikat
+  CERTIFICATE // Kursbevis
+  CARD // Plastkort
+}
+
+// Genererte dokumenter
+model Document {
+  id           String  @id @default(cuid())
+  templateId   String
+  credentialId String? // Optional - midlertidige bevis har ikke credential
+  enrollmentId String? // Optional - kobling til enrollment for midlertidige bevis
+
+  // Generert fil
+  fileKey String // S3/R2 nøkkel til generert PDF
+
+  // Payload/metadata brukt ved generering (JSON)
+  metadata Json @default("{}")
+
+  // Metadata
+  generatedBy String? // User ID (optional for system-genererte)
+  generatedAt DateTime @default(now())
+
+  template   Template    @relation(fields: [templateId], references: [id])
+  credential Credential? @relation(fields: [credentialId], references: [id])
+  enrollment Enrollment? @relation(fields: [enrollmentId], references: [id])
+
+  @@index([templateId])
+  @@index([credentialId])
+  @@index([enrollmentId])
+  @@index([generatedAt])
+  @@map("documents")
+}
+
+// Plastkort (bestilling og produksjon)
+model Card {
+  id           String @id @default(cuid())
+  credentialId String
+  personId     String
+
+  // Kortnummer (unikt)
+  number String @unique
+
+  // Produksjon
+  batchId String? // Batch-ID for samlet produksjon
+  fileKey String? // Print-klar PDF
+  status  CardStatus @default(PENDING)
+
+  // QR-kode data
+  qrCode String? // QR-kode data (verify URL)
+
+  // Metadata
+  orderedAt DateTime  @default(now())
+  printedAt DateTime?
+  shippedAt DateTime?
+
+  credential Credential @relation(fields: [credentialId], references: [id])
+  person     Person     @relation(fields: [personId], references: [id])
+
+  @@index([status])
+  @@index([batchId])
+  @@index([credentialId])
+  @@map("cards")
+}
+
+enum CardStatus {
+  PENDING // Venter på produksjon
+  RENDERED // PDF generert
+  PRINTING // Sendt til print
+  SHIPPED // Sendt
+  FAILED // Feil
+}
+
+// ========================================
+// Vurdering & Oppmøte (Assessment)
+// ========================================
+
+model Assessment {
+  id        String @id @default(cuid())
+  sessionId String
+  personId  String
+  courseId  String
+
+  // Oppmøte
+  attended       Boolean   @default(false)
+  attendanceTime DateTime?
+
+  // Resultat
+  passed      Boolean?
+  score       Int? // 0-100
+  resultNotes String?  @db.Text
+
+  // Bilder/dokumentasjon
+  images Json? // S3/R2 nøkler til bilder (array)
+
+  // Signaturer
+  instructorSignature  String? // Base64 eller S3 nøkkel
+  participantSignature String? // Base64 eller S3 nøkkel
+
+  // Metadata
+  assessedBy String // User ID (instruktør)
+  assessedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  session CourseSession @relation(fields: [sessionId], references: [id])
+  person  Person        @relation(fields: [personId], references: [id])
+  course  Course        @relation(fields: [courseId], references: [id])
+
+  @@unique([sessionId, personId])
+  @@index([sessionId])
+  @@index([personId])
+  @@index([courseId])
+  @@index([attended])
+  @@map("assessments")
+}
+
+// ========================================
+// KVALITETSSYSTEM (ISO 9001)
+// ========================================
+
+// Dokumenthåndtering
+model QmsDocument {
+  id          String         @id @default(cuid())
+  documentNo  String         @unique // F.eks "1.00", "6.01"
+  title       String
+  description String?        @db.Text
+  category    QmsDocCategory // PROCEDURE, INSTRUCTION, FORM, POLICY, etc.
+
+  // Versjonskontroll
+  version       String // F.eks "1.04"
+  status        QmsDocStatus
+  effectiveDate DateTime?
+  reviewDate    DateTime? // Neste revidering
+
+  // Filer
+  fileKey  String // S3/lokal path
+  fileSize Int?
+
+  // Ansvar
+  ownerId    String // Dokumenteier
+  approvedBy String? // Godkjent av
+  approvedAt DateTime?
+
+  // Metadata
+  createdBy  String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
+
+  // Distribusjonsbekreftelser
+  acknowledgments QmsDocAcknowledgment[]
+
+  // Relasjoner
+  owner    User  @relation("QmsDocOwner", fields: [ownerId], references: [id])
+  approver User? @relation("QmsDocApprover", fields: [approvedBy], references: [id])
+  creator  User  @relation("QmsDocCreator", fields: [createdBy], references: [id])
+
+  @@index([status])
+  @@index([category])
+  @@index([ownerId])
+  @@map("qms_documents")
+}
+
+enum QmsDocCategory {
+  PROCEDURE // Prosedyre
+  INSTRUCTION // Instruksjon
+  FORM // Skjema
+  POLICY // Policy
+  MANUAL // Håndbok
+  RECORD // Protokoll/logg
+  EXTERNAL // Eksternt dokument
+}
+
+enum QmsDocStatus {
+  DRAFT // Under arbeid
+  REVIEW // Til godkjenning
+  APPROVED // Godkjent
+  EFFECTIVE // I bruk
+  SUPERSEDED // Erstattet
+  ARCHIVED // Arkivert
+}
+
+// Lesebekreftelser på dokumenter
+model QmsDocAcknowledgment {
+  id             String   @id @default(cuid())
+  documentId     String
+  userId         String
+  acknowledgedAt DateTime @default(now())
+
+  document QmsDocument @relation(fields: [documentId], references: [id])
+  user     User        @relation(fields: [userId], references: [id])
+
+  @@unique([documentId, userId])
+  @@index([documentId])
+  @@index([userId])
+  @@map("qms_doc_acknowledgments")
+}
+
+// Avvikshåndtering (Non-Conformance)
+model QmsNonConformance {
+  id       String @id @default(cuid())
+  ncNumber String @unique // Auto-generert: NC-2025-001
+
+  // Klassifisering
+  type     NcType
+  severity NcSeverity
+  category NcCategory
+
+  // Beskrivelse
+  title       String
+  description String   @db.Text
+  detectedAt  DateTime
+  location    String?
+
+  // Årsaker
+  rootCause       String? @db.Text
+  rootCauseMethod String? // "5_WHY", "ISHIKAWA", "PARETO"
+
+  // Status og oppfølging
+  status   NcStatus
+  priority Int      @default(2) // 1=Høy, 2=Medium, 3=Lav
+
+  // Ansvar
+  reportedBy String // User ID
+  assignedTo String? // User ID
+  verifiedBy String? // User ID
+  closedBy   String? // User ID
+
+  // Datoer
+  dueDate  DateTime?
+  closedAt DateTime?
+
+  // Relasjoner (valgfritt)
+  companyId String?
+  personId  String?
+  courseId  String?
+  sessionId String?
+
+  // Bilder/dokumentasjon
+  attachments Json? // Array av S3 keys
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Korrigerende tiltak
+  correctiveActions QmsCorrectiveAction[]
+
+  // Relasjoner
+  reporter User           @relation("NcReporter", fields: [reportedBy], references: [id])
+  assignee User?          @relation("NcAssignee", fields: [assignedTo], references: [id])
+  verifier User?          @relation("NcVerifier", fields: [verifiedBy], references: [id])
+  closer   User?          @relation("NcCloser", fields: [closedBy], references: [id])
+  company  Company?       @relation(fields: [companyId], references: [id])
+  person   Person?        @relation(fields: [personId], references: [id])
+  course   Course?        @relation(fields: [courseId], references: [id])
+  session  CourseSession? @relation(fields: [sessionId], references: [id])
+
+  @@index([status])
+  @@index([type])
+  @@index([severity])
+  @@index([reportedBy])
+  @@index([assignedTo])
+  @@index([detectedAt])
+  @@map("qms_non_conformances")
+}
+
+enum NcType {
+  INTERNAL // Internt avvik
+  EXTERNAL // Eksternt avvik
+  CUSTOMER // Kundeklage
+  SUPPLIER // Leverandøravvik
+  AUDIT // Revisjonsfunn
+  REGULATORY // Myndighetskrav
+}
+
+enum NcSeverity {
+  CRITICAL // Kritisk
+  MAJOR // Alvorlig
+  MINOR // Mindre alvorlig
+  OBSERVATION // Observasjon
+}
+
+enum NcCategory {
+  PROCESS // Prosess
+  PRODUCT // Produkt/tjeneste
+  DOCUMENTATION // Dokumentasjon
+  EQUIPMENT // Utstyr
+  PERSONNEL // Personell/kompetanse
+  ENVIRONMENT // Miljø/HMS
+  OTHER // Annet
+}
+
+enum NcStatus {
+  OPEN // Åpen
+  INVESTIGATING // Under undersøkelse
+  ACTION // Tiltak iverksatt
+  VERIFICATION // Til verifisering
+  CLOSED // Lukket
+  REJECTED // Avvist
+}
+
+// Korrigerende tiltak
+model QmsCorrectiveAction {
+  id   String @id @default(cuid())
+  ncId String
+
+  // Beskrivelse
+  title       String
+  description String     @db.Text
+  actionType  ActionType
+
+  // Ansvar og frister
+  responsibleUser String
+  dueDate         DateTime
+  completedAt     DateTime?
+
+  // Status
+  status ActionStatus
+
+  // Effektivitet
+  effectiveness String?   @db.Text // Vurdering av effekt
+  verifiedBy    String?
+  verifiedAt    DateTime?
+
+  // Metadata
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasjoner
+  nonConformance QmsNonConformance @relation(fields: [ncId], references: [id], onDelete: Cascade)
+  responsible    User              @relation("ActionResponsible", fields: [responsibleUser], references: [id])
+  verifier       User?             @relation("ActionVerifier", fields: [verifiedBy], references: [id])
+  creator        User              @relation("ActionCreator", fields: [createdBy], references: [id])
+
+  @@index([ncId])
+  @@index([status])
+  @@index([responsibleUser])
+  @@index([dueDate])
+  @@map("qms_corrective_actions")
+}
+
+enum ActionType {
+  IMMEDIATE // Umiddelbar handling
+  CORRECTIVE // Korrigerende tiltak
+  PREVENTIVE // Forebyggende tiltak
+}
+
+enum ActionStatus {
+  PLANNED // Planlagt
+  IN_PROGRESS // Pågår
+  COMPLETED // Fullført
+  VERIFIED // Verifisert
+  OVERDUE // Forfalt
+}
+
+// Revisjoner (Audits)
+model QmsAudit {
+  id      String @id @default(cuid())
+  auditNo String @unique // AUD-2025-001
+
+  // Type og omfang
+  type     AuditType
+  scope    String    @db.Text // Hva skal revideres
+  standard String? // ISO 9001:2015, etc.
+
+  // Planlegging
+  plannedDate     DateTime
+  plannedDuration Int // Antall timer
+  location        String?
+
+  // Status
+  status AuditStatus
+
+  // Team
+  leadAuditor String // User ID
+  auditors    Json? // Array av User IDs
+
+  // Resultater
+  findings      Json? // Array av funn
+  reportFileKey String? // S3 key til rapport
+
+  // Oppfølging
+  followUpDate DateTime?
+  closedAt     DateTime?
+
+  // Metadata
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasjoner
+  lead    User @relation("AuditLead", fields: [leadAuditor], references: [id])
+  creator User @relation("AuditCreator", fields: [createdBy], references: [id])
+
+  @@index([status])
+  @@index([type])
+  @@index([plannedDate])
+  @@map("qms_audits")
+}
+
+enum AuditType {
+  INTERNAL // Internrevisjon
+  EXTERNAL // Ekstern revisjon (sertifisering)
+  SUPPLIER // Leverandørrevisjon
+  CUSTOMER // Kunderevisjon
+}
+
+enum AuditStatus {
+  PLANNED // Planlagt
+  IN_PROGRESS // Pågår
+  REPORTING // Rapportskriving
+  COMPLETED // Fullført
+  CLOSED // Lukket
+}
+
+// Risikohåndtering
+model QmsRisk {
+  id     String @id @default(cuid())
+  riskNo String @unique // RISK-001
+
+  // Identifikasjon
+  title       String
+  description String       @db.Text
+  category    RiskCategory
+  process     String? // Hvilken prosess
+
+  // Vurdering (før tiltak)
+  likelihood  Int // 1-5
+  consequence Int // 1-5
+  riskScore   Int // likelihood * consequence
+
+  // Vurdering (etter tiltak)
+  residualLikelihood  Int?
+  residualConsequence Int?
+  residualScore       Int?
+
+  // Tiltak
+  mitigationPlan String? @db.Text
+
+  // Ansvar
+  ownerId    String
+  reviewDate DateTime // Neste gjennomgang
+
+  // Status
+  status RiskStatus
+
+  // Metadata
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasjoner
+  owner   User @relation("RiskOwner", fields: [ownerId], references: [id])
+  creator User @relation("RiskCreator", fields: [createdBy], references: [id])
+
+  @@index([status])
+  @@index([category])
+  @@index([riskScore])
+  @@map("qms_risks")
+}
+
+enum RiskCategory {
+  STRATEGIC // Strategisk
+  OPERATIONAL // Operasjonell
+  FINANCIAL // Økonomisk
+  COMPLIANCE // Regelverk
+  REPUTATION // Omdømme
+  SAFETY // HMS/sikkerhet
+}
+
+enum RiskStatus {
+  IDENTIFIED // Identifisert
+  ASSESSED // Vurdert
+  MITIGATED // Tiltak iverksatt
+  MONITORED // Under overvåkning
+  CLOSED // Lukket
+}
+
+// KPI & Mål
+model QmsKpi {
+  id String @id @default(cuid())
+
+  // Definisjon
+  name        String
+  description String?     @db.Text
+  category    KpiCategory
+  unit        String // %, antall, timer, etc.
+
+  // Mål
+  target    Float
+  threshold Float? // Grenseverdi for varsel
+
+  // Måling
+  frequency       KpiFrequency
+  dataSource      String? // Hvor hentes data fra
+  isAutomatic     Boolean      @default(false) // Beregnes automatisk?
+  calculationRule String?      @db.Text // Formel/regel for automatisk beregning
+
+  // Status
+  currentValue Float?
+  lastMeasured DateTime?
+  status       KpiStatus
+
+  // Ansvar
+  ownerId String
+
+  // Metadata
+  active    Boolean  @default(true)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Historikk
+  measurements QmsKpiMeasurement[]
+
+  // Relasjoner
+  owner   User @relation("KpiOwner", fields: [ownerId], references: [id])
+  creator User @relation("KpiCreator", fields: [createdBy], references: [id])
+
+  @@index([category])
+  @@index([status])
+  @@index([active])
+  @@index([isAutomatic])
+  @@map("qms_kpis")
+}
+
+enum KpiCategory {
+  QUALITY // Kvalitet
+  DELIVERY // Leveranse/tid
+  CUSTOMER // Kundetilfredshet
+  FINANCIAL // Økonomi
+  PROCESS // Prosess
+  PERSONNEL // Personell
+  SAFETY // HMS
+}
+
+enum KpiFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum KpiStatus {
+  ON_TARGET // På mål
+  WARNING // Varsel
+  OFF_TARGET // Utenfor mål
+  NO_DATA // Ingen data
+}
+
+// KPI målinger (historikk)
+model QmsKpiMeasurement {
+  id    String @id @default(cuid())
+  kpiId String
+
+  value      Float
+  measuredAt DateTime
+  note       String?  @db.Text
+
+  measuredBy String
+
+  kpi      QmsKpi @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+  measurer User   @relation(fields: [measuredBy], references: [id])
+
+  @@index([kpiId])
+  @@index([measuredAt])
+  @@map("qms_kpi_measurements")
+}
+
+// ============================================
+// LISENSSYSTEM
+// ============================================
+
+enum LicenseStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+  CANCELLED
+}
+
+enum LicenseAction {
+  CREATED
+  RENEWED
+  SUSPENDED
+  RESUMED
+  CANCELLED
+  EXPIRED
+  EXTENDED
+}
+
+model License {
+  id        String @id @default(cuid())
+  companyId String
+
+  // Lisensinfo
+  status          LicenseStatus @default(TRIAL)
+  startDate       DateTime
+  endDate         DateTime
+  gracePeriodDays Int           @default(14)
+
+  // Begrensninger
+  maxUsers       Int?
+  maxEnrollments Int?
+
+  // Pris
+  monthlyPrice Float?
+  annualPrice  Float?
+
+  // Metadata
+  suspendedAt     DateTime?
+  suspendedBy     String?
+  suspendedReason String?   @db.Text
+  cancelledAt     DateTime?
+  cancelledBy     String?
+  cancelledReason String?   @db.Text
+  notes           String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company    Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  activities LicenseActivity[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([endDate])
+  @@map("licenses")
+}
+
+model LicenseActivity {
+  id        String @id @default(cuid())
+  licenseId String
+  companyId String
+
+  action      LicenseAction
+  performedBy String?
+  reason      String?       @db.Text
+  metadata    Json?
+
+  createdAt DateTime @default(now())
+
+  license License @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([licenseId])
+  @@index([companyId])
+  @@index([createdAt])
+  @@map("license_activities")
+}
+
+// ========================================
+// ISO 27001 - Informasjonssikkerhet
+// ========================================
+
+// 2FA (Two-Factor Authentication)
+model TwoFactorToken {
+  id     String @id @default(cuid())
+  userId String
+
+  token     String   @unique
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("two_factor_tokens")
+}
+
+// Sikkerhetshendelser (Security Incidents)
+enum IncidentType {
+  UNAUTHORIZED_ACCESS    // Uautorisert tilgang
+  DATA_BREACH           // Datainnbrudd
+  MALWARE               // Skadelig programvare
+  PHISHING              // Phishing-forsøk
+  DDOS                  // DDoS-angrep
+  DATA_LOSS             // Datatap
+  SYSTEM_FAILURE        // Systemfeil
+  POLICY_VIOLATION      // Brudd på policy
+  SUSPICIOUS_ACTIVITY   // Mistenkelig aktivitet
+  OTHER                 // Annet
+}
+
+enum IncidentSeverity {
+  CRITICAL  // Kritisk - Umiddelbar handling påkrevd
+  HIGH      // Høy - Handling påkrevd innen 24t
+  MEDIUM    // Medium - Handling påkrevd innen 1 uke
+  LOW       // Lav - Kan håndteres etter prioritet
+}
+
+enum IncidentStatus {
+  REPORTED      // Rapportert
+  INVESTIGATING // Under utredning
+  CONTAINED     // Inneholdt
+  RESOLVED      // Løst
+  CLOSED        // Lukket
+}
+
+model SecurityIncident {
+  id            String   @id @default(cuid())
+  incidentNumber String  @unique // Format: SEC-YYYY-XXXX
+
+  // Klassifisering
+  type          IncidentType
+  severity      IncidentSeverity
+  status        IncidentStatus @default(REPORTED)
+  
+  // Beskrivelse
+  title         String
+  description   String           @db.Text
+  affectedAssets String?         @db.Text // Hvilke systemer/data er påvirket
+  
+  // Tidslinje
+  detectedAt    DateTime
+  reportedAt    DateTime         @default(now())
+  respondedAt   DateTime?
+  resolvedAt    DateTime?
+  closedAt      DateTime?
+  
+  // Ansvar
+  reportedBy    String
+  assignedTo    String?
+  
+  // Respons & tiltak
+  immediateAction String?        @db.Text // Umiddelbare tiltak
+  rootCause      String?         @db.Text // Rotårsak
+  resolution     String?         @db.Text // Løsning
+  preventiveActions String?      @db.Text // Forebyggende tiltak
+  
+  // Metadata
+  impactAssessment String?       @db.Text // Konsekvensanalyse
+  dataAffected     Boolean       @default(false) // Persondata påvirket?
+  notificationRequired Boolean   @default(false) // Varsling påkrevd (GDPR)?
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  reporter      User             @relation("IncidentReporter", fields: [reportedBy], references: [id])
+  assignee      User?            @relation("IncidentAssignee", fields: [assignedTo], references: [id])
+  
+  @@index([status])
+  @@index([severity])
+  @@index([reportedBy])
+  @@index([assignedTo])
+  @@index([detectedAt])
+  @@map("security_incidents")
+}
+
+// Audit Log (Sporingslogg)
+enum AuditAction {
+  // Autentisering
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  PASSWORD_CHANGED
+  TWO_FACTOR_ENABLED
+  TWO_FACTOR_DISABLED
+  
+  // Data operasjoner
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  EXPORT
+  
+  // Sikkerhet
+  ACCESS_DENIED
+  PERMISSION_CHANGED
+  ROLE_CHANGED
+  
+  // Admin handlinger
+  USER_CREATED
+  USER_DELETED
+  LICENSE_SUSPENDED
+  LICENSE_RESUMED
+  
+  // QMS
+  DOCUMENT_APPROVED
+  NONCONFORMANCE_CLOSED
+  RISK_UPDATED
+  
+  // System
+  BACKUP_CREATED
+  SYSTEM_CONFIG_CHANGED
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  
+  // Handling
+  action      AuditAction
+  entity      String?     // Hvilken type entitet (User, Course, etc)
+  entityId    String?     // ID på entiteten
+  
+  // Bruker info
+  userId      String?
+  userEmail   String?
+  userName    String?
+  
+  // Detaljer
+  description String?     @db.Text
+  metadata    Json?       // Ekstra data (før/etter verdier, etc)
+  
+  // Teknisk info
+  ipAddress   String?
+  userAgent   String?     @db.Text
+  
+  // Resultat
+  success     Boolean     @default(true)
+  errorMessage String?    @db.Text
+  
+  createdAt   DateTime    @default(now())
+  
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+// Sikkerhetspolitikker (Security Policies)
+enum PolicyCategory {
+  ACCESS_CONTROL        // Tilgangskontroll
+  DATA_PROTECTION       // Databeskyttelse
+  INCIDENT_MANAGEMENT   // Hendelseshåndtering
+  BACKUP_RECOVERY       // Backup og gjenoppretting
+  PASSWORD_POLICY       // Passordpolicy
+  ACCEPTABLE_USE        // Akseptabel bruk
+  CHANGE_MANAGEMENT     // Endringsledelse
+  RISK_MANAGEMENT       // Risikostyring
+  COMPLIANCE            // Compliance
+  TRAINING              // Opplæring
+}
+
+enum PolicyStatus {
+  DRAFT      // Utkast
+  REVIEW     // Til gjennomgang
+  APPROVED   // Godkjent
+  ACTIVE     // Aktiv
+  ARCHIVED   // Arkivert
+}
+
+model SecurityPolicy {
+  id              String         @id @default(cuid())
+  
+  // Identifikasjon
+  policyNumber    String         @unique // Format: POL-SEC-XXX
+  title           String
+  category        PolicyCategory
+  
+  // Innhold
+  description     String         @db.Text
+  purpose         String         @db.Text
+  scope           String         @db.Text
+  policy          String         @db.LongText // Selve policy-teksten
+  procedures      String?        @db.LongText // Prosedyrer
+  
+  // Metadata
+  version         String         @default("1.0")
+  status          PolicyStatus   @default(DRAFT)
+  
+  // Godkjenning
+  approvedBy      String?
+  approvedAt      DateTime?
+  
+  // Gjennomgang
+  reviewSchedule  String?        // "Annually", "Quarterly", etc
+  nextReview      DateTime?
+  lastReviewed    DateTime?
+  
+  // Målgruppe
+  applicableTo    String?        @db.Text // Hvem policyen gjelder for
+  
+  // Metadata
+  effectiveDate   DateTime?
+  expiryDate      DateTime?
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  acknowledgments SecurityPolicyAcknowledgment[]
+  
+  @@index([status])
+  @@index([category])
+  @@map("security_policies")
+}
+
+// Bekreftelse av at policy er lest og forstått
+model SecurityPolicyAcknowledgment {
+  id         String   @id @default(cuid())
+  
+  policyId   String
+  userId     String
+  
+  acknowledged Boolean  @default(false)
+  acknowledgedAt DateTime?
+  
+  createdAt  DateTime @default(now())
+  
+  policy     SecurityPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([policyId, userId])
+  @@index([policyId])
+  @@index([userId])
+  @@map("security_policy_acknowledgments")
+}
