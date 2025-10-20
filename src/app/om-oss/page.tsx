@@ -66,24 +66,24 @@ const services = [
 
 const timeline = [
   {
-    year: "2008",
+    year: "2020",
     title: "Starten",
     description: "KKS AS ble grunnlagt med et mål om å tilby kvalitetsopplæring innen HMS og sikkerhet.",
   },
   {
-    year: "2015",
+    year: "2021",
+    title: "Sertifisert bedrift",
+    description: "Ble offisielt sertifisert som kursleverandør og etablerte solid grunnlag for vekst.",
+  },
+  {
+    year: "2024",
     title: "Ekspansjon",
     description: "Utvidet tilbudet til å inkludere truck, kran og stillaskurs over hele Norge.",
   },
   {
-    year: "2020",
-    title: "Digital transformasjon",
-    description: "Lanserte digitale kursløsninger for å møte fremtidens behov.",
-  },
-  {
-    year: "2024",
-    title: "ISO-sertifisering",
-    description: "Oppnådde ISO 9001 og ISO 27001 sertifisering for kvalitet og sikkerhet.",
+    year: "2025",
+    title: "ISO-sertifisering og digitalisering",
+    description: "Oppnådde ISO 9001 og ISO 27001 sertifisering for kvalitet og sikkerhet. Lanserte digitale kursløsninger for å møte fremtidens behov.",
   },
 ];
 
