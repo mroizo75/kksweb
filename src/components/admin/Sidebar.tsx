@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -40,40 +41,48 @@ const navigation = [
     name: "Dashboard",
     href: "/admin/dashboard",
     icon: LayoutDashboard,
+    roles: ["ADMIN", "INSTRUCTOR"],
   },
   {
     name: "Kurs",
     href: "/admin/kurs",
     icon: BookOpen,
+    roles: ["ADMIN", "INSTRUCTOR"],
   },
   {
     name: "Sesjoner",
     href: "/admin/sesjoner",
     icon: Calendar,
+    roles: ["ADMIN", "INSTRUCTOR"],
   },
   {
     name: "Påmeldinger",
     href: "/admin/pameldinger",
     icon: UserCheck,
+    roles: ["ADMIN", "INSTRUCTOR"],
   },
   {
     name: "Bulk-påmelding",
     href: "/admin/bulk-pamelding",
     icon: Users,
+    roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR kan nå melde på flere deltakere
   },
   {
     name: "Kunder",
     href: "/admin/kunder",
     icon: Building2,
+    roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR kan se kunder
   },
   {
     name: "Lisenser",
     href: "/admin/lisenser",
     icon: Key,
+    roles: ["ADMIN"], // Kun ADMIN
   },
   {
     name: "CRM",
     icon: Briefcase,
+    roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR selger inn kurs selv
     children: [
       { name: "Leads", href: "/admin/crm/leads", icon: UserPlus },
       { name: "Avtaler", href: "/admin/crm/deals", icon: FileText },
@@ -85,25 +94,30 @@ const navigation = [
     name: "Kompetanse",
     href: "/admin/kompetanse",
     icon: Award,
+    roles: ["ADMIN", "INSTRUCTOR"],
   },
   {
     name: "Vurdering",
     href: "/admin/vurdering",
     icon: ClipboardCheck,
+    roles: ["ADMIN", "INSTRUCTOR"],
   },
   {
     name: "Maler",
     href: "/admin/maler",
     icon: FileImage,
+    roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR kan bruke maler
   },
   {
     name: "Gyldighet",
     href: "/admin/gyldighet",
     icon: Shield,
+    roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR kan se gyldighetsregler
   },
   {
     name: "Kvalitet (ISO 9001)",
     icon: CheckSquare,
+    roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR kan se kvalitetssystem
     children: [
       { name: "Avvik", href: "/admin/kvalitet/avvik", icon: AlertTriangle },
       { name: "Dokumenter", href: "/admin/kvalitet/dokumenter", icon: FileCheck },
@@ -115,6 +129,7 @@ const navigation = [
   {
     name: "Sikkerhet (ISO 27001)",
     icon: ShieldAlert,
+    roles: ["ADMIN"], // Kun ADMIN - INSTRUCTOR har IKKE tilgang
     children: [
       { name: "Hendelser", href: "/admin/sikkerhet/hendelser", icon: AlertTriangle },
       { name: "Politikk", href: "/admin/sikkerhet/politikk", icon: FileKey },
@@ -126,6 +141,13 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || "USER";
+
+  // Filtrer navigation basert på brukerens rolle
+  const filteredNavigation = navigation.filter((item) => 
+    item.roles?.includes(userRole as "ADMIN" | "INSTRUCTOR")
+  );
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-muted/40">
@@ -138,7 +160,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-        {navigation.map((item) => {
+        {filteredNavigation.map((item) => {
           if (item.children) {
             // Parent item with children
             const isAnyChildActive = item.children.some(
