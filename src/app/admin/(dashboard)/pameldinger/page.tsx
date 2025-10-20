@@ -94,15 +94,15 @@ export default function AdminEnrollmentsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Påmeldinger</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold">Påmeldinger</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Oversikt over alle kurspåmeldinger
           </p>
         </div>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Manuell påmelding
         </Button>
@@ -110,14 +110,14 @@ export default function AdminEnrollmentsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle>Alle påmeldinger</CardTitle>
             <div className="flex items-center gap-2">
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Søk..."
-                  className="pl-9 w-64"
+                  className="pl-9 w-full sm:w-64"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -129,65 +129,66 @@ export default function AdminEnrollmentsPage() {
           {loading ? (
             <p className="text-center py-8 text-muted-foreground">Laster...</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full min-w-[800px]">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-medium">Deltaker</th>
-                    <th className="text-left py-3 px-4 font-medium">Kurs</th>
-                    <th className="text-left py-3 px-4 font-medium">Dato</th>
-                    <th className="text-left py-3 px-4 font-medium">Bedrift</th>
-                    <th className="text-left py-3 px-4 font-medium">Status</th>
-                    <th className="text-left py-3 px-4 font-medium">Påmeldt</th>
-                    <th className="text-right py-3 px-4 font-medium">Handlinger</th>
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm">Deltaker</th>
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm">Kurs</th>
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm">Dato</th>
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm">Bedrift</th>
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm">Status</th>
+                    <th className="text-left py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm">Påmeldt</th>
+                    <th className="text-right py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm">Handlinger</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredEnrollments.map((enrollment) => (
                     <tr key={enrollment.id} className="border-b last:border-0">
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-2 sm:px-4">
                         <div>
-                          <p className="font-medium">
+                          <p className="font-medium text-xs sm:text-sm">
                             {enrollment.person.firstName} {enrollment.person.lastName}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {enrollment.person.email}
                           </p>
                         </div>
                       </td>
-                      <td className="py-3 px-4">
-                        <p className="font-medium">{enrollment.session.course.title}</p>
+                      <td className="py-3 px-2 sm:px-4">
+                        <p className="font-medium text-xs sm:text-sm">{enrollment.session.course.title}</p>
                       </td>
-                      <td className="py-3 px-4">
-                        <p className="text-sm">
+                      <td className="py-3 px-2 sm:px-4">
+                        <p className="text-xs">
                           {format(new Date(enrollment.session.startsAt), "dd.MM.yyyy", { locale: nb })}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {enrollment.session.location}
                         </p>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-2 sm:px-4">
                         {enrollment.company ? (
-                          <p className="text-sm">{enrollment.company.name}</p>
+                          <p className="text-xs">{enrollment.company.name}</p>
                         ) : (
-                          <p className="text-sm text-muted-foreground">Privatperson</p>
+                          <p className="text-xs text-muted-foreground">Privatperson</p>
                         )}
                       </td>
-                      <td className="py-3 px-4">
-                        <Badge variant={statusColors[enrollment.status]}>
+                      <td className="py-3 px-2 sm:px-4">
+                        <Badge variant={statusColors[enrollment.status]} className="text-xs">
                           {statusText[enrollment.status]}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4">
-                        <p className="text-sm text-muted-foreground">
+                      <td className="py-3 px-2 sm:px-4">
+                        <p className="text-xs text-muted-foreground">
                           {format(new Date(enrollment.createdAt), "dd.MM.yyyy", { locale: nb })}
                         </p>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-2 sm:px-4 text-right">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleOpenDetails(enrollment)}
+                          className="text-xs"
                         >
                           Detaljer
                         </Button>

@@ -204,29 +204,29 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+        <p className="text-sm md:text-base text-muted-foreground">
           Oversikt over aktivitet og nøkkeltall
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-xs md:text-sm font-medium">
                   {stat.title}
                 </CardTitle>
                 <Icon className={`h-4 w-4 ${stat.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="text-xl md:text-2xl font-bold">{stat.value}</div>
                 <p className="text-xs text-muted-foreground">
                   {stat.description}
                 </p>

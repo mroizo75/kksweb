@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 import {
   LayoutDashboard,
   BookOpen,
@@ -32,6 +33,8 @@ import {
   History,
   Settings,
   UserX,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
@@ -143,24 +146,59 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role || "USER";
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Filtrer navigation basert på brukerens rolle
   const filteredNavigation = navigation.filter((item) => 
     item.roles?.includes(userRole as "ADMIN" | "INSTRUCTOR")
   );
 
-  return (
-    <div className="flex h-full w-64 flex-col border-r bg-muted/40">
-      {/* Logo */}
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/admin/dashboard" className="text-xl font-bold">
-          KKS Admin
-        </Link>
-      </div>
+  // Lukk mobil-meny ved navigasjon
+  const handleLinkClick = () => {
+    setIsMobileMenuOpen(false);
+  };
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-        {filteredNavigation.map((item) => {
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-4 left-4 z-50 md:hidden"
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      >
+        {isMobileMenuOpen ? (
+          <X className="h-6 w-6" />
+        ) : (
+          <Menu className="h-6 w-6" />
+        )}
+      </Button>
+
+      {/* Overlay for mobile */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "fixed md:static inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r bg-background transition-transform duration-200 ease-in-out md:translate-x-0",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Logo */}
+        <div className="flex h-16 items-center border-b px-6">
+          <Link href="/admin/dashboard" className="text-xl font-bold" onClick={handleLinkClick}>
+            KKS Admin
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+          {filteredNavigation.map((item) => {
           if (item.children) {
             // Parent item with children
             const isAnyChildActive = item.children.some(
@@ -192,6 +230,7 @@ export function Sidebar() {
                             ? "bg-primary text-primary-foreground"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
+                        onClick={handleLinkClick}
                       >
                         <child.icon className="h-4 w-4" />
                         {child.name}
@@ -215,6 +254,7 @@ export function Sidebar() {
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
+              onClick={handleLinkClick}
             >
               <item.icon className="h-4 w-4" />
               {item.name}
@@ -223,30 +263,31 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Settings & Logout */}
-      <div className="border-t p-3 space-y-1">
-        <Link href="/admin/settings">
+        {/* Settings & Logout */}
+        <div className="border-t p-3 space-y-1">
+          <Link href="/admin/settings" onClick={handleLinkClick}>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start",
+                pathname?.startsWith("/admin/settings") && "bg-muted"
+              )}
+            >
+              <Settings className="mr-3 h-4 w-4" />
+              Innstillinger
+            </Button>
+          </Link>
           <Button
             variant="ghost"
-            className={cn(
-              "w-full justify-start",
-              pathname?.startsWith("/admin/settings") && "bg-muted"
-            )}
+            className="w-full justify-start"
+            onClick={() => signOut({ callbackUrl: "/admin/login" })}
           >
-            <Settings className="mr-3 h-4 w-4" />
-            Innstillinger
+            <LogOut className="mr-3 h-4 w-4" />
+            Logg ut
           </Button>
-        </Link>
-        <Button
-          variant="ghost"
-          className="w-full justify-start"
-          onClick={() => signOut({ callbackUrl: "/admin/login" })}
-        >
-          <LogOut className="mr-3 h-4 w-4" />
-          Logg ut
-        </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
