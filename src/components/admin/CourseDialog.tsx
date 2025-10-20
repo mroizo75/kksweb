@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -56,8 +56,24 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
 
   const form = useForm<CourseInput>({
     resolver: zodResolver(courseSchema),
-    defaultValues: course
-      ? {
+    defaultValues: {
+      title: "",
+      slug: "",
+      code: "",
+      category: "truck",
+      description: "",
+      durationDays: 1,
+      price: 0,
+      image: "",
+      published: true,
+    },
+  });
+
+  // Oppdater form verdier når dialogen åpnes med et kurs
+  useEffect(() => {
+    if (open) {
+      if (course) {
+        form.reset({
           title: course.title,
           slug: course.slug,
           code: course.code,
@@ -67,8 +83,9 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           price: course.price,
           image: course.image || "",
           published: course.published,
-        }
-      : {
+        });
+      } else {
+        form.reset({
           title: "",
           slug: "",
           code: "",
@@ -78,8 +95,10 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           price: 0,
           image: "",
           published: true,
-        },
-  });
+        });
+      }
+    }
+  }, [open, course, form]);
 
   const onSubmit = async (data: CourseInput) => {
     setIsSubmitting(true);
