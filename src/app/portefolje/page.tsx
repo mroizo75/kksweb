@@ -46,8 +46,8 @@ const products = [
     url: "https://bransjekurs.no",
     iconName: "Calendar",
     logo: "/logos/bransjekurs-logo.png",
-    status: "Live",
-    statusColor: "bg-green-500",
+    status: "Under utvikling",
+    statusColor: "bg-orange-500",
     features: [
       "Omfattende kurskatalog",
       "Webhook-integrasjon",
@@ -118,8 +118,8 @@ const products = [
     url: "https://scrut-man.com",
     iconName: "Zap",
     logo: "/logos/scrutman-logo.png",
-    status: "Live",
-    statusColor: "bg-green-500",
+    status: "Under utvikling",
+    statusColor: "bg-orange-500",
     features: [
       "Digital innsjekk",
       "Teknisk kontroll",
