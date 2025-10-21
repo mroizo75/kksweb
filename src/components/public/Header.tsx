@@ -13,7 +13,7 @@ export function Header() {
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="hover:opacity-80 transition-opacity">
-          <Image src="/logo-black-kks.png" alt="KKS AS" width={150} height={150} className="h-8 w-auto" />
+          <Image src="/logo-black-kks.png" alt="KKS AS" width={200} height={200} className="h-12 md:h-16 w-auto" />
         </Link>
 
         {/* Desktop Navigation */}
