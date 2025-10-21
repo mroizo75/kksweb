@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Loader2, ShieldCheck, Key, AlertTriangle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { check2FARequired, verify2FALogin } from "@/app/actions/auth/verify-2fa-login";
+import { loginWithRateLimit } from "@/app/actions/auth/login-with-rate-limit";
 
 function LoginForm() {
   const router = useRouter();
@@ -33,8 +34,8 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      // Sjekk om 2FA er påkrevd
-      const result = await check2FARequired(email, password);
+      // Bruk rate-limited login
+      const result = await loginWithRateLimit(email, password);
 
       if (!result.success) {
         toast.error(result.error || "Ugyldig e-post eller passord");
@@ -57,6 +58,7 @@ function LoginForm() {
         if (signInResult?.error) {
           toast.error("Ugyldig e-post eller passord");
         } else {
+          toast.success("Innlogget!");
           const from = searchParams.get("from") || "/admin/dashboard";
           router.push(from);
           router.refresh();

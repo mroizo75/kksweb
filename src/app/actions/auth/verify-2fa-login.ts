@@ -3,6 +3,8 @@
 import { db } from "@/lib/db";
 import { verifyTOTPToken, decryptSecret, verifyBackupCode } from "@/lib/2fa";
 import bcrypt from "bcryptjs";
+import { checkRateLimit, recordFailedAttempt, resetRateLimit } from "@/lib/rate-limit";
+import { headers } from "next/headers";
 
 /**
  * Verifiser 2FA-token ved innlogging
@@ -10,6 +12,30 @@ import bcrypt from "bcryptjs";
  */
 export async function verify2FALogin(email: string, password: string, token: string) {
   try {
+    // Hent IP-adresse
+    const headersList = await headers();
+    const forwarded = headersList.get("x-forwarded-for");
+    const realIp = headersList.get("x-real-ip");
+    const ip = forwarded?.split(",")[0].trim() || realIp || "unknown";
+
+    // Rate limit på 2FA-forsøk (5 forsøk per 15 min)
+    const twoFaKey = `2fa:${email.toLowerCase()}`;
+    const limit = await checkRateLimit(twoFaKey, "email");
+    
+    if (!limit.allowed) {
+      await db.auditLog.create({
+        data: {
+          action: "LOGIN_FAILED",
+          entity: "USER",
+          description: "Rate limit overskredet for 2FA",
+          metadata: { email, ip, reason: limit.message },
+          ipAddress: ip,
+          success: false,
+        },
+      });
+      return { success: false, error: limit.message || "For mange forsøk på 2FA" };
+    }
+
     // Først, verifiser e-post og passord
     const user = await db.user.findUnique({
       where: { email },
@@ -26,12 +52,14 @@ export async function verify2FALogin(email: string, password: string, token: str
     });
 
     if (!user || !user.hashedPassword) {
+      await recordFailedAttempt(twoFaKey, "email");
       return { success: false, error: "Ugyldig e-post eller passord" };
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.hashedPassword);
 
     if (!isPasswordValid) {
+      await recordFailedAttempt(twoFaKey, "email");
       return { success: false, error: "Ugyldig e-post eller passord" };
     }
 
@@ -47,6 +75,21 @@ export async function verify2FALogin(email: string, password: string, token: str
     const isValid = verifyTOTPToken(secret, token);
 
     if (isValid) {
+      // Reset rate limit ved vellykket 2FA
+      await resetRateLimit(twoFaKey);
+      
+      // Logg vellykket 2FA
+      await db.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "LOGIN",
+          entity: "USER",
+          entityId: user.id,
+          metadata: { email: user.email, twoFactor: true },
+          ipAddress: ip,
+        },
+      });
+      
       return {
         success: true,
         user: {
@@ -64,11 +107,30 @@ export async function verify2FALogin(email: string, password: string, token: str
       const { valid, remainingCodes } = verifyBackupCode(token, hashedCodes);
 
       if (valid) {
+        // Reset rate limit ved vellykket backup-kode
+        await resetRateLimit(twoFaKey);
+        
         // Oppdater backup-koder (fjern brukt kode)
         await db.user.update({
           where: { email },
           data: {
             backupCodes: remainingCodes,
+          },
+        });
+
+        // Logg bruk av backup-kode
+        await db.auditLog.create({
+          data: {
+            userId: user.id,
+            action: "LOGIN",
+            entity: "USER",
+            entityId: user.id,
+            metadata: {
+              email: user.email,
+              backupCodeUsed: true,
+              remaining: remainingCodes.length,
+            },
+            ipAddress: ip,
           },
         });
 
@@ -85,6 +147,21 @@ export async function verify2FALogin(email: string, password: string, token: str
         };
       }
     }
+
+    // Mislykket 2FA - registrer forsøk
+    await recordFailedAttempt(twoFaKey, "email");
+    await db.auditLog.create({
+      data: {
+        userId: user.id,
+        action: "LOGIN_FAILED",
+        entity: "USER",
+        entityId: user.id,
+        description: "Mislykket 2FA-verifisering",
+        metadata: { email, ip },
+        ipAddress: ip,
+        success: false,
+      },
+    });
 
     return { success: false, error: "Ugyldig 2FA-kode" };
   } catch (error) {
