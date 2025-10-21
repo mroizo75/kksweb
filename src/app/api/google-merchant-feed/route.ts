@@ -15,7 +15,10 @@ export async function GET() {
     
     // Hent alle publiserte kurs med sesjoner
     const courses = await db.course.findMany({
-      where: { published: true },
+      where: { 
+        published: true,
+        image: { not: null }, // Kun kurs med bilder (påkrevd av Google)
+      },
       include: {
         sessions: {
           where: {
@@ -30,11 +33,22 @@ export async function GET() {
     // Generer produkter
     const items = courses.map((course) => {
       const hasAvailableSessions = course.sessions.length > 0;
-      const imageUrl = course.image 
-        ? course.image.startsWith('http') 
-          ? course.image 
-          : `${baseUrl}${course.image}`
-        : `${baseUrl}/default-course.jpg`;
+      
+      // Valider og bygg bilde-URL
+      let imageUrl = `${baseUrl}/logo-black-kks.png`; // Fallback til KKS-logo
+      if (course.image) {
+        if (course.image.startsWith('http')) {
+          imageUrl = course.image;
+        } else if (course.image.startsWith('/')) {
+          imageUrl = `${baseUrl}${course.image}`;
+        } else {
+          imageUrl = `${baseUrl}/${course.image}`;
+        }
+      } else if (course.slug) {
+        // Prøv å finne bilde basert på slug i /courses/ mappen
+        // Sjekk først for PNG, deretter JPG
+        imageUrl = `${baseUrl}/courses/${course.slug}.png`;
+      }
 
       return {
         id: course.id,
