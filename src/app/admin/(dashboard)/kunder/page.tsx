@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PersonDetailsDialog } from "@/components/admin/PersonDetailsDialog";
 import { CompanyDetailsDialog } from "@/components/admin/CompanyDetailsDialog";
+import { CreatePersonDialog } from "@/components/admin/CreatePersonDialog";
+import { CreateCompanyDialog } from "@/components/admin/CreateCompanyDialog";
 import { Plus, Search, User, Building2 } from "lucide-react";
 import type { Person, Company, Enrollment, CourseSession, Course, Contact } from "@prisma/client";
 
@@ -36,6 +38,8 @@ export default function AdminCustomersPage() {
   const [selectedCompany, setSelectedCompany] = useState<CompanyWithRelations | null>(null);
   const [personDialogOpen, setPersonDialogOpen] = useState(false);
   const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
+  const [createPersonDialogOpen, setCreatePersonDialogOpen] = useState(false);
+  const [createCompanyDialogOpen, setCreateCompanyDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -122,6 +126,28 @@ export default function AdminCustomersPage() {
     }
   };
 
+  const handleCreateNewPerson = () => {
+    setCreatePersonDialogOpen(true);
+  };
+
+  const handleCreateNewCompany = () => {
+    setCreateCompanyDialogOpen(true);
+  };
+
+  const handleCloseCreatePersonDialog = (open: boolean) => {
+    setCreatePersonDialogOpen(open);
+    if (!open) {
+      fetchCustomers();
+    }
+  };
+
+  const handleCloseCreateCompanyDialog = (open: boolean) => {
+    setCreateCompanyDialogOpen(open);
+    if (!open) {
+      fetchCustomers();
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -160,7 +186,7 @@ export default function AdminCustomersPage() {
                       onChange={(e) => setPeopleSearchTerm(e.target.value)}
                     />
                   </div>
-                  <Button>
+                  <Button onClick={handleCreateNewPerson}>
                     <Plus className="mr-2 h-4 w-4" />
                     Ny deltaker
                   </Button>
@@ -247,7 +273,7 @@ export default function AdminCustomersPage() {
                       onChange={(e) => setCompaniesSearchTerm(e.target.value)}
                     />
                   </div>
-                  <Button>
+                  <Button onClick={handleCreateNewCompany}>
                     <Plus className="mr-2 h-4 w-4" />
                     Ny bedrift
                   </Button>
@@ -328,6 +354,17 @@ export default function AdminCustomersPage() {
         company={selectedCompany}
         open={companyDialogOpen}
         onOpenChange={handleCloseCompanyDialog}
+      />
+
+      <CreatePersonDialog
+        open={createPersonDialogOpen}
+        onOpenChange={handleCloseCreatePersonDialog}
+        companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+      />
+
+      <CreateCompanyDialog
+        open={createCompanyDialogOpen}
+        onOpenChange={handleCloseCreateCompanyDialog}
       />
     </div>
   );
