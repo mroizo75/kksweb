@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { checkRateLimit, recordFailedAttempt, resetRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
-    // Hent authorization header
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { isValid: false, errorMessage: 'Mangler authorization header' },
-        { status: 401 }
-      );
-    }
+    // Hent klient-IP
+    const clientIp = getClientIp(request);
 
-    const validationToken = authHeader.replace('Bearer ', '');
-
-    // Parse request body
+    // Parse request body først for å få lisenskode
     const body = await request.json();
     const { licenseKey, domain, appVersion } = body;
 
@@ -25,6 +17,55 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Rate limiting basert på IP
+    const ipRateLimit = await checkRateLimit(clientIp, 'ip');
+    if (!ipRateLimit.allowed) {
+      await logValidation({
+        licenseKey,
+        isValid: false,
+        domain,
+        appVersion,
+        errorMessage: `Rate limit overskredet: ${ipRateLimit.message}`,
+        ipAddress: clientIp,
+      });
+      return NextResponse.json(
+        { isValid: false, errorMessage: ipRateLimit.message || 'For mange forsøk' },
+        { status: 429 }
+      );
+    }
+
+    // Rate limiting basert på lisenskode (maks 60 valideringer per time)
+    const licenseRateLimit = await checkRateLimit(`license:${licenseKey}`, 'email');
+    if (!licenseRateLimit.allowed) {
+      await recordFailedAttempt(clientIp, 'ip');
+      await logValidation({
+        licenseKey,
+        isValid: false,
+        domain,
+        appVersion,
+        errorMessage: 'For mange valideringsforsøk på denne lisensen',
+        ipAddress: clientIp,
+      });
+      return NextResponse.json(
+        { isValid: false, errorMessage: 'For mange valideringsforsøk på denne lisensen' },
+        { status: 429 }
+      );
+    }
+
+    // Hent authorization header
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      await recordFailedAttempt(clientIp, 'ip');
+      await recordFailedAttempt(`license:${licenseKey}`, 'email');
+      return NextResponse.json(
+        { isValid: false, errorMessage: 'Mangler authorization header' },
+        { status: 401 }
+      );
+    }
+
+    const validationToken = authHeader.replace('Bearer ', '');
 
     // Hent lisens fra database
     const license = await db.productLicense.findUnique({
@@ -40,6 +81,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!license) {
+      // Registrer mislykket forsøk
+      await recordFailedAttempt(clientIp, 'ip');
+      await recordFailedAttempt(`license:${licenseKey}`, 'email');
+      
       // Logg validering (failed)
       await logValidation({
         licenseKey,
@@ -47,7 +92,7 @@ export async function POST(request: NextRequest) {
         domain,
         appVersion,
         errorMessage: 'Lisenskode ikke funnet',
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        ipAddress: clientIp,
       });
 
       return NextResponse.json(
@@ -58,6 +103,10 @@ export async function POST(request: NextRequest) {
 
     // Sjekk validerings-token
     if (license.validationToken !== validationToken) {
+      // Registrer mislykket forsøk
+      await recordFailedAttempt(clientIp, 'ip');
+      await recordFailedAttempt(`license:${licenseKey}`, 'email');
+      
       // Logg validering (failed)
       await logValidation({
         licenseId: license.id,
@@ -66,7 +115,7 @@ export async function POST(request: NextRequest) {
         domain,
         appVersion,
         errorMessage: 'Ugyldig validerings-token',
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        ipAddress: clientIp,
       });
 
       return NextResponse.json(
@@ -77,6 +126,10 @@ export async function POST(request: NextRequest) {
 
     // Sjekk om lisensen er aktiv
     if (!license.isActive) {
+      // Registrer mislykket forsøk
+      await recordFailedAttempt(clientIp, 'ip');
+      await recordFailedAttempt(`license:${licenseKey}`, 'email');
+      
       await logValidation({
         licenseId: license.id,
         licenseKey,
@@ -84,7 +137,7 @@ export async function POST(request: NextRequest) {
         domain,
         appVersion,
         errorMessage: 'Lisensen er deaktivert',
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        ipAddress: clientIp,
       });
 
       return NextResponse.json(
@@ -95,6 +148,10 @@ export async function POST(request: NextRequest) {
 
     // Sjekk utløpsdato
     if (license.expiresAt && new Date(license.expiresAt) < new Date()) {
+      // Registrer mislykket forsøk
+      await recordFailedAttempt(clientIp, 'ip');
+      await recordFailedAttempt(`license:${licenseKey}`, 'email');
+      
       await logValidation({
         licenseId: license.id,
         licenseKey,
@@ -102,7 +159,7 @@ export async function POST(request: NextRequest) {
         domain,
         appVersion,
         errorMessage: 'Lisensen har utløpt',
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        ipAddress: clientIp,
       });
 
       return NextResponse.json(
@@ -113,6 +170,10 @@ export async function POST(request: NextRequest) {
 
     // Sjekk domene (hvis spesifisert)
     if (license.allowedDomain && domain && license.allowedDomain !== domain) {
+      // Registrer mislykket forsøk
+      await recordFailedAttempt(clientIp, 'ip');
+      await recordFailedAttempt(`license:${licenseKey}`, 'email');
+      
       await logValidation({
         licenseId: license.id,
         licenseKey,
@@ -120,7 +181,7 @@ export async function POST(request: NextRequest) {
         domain,
         appVersion,
         errorMessage: `Lisensen er kun gyldig for domenet: ${license.allowedDomain}`,
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        ipAddress: clientIp,
       });
 
       return NextResponse.json(
@@ -148,6 +209,10 @@ export async function POST(request: NextRequest) {
       features.maxBookingsPerMonth = license.maxBookingsPerMonth;
     }
 
+    // Reset rate limiting ved vellykket validering
+    await resetRateLimit(clientIp);
+    await resetRateLimit(`license:${licenseKey}`);
+
     // Logg suksessfull validering
     await logValidation({
       licenseId: license.id,
@@ -155,7 +220,7 @@ export async function POST(request: NextRequest) {
       isValid: true,
       domain,
       appVersion,
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+      ipAddress: clientIp,
     });
 
     // Oppdater activatedAt hvis ikke satt
