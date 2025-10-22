@@ -83,6 +83,12 @@ const navigation = [
     roles: ["ADMIN"], // Kun ADMIN
   },
   {
+    name: "Produktlisenser",
+    href: "/admin/produktlisenser",
+    icon: Key,
+    roles: ["ADMIN"], // Kun ADMIN - For Svampen, TaskGuild, etc.
+  },
+  {
     name: "CRM",
     icon: Briefcase,
     roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR selger inn kurs selv

@@ -1565,3 +1565,79 @@ model SecurityPolicyAcknowledgment {
   @@index([userId])
   @@map("security_policy_acknowledgments")
 }
+
+// ========================================
+// PRODUKT-LISENSSYSTEM (for Svampen, TaskGuild, etc.)
+// ========================================
+
+// Produktkunde (den som kjøper lisens til våre produkter)
+model ProductCustomer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  company   String?
+  domain    String?  // Kundens domene (f.eks. "svampen.no")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  productLicenses ProductLicense[]
+  
+  @@map("product_customers")
+}
+
+// Produkt-lisens (for eksterne produkter)
+model ProductLicense {
+  id                String   @id @default(cuid())
+  licenseKey        String   @unique  // Unik lisenskode (f.eks. SVAMPEN-2025-XXXX-XXXX-XXXX)
+  validationToken   String   @unique  // Token for API-validering
+  customerId        String
+  customer          ProductCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  productName       String        @default("Svampen Booking System")
+  productVersion    String?       // Hvilken versjon av produktet
+  
+  isActive          Boolean       @default(true)
+  activatedAt       DateTime?
+  expiresAt         DateTime?     // null = ingen utløpsdato
+  
+  // Feature flags (JSON)
+  features          String        @db.Text  // JSON string med features
+  
+  // Begrensninger
+  maxUsers          Int?          // null = ubegrenset
+  maxBookingsPerMonth Int?        // null = ubegrenset
+  allowedDomain     String?       // Kun tillatt for dette domenet
+  
+  // Metadata
+  notes             String?       @db.Text
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  // Validerings-logger
+  validationLogs    ProductLicenseValidation[]
+  
+  @@index([customerId])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@map("product_licenses")
+}
+
+// Validerings-logg for produkt-lisenser
+model ProductLicenseValidation {
+  id              String   @id @default(cuid())
+  licenseId       String
+  license         ProductLicense @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  
+  isValid         Boolean
+  domain          String?   // Hvilket domene som validerte
+  appVersion      String?   // Hvilken app-versjon
+  ipAddress       String?   // IP-adresse
+  errorMessage    String?   @db.Text
+  
+  validatedAt     DateTime @default(now())
+  
+  @@index([licenseId])
+  @@index([validatedAt])
+  @@map("product_license_validations")
+}
