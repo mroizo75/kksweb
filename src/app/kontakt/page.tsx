@@ -88,7 +88,7 @@ export default function KontaktPage() {
       </section>
 
       {/* Contact Info Cards */}
-      <section className="py-12 -mt-12">
+      <section className="py-12 -mt-12pt-16">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {contactInfo.map((info) => (
