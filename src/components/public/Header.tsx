@@ -24,6 +24,9 @@ export function Header() {
           <Link href="/bht-medlem" className="text-sm hover:text-primary transition-colors">
             BHT-medlem
           </Link>
+          <Link href="/saas" className="text-sm hover:text-primary transition-colors font-semibold">
+            Leie Software 💡
+          </Link>
           <Link href="/portefolje" className="text-sm hover:text-primary transition-colors">
             Våre Produkter
           </Link>
@@ -72,6 +75,13 @@ export function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               BHT-medlem
+            </Link>
+            <Link 
+              href="/saas" 
+              className="text-sm hover:text-primary transition-colors py-2 border-b font-semibold"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Leie Software 💡
             </Link>
             <Link 
               href="/portefolje" 
