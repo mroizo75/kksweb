@@ -8,7 +8,7 @@ export const courseSchema = z.object({
   description: z.string().optional(),
   durationDays: z.number().int().min(1, "Varighet må være minst 1 dag"),
   price: z.number().int().min(0, "Pris kan ikke være negativ"),
-  image: z.string().url("Ugyldig bilde-URL").optional().or(z.literal("")),
+  image: z.string().optional().or(z.literal("")),
   published: z.boolean(),
 });
 

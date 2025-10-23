@@ -69,7 +69,7 @@ const availableImages = [
   "fse-lav-og-hoyspenning-med-forstehjelp.png",
   "g11-lofteredskap.png",
   "g4traverskran.png",
-  "g8-lastebilkran.png",
+  "g8lastebilkran.png",
   "grunnkurs-arbeidsmiljo.png",
   "grunnkurs-hms-for-bygg-og-anleggsbransjen.png",
   "grunnkurs-hms.png",
