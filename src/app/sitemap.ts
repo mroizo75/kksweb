@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
  * Automatisk inkludering av alle kurs og sider
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://kkskurs.no";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
 
   // Hent alle publiserte kurs
   const courses = await db.course.findMany({
