@@ -67,6 +67,17 @@ export default async function CourseDetailPage(props: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
+            {/* Course Image */}
+            {course.image && (
+              <div className="mb-6 rounded-xl overflow-hidden shadow-lg">
+                <img 
+                  src={course.image} 
+                  alt={course.title}
+                  className="w-full h-auto object-cover max-h-[400px]"
+                />
+              </div>
+            )}
+
             <div className="mb-4">
               <Badge variant="secondary" className="mb-4">
                 {course.category}
@@ -94,11 +105,20 @@ export default async function CourseDetailPage(props: PageProps) {
             </div>
 
             {course.description && (
-              <div className="prose max-w-none mb-8">
+              <div className="mb-8">
                 <h2 className="text-2xl font-bold mb-4">Om kurset</h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">
-                  {course.description}
-                </p>
+                <div className="prose prose-gray max-w-none dark:prose-invert">
+                  {course.description.split('\n\n').map((paragraph, idx) => (
+                    <p key={idx} className="text-muted-foreground mb-4 leading-relaxed">
+                      {paragraph.split('\n').map((line, lineIdx) => (
+                        <span key={lineIdx}>
+                          {line}
+                          {lineIdx < paragraph.split('\n').length - 1 && <br />}
+                        </span>
+                      ))}
+                    </p>
+                  ))}
+                </div>
               </div>
             )}
 

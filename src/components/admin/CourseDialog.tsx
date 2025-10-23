@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,51 @@ const categories = [
   { value: "vei", label: "Arbeid på vei" },
   { value: "graving", label: "Graving" },
   { value: "annet", label: "Annet" },
+];
+
+// Available course images from /public/courses/
+const availableImages = [
+  "arbeidsvarsling-for-arbeid-ved-vei-og-pa-vei.png",
+  "batproven.png",
+  "behandle-og-sikring-av-data.png",
+  "brukerkurs-stilas.png",
+  "c1-c2-mobilkran.png",
+  "diisocynater.png",
+  "fallsikringskurs.png",
+  "farlig-handverktoy.png",
+  "forstehjelp-bygg-og-anlegg.png",
+  "forstehjelp-pa-barn.png",
+  "forstehjelp-pa-bygg-og-anlegg.png",
+  "fse-instruert-personell.png",
+  "fse-lav-og-hoyspenning-med-forstehjelp.png",
+  "g11-lofteredskap.png",
+  "g4traverskran.png",
+  "g8-lastebilkran.png",
+  "grunnkurs-arbeidsmiljo.png",
+  "grunnkurs-hms-for-bygg-og-anleggsbransjen.png",
+  "grunnkurs-hms.png",
+  "grunnleggende-brannvern.png",
+  "gwo-arbeid-i-hoyden.png",
+  "gwo-brannsikkerhet.png",
+  "gwo-forstehjelp.png",
+  "gwo-manuelt-arbeid.png",
+  "hms-for-ledere.png",
+  "hms-kurs-ledere-40-timer-for-verneombud.png",
+  "hoy-hastighetsbevis.png",
+  "innforing-datasikkerhet.png",
+  "innføring-i-hms.png",
+  "komplett-forstehjelp-kurs.png",
+  "maskin-pr-1.png",
+  "maskinforer-m1-m6.png",
+  "modul-1.png",
+  "obligatorisk-bht-kurs.png",
+  "personlofter.png",
+  "regelverk-kompetanse.png",
+  "sosial-manipulering.png",
+  "stilas-2-9-meter.png",
+  "stilas-over-9-meter.png",
+  "truckforerkurs.png",
+  "varme-arbeidere.png",
 ];
 
 export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) {
@@ -139,7 +185,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl">
+      <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{course ? "Rediger kurs" : "Opprett nytt kurs"}</DialogTitle>
           <DialogDescription>
@@ -282,6 +328,85 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="image"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kursbilde</FormLabel>
+                  <Tabs defaultValue="gallery" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="gallery">Velg fra galleri</TabsTrigger>
+                      <TabsTrigger value="manual">Manuell URL</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="gallery" className="space-y-2">
+                      <FormDescription>
+                        Velg bilde fra /public/courses/ mappen (brukes også i Google Merchant)
+                      </FormDescription>
+                      {field.value && (
+                        <div className="mb-2 p-2 border rounded-md">
+                          <p className="text-sm font-medium mb-2">Valgt bilde:</p>
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={field.value} 
+                              alt="Preview" 
+                              className="h-16 w-auto rounded object-cover"
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {field.value}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-4 gap-2 max-h-[300px] overflow-y-auto border rounded-md p-2">
+                        {availableImages.map((imgName) => {
+                          const imgPath = `/courses/${imgName}`;
+                          const isSelected = field.value === imgPath;
+                          return (
+                            <button
+                              key={imgName}
+                              type="button"
+                              onClick={() => field.onChange(imgPath)}
+                              className={`relative rounded-md overflow-hidden border-2 transition-all hover:border-primary ${
+                                isSelected ? "border-primary ring-2 ring-primary" : "border-transparent"
+                              }`}
+                            >
+                              <img
+                                src={imgPath}
+                                alt={imgName}
+                                className="w-full h-24 object-cover"
+                              />
+                              {isSelected && (
+                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                  <div className="bg-primary text-white rounded-full p-1">
+                                    ✓
+                                  </div>
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="manual">
+                      <FormDescription>
+                        Eller lim inn en ekstern bilde-URL
+                      </FormDescription>
+                      <FormControl>
+                        <Input
+                          placeholder="/courses/kurs-navn.png eller https://..."
+                          {...field}
+                        />
+                      </FormControl>
+                    </TabsContent>
+                  </Tabs>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
