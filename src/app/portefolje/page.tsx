@@ -14,6 +14,7 @@ import {
   CheckSquare,
   Globe,
   Sparkles,
+  Car,
 } from "lucide-react";
 
 export const metadata = {
@@ -113,6 +114,24 @@ const products = [
     tech: ["React", "Node.js", "PostgreSQL"],
   },
   {
+    name: "Svampen.no",
+    description: "Profesjonell bil- og båtpleie med over 10 års erfaring. Komplett bookingsystem for vaskerier og bilpleie - fra enkel vask til eksklusiv polering.",
+    url: "https://www.svampen.no",
+    iconName: "Car",
+    logo: "/logos/svampen-logo.png",
+    status: "Live",
+    statusColor: "bg-green-500",
+    features: [
+      "Online booking 24/7",
+      "Pakke-administrasjon",
+      "Kalenderintegrasjon",
+      "Kundeadministrasjon",
+      "Prisstyring og rabatter",
+      "SMS og e-post varsling",
+    ],
+    tech: ["Next.js", "Prisma", "TypeScript", "Tailwind CSS"],
+  },
+  {
     name: "Scrut-Man.com",
     description: "Komplett påmeldingssystem for motorsporten. Håndterer alt fra innsjekk og teknisk kontroll til startlister. Federation-løsning for organisasjoner og utøvere med full kontroll over egen data.",
     url: "https://scrut-man.com",
@@ -148,7 +167,7 @@ const products = [
 ];
 
 const stats = [
-  { value: "7", label: "Produkter" },
+  { value: "8", label: "Produkter" },
   { value: "5000+", label: "Aktive brukere" },
   { value: "99.9%", label: "Oppetid" },
   { value: "24/7", label: "Support" },

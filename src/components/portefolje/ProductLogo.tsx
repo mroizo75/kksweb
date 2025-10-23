@@ -8,7 +8,8 @@ import {
   Globe, 
   Users, 
   Zap, 
-  Sparkles 
+  Sparkles,
+  Car
 } from "lucide-react";
 
 interface ProductLogoProps {
@@ -25,6 +26,7 @@ const iconMap = {
   Users,
   Zap,
   Sparkles,
+  Car,
 };
 
 export function ProductLogo({ logo, name, iconName }: ProductLogoProps) {

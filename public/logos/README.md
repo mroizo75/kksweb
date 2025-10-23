@@ -7,7 +7,8 @@
 3. **hmsnova-logo.png** - HMS Nova logo
 4. **arrango-logo.png** - Arrango.no logo
 5. **taskguild-logo.png** - TaskGuild.com logo
-6. **scrutman-logo.png** - Scrut-Man.com logo
+6. **svampen-logo.png** - Svampen.no logo (bil- og båtpleie)
+7. **scrutman-logo.png** - Scrut-Man.com logo
 
 ## Anbefalte dimensjoner:
 - **Størrelse:** 500x250px (landscape format)
