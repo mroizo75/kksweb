@@ -36,6 +36,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   });
 
+  // Lokasjonssider for lokal SEO
+  const locations = ["oslo", "bergen", "trondheim", "stavanger", "kristiansand", "tromso"];
+  const locationPages = locations.map((location) => ({
+    url: `${baseUrl}/lokasjon/${location}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.85,
+  }));
+
   // Statiske sider
   const staticPages = [
     {
@@ -104,6 +113,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...coursePages, ...enrollmentPages];
+  return [...staticPages, ...locationPages, ...coursePages, ...enrollmentPages];
 }
 

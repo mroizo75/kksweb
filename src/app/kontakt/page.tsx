@@ -13,6 +13,8 @@ import {
   Send,
   MessageSquare,
   Building2,
+  Facebook,
+  Linkedin,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -30,15 +32,15 @@ const contactInfo = [
   },
   {
     icon: Phone,
-    title: "Telefon",
-    value: "+47 99 11 29 16",
-    href: "tel:+4799112916",
+    title: "Telefon Kurs",
+    value: "+47 91 54 08 24",
+    href: "tel:+4791540824",
   },
   {
-    icon: MapPin,
-    title: "Adresse",
-    value: "Norge", // Oppdater med faktisk adresse
-    href: null,
+    icon: Phone,
+    title: "Telefon Software",
+    value: "+47 99 11 29 16",
+    href: "tel:+4799112916",
   },
   {
     icon: Clock,
@@ -234,24 +236,23 @@ export default function KontaktPage() {
               {/* Social Media / Contact Options */}
               <Card className="border-2 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
                 <CardHeader>
-                  <CardTitle>Følg oss</CardTitle>
+                  <CardTitle>Følg oss på sosiale medier</CardTitle>
                   <CardDescription>
-                    Hold deg oppdatert med siste nytt fra KKS
+                    Hold deg oppdatert med siste nytt fra KKS AS
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-3">
-                    {/* Legg til faktiske sosiale medier-lenker */}
-                    <Button variant="outline" size="icon" asChild>
-                      <a href="https://facebook.com/kkskurs" target="_blank" rel="noopener noreferrer">
-                        <span className="sr-only">Facebook</span>
-                        📘
+                    <Button variant="outline" size="lg" className="flex-1" asChild>
+                      <a href="https://www.facebook.com/kursogkompetansesystemer" target="_blank" rel="noopener noreferrer">
+                        <Facebook className="mr-2 h-5 w-5" />
+                        Facebook
                       </a>
                     </Button>
-                    <Button variant="outline" size="icon" asChild>
-                      <a href="https://linkedin.com/company/kkskurs" target="_blank" rel="noopener noreferrer">
-                        <span className="sr-only">LinkedIn</span>
-                        💼
+                    <Button variant="outline" size="lg" className="flex-1" asChild>
+                      <a href="https://www.linkedin.com/company/kurs-og-kompetansesystemer-as/" target="_blank" rel="noopener noreferrer">
+                        <Linkedin className="mr-2 h-5 w-5" />
+                        LinkedIn
                       </a>
                     </Button>
                   </div>

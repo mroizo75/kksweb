@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="border-t py-12 bg-muted/50">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div>
             <Image src="/logo-black-kks.png" alt="KKS AS" width={150} height={150} />
             <p className="text-sm text-muted-foreground">
@@ -29,9 +29,34 @@ export function Footer() {
             </div>
           </div>
           <div>
+            <h3 className="font-bold mb-4">Lokasjoner</h3>
+            <div className="flex flex-col gap-2 text-sm">
+              <Link href="/lokasjon/oslo" className="text-muted-foreground hover:text-foreground transition-colors">
+                Kurs i Oslo
+              </Link>
+              <Link href="/lokasjon/bergen" className="text-muted-foreground hover:text-foreground transition-colors">
+                Kurs i Bergen
+              </Link>
+              <Link href="/lokasjon/trondheim" className="text-muted-foreground hover:text-foreground transition-colors">
+                Kurs i Trondheim
+              </Link>
+              <Link href="/lokasjon/stavanger" className="text-muted-foreground hover:text-foreground transition-colors">
+                Kurs i Stavanger
+              </Link>
+              <Link href="/lokasjon/kristiansand" className="text-muted-foreground hover:text-foreground transition-colors">
+                Kurs i Kristiansand
+              </Link>
+              <Link href="/lokasjon/tromso" className="text-muted-foreground hover:text-foreground transition-colors">
+                Kurs i Tromsø
+              </Link>
+            </div>
+          </div>
+          <div>
             <h3 className="font-bold mb-4">Kontakt</h3>
             <p className="text-sm text-muted-foreground">
-              Telefon: +47 99 11 29 16
+              Kurs: +47 91 54 08 24
+              <br />
+              Software: +47 99 11 29 16
               <br />
               E-post: post@kksas.no
             </p>
@@ -55,7 +80,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} KKS Kurs & HMS. Alle rettigheter reservert.
+          © {new Date().getFullYear()} KKS AS. Alle rettigheter reservert.
         </div>
       </div>
     </footer>

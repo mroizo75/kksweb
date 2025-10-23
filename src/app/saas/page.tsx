@@ -683,7 +683,7 @@ export default function SaaSPage() {
               </div>
               <div className="text-center space-y-2 text-sm text-muted-foreground">
                 <p>📧 E-post: post@kksas.no</p>
-                <p>📞 Telefon: +47 991 12 916</p>
+                <p>📞 Software-salg: +47 99 11 29 16</p>
                 <p>💬 Svar innen 24 timer</p>
               </div>
             </CardContent>
