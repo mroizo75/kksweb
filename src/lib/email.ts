@@ -40,6 +40,136 @@ export async function sendEnrollmentReminder(data: EnrollmentEmailData) {
   console.log("Påminnelse vil bli sendt til:", data.email);
 }
 
+// Admin notifikasjon for ny påmelding
+export interface EnrollmentNotificationData {
+  personName: string;
+  personEmail: string;
+  personPhone: string;
+  courseName: string;
+  courseDate: string;
+  courseTime: string;
+  location: string;
+  enrollmentType: "person" | "company";
+  companyName?: string;
+  status: "CONFIRMED" | "WAITLIST";
+}
+
+export async function sendEnrollmentNotification(data: EnrollmentNotificationData) {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || "post@kksas.no";
+    
+    const statusText = data.status === "WAITLIST" ? "⏳ VENTELISTE" : "✅ BEKREFTET";
+    const statusColor = data.status === "WAITLIST" ? "#f59e0b" : "#10b981";
+    
+    const { data: emailData, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: data.personEmail,
+      to: [adminEmail],
+      subject: `${statusText} - Ny påmelding til ${data.courseName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: ${statusColor}; color: white; padding: 20px; border-radius: 5px 5px 0 0;">
+            <h2 style="margin: 0; color: white;">${statusText}</h2>
+            <p style="margin: 5px 0 0 0; color: white; font-size: 14px;">Ny kurspåmelding mottatt</p>
+          </div>
+          
+          <div style="background-color: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 5px 5px;">
+            <h3 style="color: #111827; margin-top: 0;">Kursdetaljer</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Kurs:</td>
+                <td style="padding: 8px 0; color: #111827;">${data.courseName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Dato:</td>
+                <td style="padding: 8px 0; color: #111827;">${data.courseDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Tid:</td>
+                <td style="padding: 8px 0; color: #111827;">${data.courseTime}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Sted:</td>
+                <td style="padding: 8px 0; color: #111827;">${data.location}</td>
+              </tr>
+            </table>
+
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+
+            <h3 style="color: #111827; margin-bottom: 10px;">Deltaker</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Navn:</td>
+                <td style="padding: 8px 0; color: #111827;">${data.personName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">E-post:</td>
+                <td style="padding: 8px 0; color: #111827;">
+                  <a href="mailto:${data.personEmail}" style="color: #3b82f6;">${data.personEmail}</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Telefon:</td>
+                <td style="padding: 8px 0; color: #111827;">
+                  <a href="tel:${data.personPhone}" style="color: #3b82f6;">${data.personPhone}</a>
+                </td>
+              </tr>
+              ${data.companyName ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Bedrift:</td>
+                <td style="padding: 8px 0; color: #111827;">${data.companyName}</td>
+              </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Type:</td>
+                <td style="padding: 8px 0; color: #111827;">${data.enrollmentType === "company" ? "Bedriftspåmelding" : "Privatperson"}</td>
+              </tr>
+            </table>
+
+            ${data.status === "WAITLIST" ? `
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-top: 20px; border-radius: 4px;">
+                <p style="margin: 0; color: #92400e; font-weight: 600;">⚠️ Venteliste</p>
+                <p style="margin: 5px 0 0 0; color: #78350f; font-size: 14px;">
+                  Kurset er fullt. Deltakeren er satt på venteliste.
+                </p>
+              </div>
+            ` : ''}
+
+            <div style="margin-top: 30px; padding: 15px; background-color: white; border: 1px solid #e5e7eb; border-radius: 5px;">
+              <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">
+                <strong>Logg inn i admin-panelet for å se alle detaljer:</strong>
+              </p>
+              <a href="${process.env.NEXTAUTH_URL}/admin/pameldinger" 
+                 style="display: inline-block; background-color: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: 600;">
+                Se påmeldinger
+              </a>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; padding: 15px; background-color: #f9fafb; border-radius: 5px; border: 1px solid #e5e7eb;">
+            <p style="margin: 0; color: #6b7280; font-size: 12px;">
+              Dette er en automatisk notifikasjon fra KKS Kurssystem.
+              <br/>
+              Svar på denne e-posten går direkte til deltakeren.
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error("Feil ved sending av admin-notifikasjon:", error);
+      // Ikke kast feil - vi vil ikke at påmeldingen skal feile hvis admin-e-post feiler
+      return null;
+    }
+
+    return emailData;
+  } catch (error) {
+    console.error("Uventet feil ved sending av admin-notifikasjon:", error);
+    return null;
+  }
+}
+
 // CRM E-post funksjoner
 
 export interface ActivityEmailData {

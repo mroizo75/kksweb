@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { personEnrollmentSchema } from "@/lib/validations/enrollment";
-import { sendEnrollmentConfirmation } from "@/lib/email";
+import { sendEnrollmentConfirmation, sendEnrollmentNotification } from "@/lib/email";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
@@ -76,7 +76,7 @@ export async function enrollPerson(formData: unknown) {
       },
     });
 
-    // Send bekreftelse på e-post
+    // Send bekreftelse på e-post til deltaker
     try {
       await sendEnrollmentConfirmation({
         personName: `${person.firstName} ${person.lastName}`,
@@ -88,7 +88,25 @@ export async function enrollPerson(formData: unknown) {
         duration: `${session.course.durationDays} ${session.course.durationDays === 1 ? "dag" : "dager"}`,
       });
     } catch (emailError) {
-      console.error("Kunne ikke sende e-post:", emailError);
+      console.error("Kunne ikke sende bekreftelse til deltaker:", emailError);
+      // Fortsett selv om e-post feiler
+    }
+
+    // Send notifikasjon til admin
+    try {
+      await sendEnrollmentNotification({
+        personName: `${person.firstName} ${person.lastName}`,
+        personEmail: person.email || "",
+        personPhone: person.phone || "Ikke oppgitt",
+        courseName: session.course.title,
+        courseDate: format(session.startsAt, "EEEE d. MMMM yyyy", { locale: nb }),
+        courseTime: format(session.startsAt, "HH:mm", { locale: nb }),
+        location: session.location,
+        enrollmentType: "person",
+        status: isWaitlist ? "WAITLIST" : "CONFIRMED",
+      });
+    } catch (emailError) {
+      console.error("Kunne ikke sende admin-notifikasjon:", emailError);
       // Fortsett selv om e-post feiler
     }
 

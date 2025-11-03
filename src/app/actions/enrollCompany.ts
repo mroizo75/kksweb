@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { companyEnrollmentSchema } from "@/lib/validations/enrollment";
-import { sendEnrollmentConfirmation } from "@/lib/email";
+import { sendEnrollmentConfirmation, sendEnrollmentNotification } from "@/lib/email";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
@@ -143,8 +143,28 @@ export async function enrollCompany(formData: unknown) {
               duration: `${session.course.durationDays} ${session.course.durationDays === 1 ? "dag" : "dager"}`,
             });
           } catch (emailError) {
-            console.error("Kunne ikke sende e-post:", emailError);
+            console.error("Kunne ikke sende bekreftelse til deltaker:", emailError);
           }
+        }
+
+        // Send notifikasjon til admin
+        try {
+          await sendEnrollmentNotification({
+            personName: `${person.firstName} ${person.lastName}`,
+            personEmail: person.email || "Ikke oppgitt",
+            personPhone: person.phone || "Ikke oppgitt",
+            courseName: session.course.title,
+            courseDate: format(session.startsAt, "EEEE d. MMMM yyyy", {
+              locale: nb,
+            }),
+            courseTime: format(session.startsAt, "HH:mm", { locale: nb }),
+            location: session.location,
+            enrollmentType: "company",
+            companyName: company.name,
+            status: allWaitlist ? "WAITLIST" : "CONFIRMED",
+          });
+        } catch (emailError) {
+          console.error("Kunne ikke sende admin-notifikasjon:", emailError);
         }
       }
     }
