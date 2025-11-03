@@ -16,7 +16,8 @@ export interface EnrollmentEmailData {
 export async function sendEnrollmentConfirmation(data: EnrollmentEmailData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@kkskurs.no>",
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
       to: [data.email],
       subject: `Påmeldingsbekreftelse - ${data.courseName}`,
       react: EnrollmentConfirmationEmail(data),
@@ -51,7 +52,8 @@ export interface ActivityEmailData {
 export async function sendActivityEmail(data: ActivityEmailData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.RESEND_CRM_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || "CRM <crm@kkskurs.no>",
+      from: process.env.RESEND_CRM_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || "KKS CRM <crm@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
       to: [data.to],
       subject: data.subject,
       html: `
@@ -92,7 +94,8 @@ export interface RenewalReminderData {
 export async function sendRenewalReminder(data: RenewalReminderData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@kkskurs.no>",
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
       to: [data.email],
       subject: `Påminnelse: ${data.courseName} utløper snart`,
       html: `
@@ -148,7 +151,8 @@ export interface BedriftKontaktData {
 export async function sendBedriftKontaktConfirmation(data: BedriftKontaktData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@kkskurs.no>",
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
       to: [data.email],
       subject: "Takk for din henvendelse - KKS AS",
       html: `
@@ -194,10 +198,11 @@ export async function sendBedriftKontaktConfirmation(data: BedriftKontaktData) {
 
 export async function sendBedriftKontaktNotification(data: BedriftKontaktData) {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@kkskurs.no";
+    const adminEmail = process.env.ADMIN_EMAIL || "post@kksas.no";
     
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@kkskurs.no>",
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: data.email,
       to: [adminEmail],
       subject: `Ny bedriftsforespørsel fra ${data.companyName}`,
       html: `
@@ -251,7 +256,8 @@ export interface LicenseExpiryWarningData {
 export async function sendLicenseExpiryWarning(data: LicenseExpiryWarningData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@kkskurs.no>",
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
       to: [data.email],
       subject: `Viktig: Din lisens utløper om ${data.daysUntilExpiry} dager`,
       html: `
@@ -313,7 +319,8 @@ export interface LicenseSuspendedData {
 export async function sendLicenseSuspended(data: LicenseSuspendedData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@kkskurs.no>",
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
       to: [data.email],
       subject: `Viktig: Lisens suspendert for ${data.companyName}`,
       html: `
@@ -370,7 +377,8 @@ export interface LicenseResumedData {
 export async function sendLicenseResumed(data: LicenseResumedData) {
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@kkskurs.no>",
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
       to: [data.email],
       subject: `Lisens reaktivert for ${data.companyName}`,
       html: `

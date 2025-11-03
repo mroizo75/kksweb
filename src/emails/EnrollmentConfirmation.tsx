@@ -85,9 +85,9 @@ export function EnrollmentConfirmationEmail({
             <br />
             KKS AS
             <br />
-            Telefon: [Telefonnummer]
+            Telefon: +47 91 54 08 24
             <br />
-            E-post: kurs@kkskurs.no
+            E-post: post@kksas.no
           </Text>
         </Container>
       </Body>
