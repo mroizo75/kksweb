@@ -1641,3 +1641,234 @@ model ProductLicenseValidation {
   @@index([validatedAt])
   @@map("product_license_validations")
 }
+
+// ========================================
+// FACEBOOK ADS MANAGEMENT SYSTEM
+// ========================================
+
+model FacebookCampaign {
+  id                String   @id @default(cuid())
+  
+  // Facebook data
+  facebookCampaignId String?  @unique // ID fra Facebook når publisert
+  name              String
+  objective         String   // BRAND_AWARENESS, REACH, TRAFFIC, ENGAGEMENT, etc.
+  status            CampaignStatus @default(DRAFT)
+  
+  // Budsjett
+  dailyBudget       Float?   // NOK per dag
+  lifetimeBudget    Float?   // Total NOK
+  
+  // Tidsramme
+  startDate         DateTime?
+  endDate           DateTime?
+  
+  // Målgruppe og targeting
+  targetAudience    String?  @db.Text // JSON med targeting data
+  
+  // AI-generert innhold
+  aiGenerated       Boolean  @default(false)
+  aiPrompt          String?  @db.Text // Original prompt brukt
+  
+  // Metadata
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relasjoner
+  adSets            FacebookAdSet[]
+  insights          FacebookInsight[]
+  optimizationLogs  CampaignOptimizationLog[]
+  
+  @@index([facebookCampaignId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("facebook_campaigns")
+}
+
+model FacebookAdSet {
+  id                String   @id @default(cuid())
+  campaignId        String
+  campaign          FacebookCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // Facebook data
+  facebookAdSetId   String?  @unique
+  name              String
+  status            CampaignStatus @default(DRAFT)
+  
+  // Budsjett og scheduling
+  dailyBudget       Float?
+  lifetimeBudget    Float?
+  startTime         DateTime?
+  endTime           DateTime?
+  
+  // Targeting
+  targeting         String?  @db.Text // JSON med detaljert targeting
+  
+  // Optimalisering
+  optimizationGoal  String   // IMPRESSIONS, LINK_CLICKS, CONVERSIONS, etc.
+  bidStrategy       String   @default("LOWEST_COST") // LOWEST_COST, COST_CAP, BID_CAP
+  bidAmount         Float?   // Manuelt bud hvis relevant
+  
+  // Metadata
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relasjoner
+  ads               FacebookAd[]
+  
+  @@index([campaignId])
+  @@index([facebookAdSetId])
+  @@index([status])
+  @@map("facebook_ad_sets")
+}
+
+model FacebookAd {
+  id              String   @id @default(cuid())
+  adSetId         String
+  adSet           FacebookAdSet @relation(fields: [adSetId], references: [id], onDelete: Cascade)
+  
+  // Facebook data
+  facebookAdId    String?  @unique
+  name            String
+  status          CampaignStatus @default(DRAFT)
+  
+  // Kreativt innhold
+  headline        String
+  description     String?  @db.Text
+  bodyText        String   @db.Text
+  callToAction    String   // LEARN_MORE, SHOP_NOW, SIGN_UP, etc.
+  linkUrl         String
+  
+  // Bilder/video
+  imageUrl        String?
+  videoUrl        String?
+  
+  // AI-generering
+  aiGenerated     Boolean  @default(false)
+  aiVariant       String?  // A, B, C for A/B testing
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([adSetId])
+  @@index([facebookAdId])
+  @@index([status])
+  @@map("facebook_ads")
+}
+
+// Lagrede målgrupper
+model FacebookAudience {
+  id                String   @id @default(cuid())
+  
+  // Facebook data
+  facebookAudienceId String? @unique
+  name              String
+  type              AudienceType @default(SAVED)
+  
+  // Targeting kriteria
+  targeting         String   @db.Text // JSON med targeting data
+  description       String?  @db.Text
+  
+  // AI-forslag
+  aiSuggested       Boolean  @default(false)
+  aiReasoning       String?  @db.Text
+  
+  // Metadata
+  estimatedSize     Int?     // Estimert antall personer
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([facebookAudienceId])
+  @@index([type])
+  @@map("facebook_audiences")
+}
+
+// Ytelsesdata fra Facebook
+model FacebookInsight {
+  id              String   @id @default(cuid())
+  campaignId      String
+  campaign        FacebookCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // Dato for statistikk
+  date            DateTime
+  
+  // Økonomi
+  spend           Float    @default(0) // Brukte kroner
+  impressions     Int      @default(0)
+  reach           Int      @default(0)
+  clicks          Int      @default(0)
+  
+  // Konverteringer
+  leads           Int      @default(0)
+  conversions     Int      @default(0)
+  
+  // Beregnet
+  cpc             Float?   // Cost per click
+  cpm             Float?   // Cost per 1000 impressions
+  ctr             Float?   // Click-through rate (%)
+  conversionRate  Float?   // Conversion rate (%)
+  roas            Float?   // Return on ad spend
+  
+  // Metadata
+  fetchedAt       DateTime @default(now())
+  
+  @@unique([campaignId, date])
+  @@index([campaignId])
+  @@index([date])
+  @@map("facebook_insights")
+}
+
+// AI optimaliserings-logger
+model CampaignOptimizationLog {
+  id              String   @id @default(cuid())
+  campaignId      String
+  campaign        FacebookCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  // AI-analyse
+  analysisType    String   // BUDGET, TARGETING, CREATIVE, SCHEDULE
+  findings        String   @db.Text // JSON med funn
+  recommendations String   @db.Text // JSON med anbefalinger
+  
+  // Prioritet og status
+  priority        OptimizationPriority @default(MEDIUM)
+  implemented     Boolean  @default(false)
+  implementedAt   DateTime?
+  
+  // Resultater
+  impactScore     Float?   // 0-100, beregnet forbedring
+  actualImprovement Float? // Faktisk forbedring målt
+  
+  // Metadata
+  createdAt       DateTime @default(now())
+  
+  @@index([campaignId])
+  @@index([implemented])
+  @@index([priority])
+  @@map("campaign_optimization_logs")
+}
+
+// Enums for Facebook Ads
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  SCHEDULED
+  COMPLETED
+  ARCHIVED
+}
+
+enum AudienceType {
+  SAVED
+  CUSTOM
+  LOOKALIKE
+}
+
+enum OptimizationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}

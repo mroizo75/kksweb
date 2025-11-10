@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 3028",
+    "start": "next start -p 3040",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio"
@@ -41,12 +41,14 @@
     "next": "15.5.5",
     "next-auth": "^5.0.0-beta.29",
     "next-themes": "^0.4.6",
+    "openai": "^4.104.0",
     "pdf-lib": "^1.17.1",
     "qrcode": "^1.5.4",
     "react": "18.3.1",
     "react-day-picker": "^9.11.1",
     "react-dom": "18.3.1",
     "react-hook-form": "^7.65.0",
+    "react-is": "^19.2.0",
     "recharts": "^3.3.0",
     "resend": "^6.1.3",
     "sonner": "^2.0.7",

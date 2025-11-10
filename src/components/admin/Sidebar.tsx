@@ -35,6 +35,8 @@ import {
   UserX,
   Menu,
   X,
+  Sparkles,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
@@ -87,6 +89,15 @@ const navigation = [
     href: "/admin/produktlisenser",
     icon: Key,
     roles: ["ADMIN"], // Kun ADMIN - For Svampen, TaskGuild, etc.
+  },
+  {
+    name: "Facebook Ads",
+    icon: Sparkles,
+    roles: ["ADMIN"], // Kun ADMIN - AI-assistert annonsering
+    children: [
+      { name: "Kampanjer", href: "/admin/facebook-ads", icon: Target },
+      { name: "Analytics", href: "/admin/facebook-ads/analytics", icon: BarChart3 },
+    ],
   },
   {
     name: "CRM",
