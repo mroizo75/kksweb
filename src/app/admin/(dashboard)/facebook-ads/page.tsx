@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description: "Administrer Facebook-kampanjer med AI-assistanse",
 };
 
+// Force dynamic rendering - ikke prøv static generation
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function getCampaigns() {
   try {
     const response = await fetch(
