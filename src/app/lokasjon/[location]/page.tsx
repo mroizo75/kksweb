@@ -9,6 +9,12 @@ import { MapPin, Phone, Mail, Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
+import { StructuredData } from "@/components/seo/StructuredData";
+import {
+  generateLocalBusinessSchema,
+  generateFAQSchema,
+  generateBreadcrumbSchema,
+} from "@/lib/seo/schema";
 
 interface PageProps {
   params: Promise<{ location: string }>;
@@ -156,6 +162,43 @@ export default async function LocationPage(props: PageProps) {
     notFound();
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
+  const locationFaqs = [
+    {
+      question: `Hvor holder dere kurs i ${location.name}?`,
+      answer: `Vi kommer gjerne ut til din bedrift hvis dere har egnede lokaler. Hvis ikke, leier vi et kurslokale i nærheten av deres adresse i ${location.region}.`,
+    },
+    {
+      question: `Hvor lang tid tar et typisk kurs i ${location.name}?`,
+      answer: `Kurslengden varierer fra 1 til 5 dager avhengig av kurstype. Se kursoversikten for detaljer om hvert enkelt kurs.`,
+    },
+    {
+      question: `Tilbyr dere bedriftsavtaler i ${location.name}?`,
+      answer: `Ja. KKS AS tilbyr skreddersydde løsninger for bedrifter i ${location.region}. Kontakt oss på ${location.phone} eller ${location.email} for tilbud.`,
+    },
+    {
+      question: `Hvilke kurs tilbyr KKS AS i ${location.name}?`,
+      answer: `KKS AS tilbyr truck-, kran-, stillas-, HMS- og BHT-kurs i ${location.name}. Vi har sertifiserte instruktører og kan tilpasse kurset til din bransje og lokasjon.`,
+    },
+  ];
+
+  const localBusinessSchema = generateLocalBusinessSchema(
+    baseUrl,
+    params.location,
+    location.name,
+    location.region
+  );
+  const faqSchema = generateFAQSchema(locationFaqs);
+  const breadcrumbSchema = generateBreadcrumbSchema(
+    [
+      { name: "Hjem", url: "/" },
+      { name: "Kurs etter lokasjon", url: "/lokasjon" },
+      { name: `Kurs i ${location.name}`, url: `/lokasjon/${params.location}` },
+    ],
+    baseUrl
+  );
+
   // Hent kommende sesjoner (kan filtreres på lokasjon senere)
   const sessions = await db.courseSession.findMany({
     where: {
@@ -193,6 +236,7 @@ export default async function LocationPage(props: PageProps) {
 
   return (
     <div className="min-h-screen">
+      <StructuredData data={[localBusinessSchema, faqSchema, breadcrumbSchema]} />
       <Header />
 
       {/* Hero Section */}
@@ -401,42 +445,16 @@ export default async function LocationPage(props: PageProps) {
               Ofte stilte spørsmål i {location.name}
             </h2>
             <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    Hvor holder dere kurs i {location.name}?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Vi kommer gjerne ut til din bedrift hvis dere har egnede lokaler. Hvis ikke, leier vi et kurslokale i nærheten av deres adresse i {location.region}.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    Hvor lang tid tar et typisk kurs?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Kurslengden varierer fra 1-5 dager avhengig av kurstype. Se kursoversikten for detaljer.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    Tilbyr dere bedriftsavtaler i {location.name}?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Ja! Vi tilbyr skreddersydde løsninger for bedrifter i {location.region}. Kontakt oss for tilbud.
-                  </p>
-                </CardContent>
-              </Card>
+              {locationFaqs.map((faq, idx) => (
+                <Card key={idx}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{faq.question}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{faq.answer}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { personEnrollmentSchema } from "@/lib/validations/enrollment";
 import { sendEnrollmentConfirmation, sendEnrollmentNotification } from "@/lib/email";
+import { triggerCrmEnrollmentHook } from "@/lib/crm-enrollment-hook";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
@@ -109,6 +110,16 @@ export async function enrollPerson(formData: unknown) {
       console.error("Kunne ikke sende admin-notifikasjon:", emailError);
       // Fortsett selv om e-post feiler
     }
+
+    // Koble påmelding til CRM (aktivitet i tidslinje + lead for nye kontakter)
+    await triggerCrmEnrollmentHook({
+      personId: person.id,
+      courseTitle: session.course.title,
+      sessionDate: session.startsAt,
+      sessionLocation: session.location,
+      enrollmentStatus: isWaitlist ? "WAITLIST" : "CONFIRMED",
+      isPublicEnrollment: true,
+    });
 
     // Revalidate relevante paths
     revalidatePath(`/kurs/${session.course.slug}`);

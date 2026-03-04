@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { triggerCrmEnrollmentHook } from "@/lib/crm-enrollment-hook";
 import { revalidatePath } from "next/cache";
 
 type ActionResult = {
@@ -133,6 +134,18 @@ export async function bulkEnrollParticipants(
             sessionId: sessionId,
             status: "CONFIRMED",
           },
+        });
+
+        // Koble påmelding til CRM
+        await triggerCrmEnrollmentHook({
+          personId: person.id,
+          companyId: companyId ?? null,
+          courseTitle: courseSession.course.title,
+          sessionDate: courseSession.startsAt,
+          sessionLocation: courseSession.location,
+          enrollmentStatus: "CONFIRMED",
+          isPublicEnrollment: false,
+          adminUserId: session.user.id,
         });
 
         successCount++;

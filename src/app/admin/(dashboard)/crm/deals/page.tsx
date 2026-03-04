@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, CheckCircle, XCircle, LayoutGrid, List } from "lucide-react";
 import { DealDialog } from "@/components/admin/crm/DealDialog";
+import { DealKanban } from "@/components/admin/crm/DealKanban";
 import { deleteDeal, closeDeal } from "@/app/actions/crm/deals";
 import { toast } from "sonner";
 import type { Deal, User, Company, Person } from "@prisma/client";
@@ -20,9 +21,9 @@ type DealWithRelations = Deal & {
 
 const stageColors: Record<string, string> = {
   LEAD: "bg-blue-100 text-blue-800",
-  QUALIFIED: "bg-yellow-100 text-yellow-800",
-  PROPOSAL: "bg-orange-100 text-orange-800",
-  NEGOTIATION: "bg-purple-100 text-purple-800",
+  QUALIFIED: "bg-cyan-100 text-cyan-800",
+  PROPOSAL: "bg-yellow-100 text-yellow-800",
+  NEGOTIATION: "bg-orange-100 text-orange-800",
   WON: "bg-green-100 text-green-800",
   LOST: "bg-red-100 text-red-800",
 };
@@ -36,12 +37,15 @@ const stageLabels: Record<string, string> = {
   LOST: "Tapt",
 };
 
+type ViewMode = "kanban" | "list";
+
 export default function DealsPage() {
   const [deals, setDeals] = useState<DealWithRelations[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
   const loadDeals = async () => {
     setIsLoading(true);
@@ -49,16 +53,14 @@ export default function DealsPage() {
       const response = await fetch("/api/admin/crm/deals");
       const data = await response.json();
       setDeals(data.deals || []);
-    } catch (error) {
+    } catch {
       toast.error("Kunne ikke laste avtaler");
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadDeals();
-  }, []);
+  useEffect(() => { loadDeals(); }, []);
 
   const handleEdit = (deal: Deal) => {
     setSelectedDeal(deal);
@@ -72,13 +74,12 @@ export default function DealsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Er du sikker på at du vil slette denne avtalen?")) return;
-
     const result = await deleteDeal(id);
     if (result.success) {
       toast.success("Avtale slettet");
       loadDeals();
     } else {
-      toast.error(result.error || "Kunne ikke slette avtale");
+      toast.error(result.error);
     }
   };
 
@@ -88,52 +89,112 @@ export default function DealsPage() {
       toast.success(result.message);
       loadDeals();
     } else {
-      toast.error(result.error || "Kunne ikke lukke avtale");
+      toast.error(result.error);
     }
   };
 
   const handleDialogClose = (open: boolean) => {
     setDialogOpen(open);
-    if (!open) {
-      loadDeals();
-    }
+    if (!open) loadDeals();
   };
 
-  const filteredDeals = deals.filter((deal) => {
-    const searchLower = searchTerm.toLowerCase();
+  const activeDeals = deals.filter((d) => !["WON", "LOST"].includes(d.stage));
+  const closedDeals = deals.filter((d) => ["WON", "LOST"].includes(d.stage));
+
+  const filteredActive = activeDeals.filter((deal) => {
+    const q = searchTerm.toLowerCase();
     return (
-      deal.title.toLowerCase().includes(searchLower) ||
-      (deal.company?.name || "").toLowerCase().includes(searchLower) ||
-      (deal.person
-        ? `${deal.person.firstName} ${deal.person.lastName}`.toLowerCase()
-        : ""
-      ).includes(searchLower)
+      deal.title.toLowerCase().includes(q) ||
+      (deal.company?.name || "").toLowerCase().includes(q) ||
+      (deal.person ? `${deal.person.firstName} ${deal.person.lastName}`.toLowerCase() : "").includes(q)
     );
   });
 
+  const pipelineValue = activeDeals.reduce((s, d) => s + d.value, 0);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Avtaler</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Pipeline</h1>
           <p className="text-muted-foreground">
-            Håndter salgsmuligheter og avtaler
+            {activeDeals.length} aktive deals ·{" "}
+            {new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK", maximumFractionDigits: 0 }).format(pipelineValue)} pipeline
           </p>
         </div>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Ny Avtale
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border rounded-lg overflow-hidden">
+            <Button
+              variant={viewMode === "kanban" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode("kanban")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              className="rounded-none"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Ny deal
+          </Button>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Avtale-liste</CardTitle>
-              <CardDescription>{filteredDeals.length} avtaler totalt</CardDescription>
+      {isLoading ? (
+        <div className="text-center py-16 text-muted-foreground">Laster...</div>
+      ) : viewMode === "kanban" ? (
+        <div>
+          {activeDeals.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              Ingen aktive deals i pipeline
             </div>
-            <div className="flex items-center gap-2">
+          ) : (
+            <DealKanban
+              deals={filteredActive}
+              onEdit={handleEdit}
+              onRefresh={loadDeals}
+            />
+          )}
+          {closedDeals.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold mb-4">Lukkede deals ({closedDeals.length})</h2>
+              <div className="space-y-2">
+                {closedDeals.slice(0, 10).map((deal) => (
+                  <div key={deal.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                    <div>
+                      <span className="font-medium">{deal.title}</span>
+                      {deal.company && (
+                        <span className="text-sm text-muted-foreground ml-2">· {deal.company.name}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className={stageColors[deal.stage]}>{stageLabels[deal.stage]}</Badge>
+                      <span className="font-semibold text-sm">
+                        {new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK", maximumFractionDigits: 0 }).format(deal.value)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Avtaleliste</CardTitle>
+                <CardDescription>{deals.length} avtaler totalt</CardDescription>
+              </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -144,16 +205,8 @@ export default function DealsPage() {
                 />
               </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Laster...</div>
-          ) : filteredDeals.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Ingen avtaler funnet
-            </div>
-          ) : (
+          </CardHeader>
+          <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -168,59 +221,38 @@ export default function DealsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDeals.map((deal) => (
+                  {deals.map((deal) => (
                     <tr key={deal.id} className="border-b hover:bg-muted/50">
                       <td className="p-3 font-medium">{deal.title}</td>
                       <td className="p-3 text-muted-foreground">
-                        {deal.company?.name ||
-                          (deal.person
-                            ? `${deal.person.firstName} ${deal.person.lastName}`
-                            : "-")}
+                        {deal.company?.name || (deal.person ? `${deal.person.firstName} ${deal.person.lastName}` : "-")}
                       </td>
-                      <td className="p-3">{deal.value.toLocaleString("nb-NO")} kr</td>
                       <td className="p-3">
-                        <Badge className={stageColors[deal.stage]}>
-                          {stageLabels[deal.stage]}
-                        </Badge>
+                        {new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK", maximumFractionDigits: 0 }).format(deal.value)}
+                      </td>
+                      <td className="p-3">
+                        <Badge className={stageColors[deal.stage]}>{stageLabels[deal.stage]}</Badge>
                       </td>
                       <td className="p-3">{deal.probability}%</td>
-                      <td className="p-3 text-muted-foreground">
-                        {deal.assignedTo?.name || "-"}
-                      </td>
+                      <td className="p-3 text-muted-foreground">{deal.assignedTo?.name || "-"}</td>
                       <td className="p-3">
                         <div className="flex items-center justify-end gap-2">
-                          {deal.stage !== "WON" && deal.stage !== "LOST" && (
+                          {!["WON", "LOST"].includes(deal.stage) && (
                             <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleClose(deal.id, "WON")}
-                              >
+                              <Button size="sm" variant="outline" onClick={() => handleClose(deal.id, "WON")}>
                                 <CheckCircle className="h-4 w-4 mr-1" />
                                 Vunnet
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleClose(deal.id, "LOST")}
-                              >
+                              <Button size="sm" variant="outline" onClick={() => handleClose(deal.id, "LOST")}>
                                 <XCircle className="h-4 w-4 mr-1" />
                                 Tapt
                               </Button>
                             </>
                           )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(deal)}
-                          >
+                          <Button size="sm" variant="ghost" onClick={() => handleEdit(deal)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDelete(deal.id)}
-                          >
+                          <Button size="sm" variant="ghost" onClick={() => handleDelete(deal.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -230,9 +262,9 @@ export default function DealsPage() {
                 </tbody>
               </table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <DealDialog
         open={dialogOpen}
@@ -242,4 +274,3 @@ export default function DealsPage() {
     </div>
   );
 }
-

@@ -8,6 +8,8 @@ import type { ValidityPolicy } from "@prisma/client";
 export interface CalculateValidityParams {
   completedAt: Date;
   policy?: ValidityPolicy | null;
+  /** Fallback når ingen policy er satt – direkte på Course.validityYears */
+  validityYears?: number | null;
 }
 
 export interface ValidityResult {
@@ -21,10 +23,16 @@ export interface ValidityResult {
 export function calculateValidity(
   params: CalculateValidityParams
 ): ValidityResult {
-  const { completedAt, policy } = params;
+  const { completedAt, policy, validityYears } = params;
 
   if (!policy) {
-    // Ingen policy = ingen utløp
+    if (validityYears && validityYears > 0) {
+      return {
+        validFrom: completedAt,
+        validTo: addYears(completedAt, validityYears),
+      };
+    }
+    // Ingen policy og ingen validityYears = ingen utløp
     return {
       validFrom: completedAt,
       validTo: null,

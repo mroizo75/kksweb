@@ -1,21 +1,22 @@
-"use client";
-
 interface StructuredDataProps {
   data: object | object[];
 }
 
 /**
- * Structured Data Component
- * Rendrer Schema.org JSON-LD
+ * Server-side JSON-LD structured data renderer for Schema.org
+ * Rendres av Next.js App Router som del av server HTML
  */
 export function StructuredData({ data }: StructuredDataProps) {
+  const schemas = Array.isArray(data) ? data : [data];
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(Array.isArray(data) ? data : [data]),
-      }}
-    />
+    <>
+      {schemas.map((schema, index) => (
+        <script
+          key={index}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
+    </>
   );
 }
-

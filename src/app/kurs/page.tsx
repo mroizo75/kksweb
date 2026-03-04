@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,38 @@ import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
+import { StructuredData } from "@/components/seo/StructuredData";
+import { generateCourseListSchema, generateBreadcrumbSchema } from "@/lib/seo/schema";
+
+export const metadata: Metadata = {
+  title: "Alle kurs — Truck, Kran, Stillas, HMS og BHT | KKS AS",
+  description:
+    "Komplett kursoversikt fra KKS AS. Finn og meld deg på kurs innen truck, kran, stillas, arbeid på vei, HMS og BHT-opplæring. Sertifiserte instruktører over hele Norge.",
+  keywords: [
+    "kursoversikt",
+    "truckkurs",
+    "krankurs",
+    "stillasmontørkurs",
+    "HMS kurs",
+    "BHT kurs",
+    "arbeid på vei kurs",
+    "maskinførerkurs",
+    "kurs Norge",
+    "sertifisering",
+  ],
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no"}/kurs`,
+  },
+  openGraph: {
+    title: "Alle kurs — KKS AS",
+    description:
+      "Finn og meld deg på kurs innen truck, kran, stillas, HMS og mer. KKS AS — sertifiserte instruktører i hele Norge.",
+    url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no"}/kurs`,
+    siteName: "KKS AS",
+    locale: "nb_NO",
+    type: "website",
+  },
+};
 
 interface PageProps {
   searchParams: Promise<{ category?: string; search?: string }>;
@@ -23,6 +56,8 @@ interface PageProps {
 export default async function CoursesPage(props: PageProps) {
   const searchParams = await props.searchParams;
   const { category, search } = searchParams;
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
 
   const courses = await db.course.findMany({
     where: {
@@ -68,8 +103,18 @@ export default async function CoursesPage(props: PageProps) {
 
   const uniqueCategories = categories.map((c) => c.category);
 
+  const courseListSchema = generateCourseListSchema(courses, baseUrl);
+  const breadcrumbSchema = generateBreadcrumbSchema(
+    [
+      { name: "Hjem", url: "/" },
+      { name: "Kurs", url: "/kurs" },
+    ],
+    baseUrl
+  );
+
   return (
     <div className="min-h-screen bg-background">
+      <StructuredData data={[courseListSchema, breadcrumbSchema]} />
       <Header />
 
       <div className="container mx-auto px-4 py-8">

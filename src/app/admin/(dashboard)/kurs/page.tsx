@@ -123,6 +123,12 @@ export default function AdminCoursesPage() {
                     </span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Gyldighet:</span>
+                    <span className="font-medium">
+                      {course.validityYears ? `${course.validityYears} år` : "Ingen utløp"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Sesjoner:</span>
                     <span className="font-medium">{course._count.sessions}</span>
                   </div>

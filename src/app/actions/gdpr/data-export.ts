@@ -45,10 +45,7 @@ export async function exportPersonData(personId?: string) {
       assessments,
       documents,
       cards,
-      qmsAcknowledgments,
-      securityPolicyAcks,
     ] = await Promise.all([
-      // Kurspåmeldinger
       db.enrollment.findMany({
         where: { personId: person.id },
         include: {
@@ -61,7 +58,6 @@ export async function exportPersonData(personId?: string) {
         },
       }),
 
-      // Kompetansebevis
       db.credential.findMany({
         where: { personId: person.id },
         include: {
@@ -70,7 +66,6 @@ export async function exportPersonData(personId?: string) {
         },
       }),
 
-      // Vurderinger
       db.assessment.findMany({
         where: { personId: person.id },
         include: {
@@ -79,49 +74,20 @@ export async function exportPersonData(personId?: string) {
         },
       }),
 
-      // Dokumenter (via enrollments og credentials)
       db.document.findMany({
         where: {
           OR: [
-            {
-              enrollment: {
-                personId: person.id,
-              },
-            },
-            {
-              credential: {
-                personId: person.id,
-              },
-            },
+            { enrollment: { personId: person.id } },
+            { credential: { personId: person.id } },
           ],
         },
         include: {
-          template: {
-            select: {
-              name: true,
-              kind: true,
-            },
-          },
+          template: { select: { name: true, kind: true } },
         },
       }),
 
-      // Kompetansekort
       db.card.findMany({
-        where: {
-          credential: {
-            personId: person.id,
-          },
-        },
-      }),
-
-      // QMS dokumentbekreftelser
-      db.qmsDocAcknowledgment.findMany({
-        where: { userId },
-      }),
-
-      // Sikkerhetspolitikk-bekreftelser
-      db.securityPolicyAcknowledgment.findMany({
-        where: { userId },
+        where: { credential: { personId: person.id } },
       }),
     ]);
 
@@ -166,7 +132,7 @@ export async function exportPersonData(personId?: string) {
             },
           })
         : null,
-      courseEnrollments: enrollments.map((e) => ({
+      courseEnrollments: enrollments.map((e: any) => ({
         id: e.id,
         courseName: e.session.course.title,
         sessionDate: e.session.startsAt,
@@ -175,7 +141,7 @@ export async function exportPersonData(personId?: string) {
         notes: e.notes,
         enrolledAt: e.createdAt,
       })),
-      credentials: credentials.map((c) => ({
+      credentials: credentials.map((c: any) => ({
         id: c.id,
         courseName: c.course.title,
         issuedAt: c.validFrom,
@@ -184,7 +150,7 @@ export async function exportPersonData(personId?: string) {
         status: c.status,
         validityPolicy: c.policy?.name,
       })),
-      assessments: assessments.map((a) => ({
+      assessments: assessments.map((a: any) => ({
         id: a.id,
         courseName: a.course.title,
         sessionDate: a.session?.startsAt,
@@ -194,14 +160,14 @@ export async function exportPersonData(personId?: string) {
         resultNotes: a.resultNotes,
         assessedAt: a.assessedAt,
       })),
-      documents: documents.map((d) => ({
+      documents: documents.map((d: any) => ({
         id: d.id,
         templateName: d.template.name,
         templateKind: d.template.kind,
         fileKey: d.fileKey,
         generatedAt: d.generatedAt,
       })),
-      cards: cards.map((c) => ({
+      cards: cards.map((c: any) => ({
         id: c.id,
         cardNumber: c.number,
         status: c.status,
@@ -209,12 +175,6 @@ export async function exportPersonData(personId?: string) {
         printedAt: c.printedAt,
         shippedAt: c.shippedAt,
       })),
-      qualityManagement: {
-        documentAcknowledgments: qmsAcknowledgments.length,
-      },
-      security: {
-        policyAcknowledgments: securityPolicyAcks.length,
-      },
     };
 
     // Logg i audit log

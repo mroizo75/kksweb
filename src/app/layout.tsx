@@ -2,18 +2,39 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { StructuredData } from "@/components/seo/StructuredData";
+import {
+  generateOrganizationSchema,
+  generateWebSiteSchema,
+} from "@/lib/seo/schema";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no"),
-  title: "KKS AS - Profesjonell kursvirksomhet",
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: "KKS AS — Profesjonell kursvirksomhet i Norge",
+    template: "%s | KKS AS",
+  },
   description:
-    "Kurs for truck, kran, stillas, arbeid på vei, HMS og mer. Profesjonell opplæring med erfarne instruktører.",
-  keywords: "kurs, truck, kran, stillas, HMS, arbeidssikkerhet, sertifisering",
+    "KKS AS er en ledende norsk kurstilbyder innen truck, kran, stillas, arbeid på vei, HMS og BHT-opplæring. Sertifiserte instruktører i hele Norge.",
+  keywords: [
+    "kurs",
+    "truckkurs",
+    "krankurs",
+    "stillasmontørkurs",
+    "HMS kurs",
+    "BHT kurs",
+    "arbeid på vei",
+    "maskinførerkurs",
+    "sertifisering Norge",
+    "KKS AS",
+  ],
   manifest: "/site.webmanifest",
   icons: {
     icon: [
@@ -39,24 +60,26 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "nb_NO",
-    url: "https://www.kksas.no",
+    url: BASE_URL,
     siteName: "KKS AS",
-    title: "KKS AS - Profesjonell kursvirksomhet",
-    description: "Kurs for truck, kran, stillas, arbeid på vei, HMS og mer. Profesjonell opplæring med erfarne instruktører.",
+    title: "KKS AS — Profesjonell kursvirksomhet i Norge",
+    description:
+      "KKS AS er en ledende norsk kurstilbyder innen truck, kran, stillas, arbeid på vei, HMS og BHT-opplæring. Sertifiserte instruktører i hele Norge.",
     images: [
       {
-        url: "/logo-black-kks.png",
+        url: "/og-default.png",
         width: 1200,
         height: 630,
-        alt: "KKS AS Logo",
+        alt: "KKS AS — Profesjonell kursvirksomhet i Norge",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "KKS AS - Profesjonell kursvirksomhet",
-    description: "Kurs for truck, kran, stillas, arbeid på vei, HMS og mer",
-    images: ["/logo-black-kks.png"],
+    title: "KKS AS — Profesjonell kursvirksomhet i Norge",
+    description:
+      "Truck, kran, stillas, arbeid på vei, HMS og BHT-kurs. Sertifiserte instruktører i hele Norge.",
+    images: ["/og-default.png"],
   },
 };
 
@@ -65,9 +88,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const organizationSchema = generateOrganizationSchema(BASE_URL);
+  const webSiteSchema = generateWebSiteSchema(BASE_URL);
+
   return (
     <html lang="nb">
       <body className={inter.className}>
+        <StructuredData data={[organizationSchema, webSiteSchema]} />
         {children}
         <Toaster />
       </body>

@@ -10,6 +10,7 @@ export const courseSchema = z.object({
   price: z.number().int().min(0, "Pris kan ikke være negativ"),
   image: z.string().optional().or(z.literal("")),
   published: z.boolean(),
+  validityYears: z.number().int().min(1).max(20).nullable().optional(),
 });
 
 export const sessionSchema = z.object({

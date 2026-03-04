@@ -13,9 +13,21 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Clock, Users, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
+import { generateCourseMetadata } from "./metadata";
+import { StructuredData } from "@/components/seo/StructuredData";
+import {
+  generateCourseSchema,
+  generateBreadcrumbSchema,
+  generateFAQSchema,
+} from "@/lib/seo/schema";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata(props: PageProps) {
+  const params = await props.params;
+  return generateCourseMetadata(params.slug);
 }
 
 export default async function CourseDetailPage(props: PageProps) {
@@ -51,8 +63,47 @@ export default async function CourseDetailPage(props: PageProps) {
     notFound();
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
+  const courseFaqs = [
+    {
+      question: `Hva er ${course.title}?`,
+      answer: course.description || `${course.title} er et profesjonelt kurs fra KKS AS som gir deg nødvendig kompetanse og sertifisering.`,
+    },
+    {
+      question: `Hvor lang tid tar ${course.title}?`,
+      answer: `Kurset varer ${course.durationDays} ${course.durationDays === 1 ? "dag" : "dager"}. Du får et offisielt kursbevis ved bestått eksamen.`,
+    },
+    {
+      question: `Hva koster ${course.title}?`,
+      answer: course.price === 0
+        ? `${course.title} er gratis. Kontakt oss for mer informasjon.`
+        : `${course.title} koster kr ${course.price.toLocaleString("nb-NO")},-. Prisen inkluderer kursmateriell og kursbevis.`,
+    },
+    {
+      question: `Hvem tilbyr ${course.title} i Norge?`,
+      answer: `KKS AS tilbyr ${course.title} i hele Norge. Vi har sertifiserte instruktører og kan komme til din bedrift. Ring oss på +47 91 54 08 24 eller send e-post til post@kksas.no.`,
+    },
+    {
+      question: `Får jeg kursbevis etter ${course.title}?`,
+      answer: `Ja. Etter bestått ${course.title} mottar du et offisielt kompetansebevis fra KKS AS som dokumenterer din sertifisering.`,
+    },
+  ];
+
+  const courseSchema = generateCourseSchema(course, baseUrl);
+  const breadcrumbSchema = generateBreadcrumbSchema(
+    [
+      { name: "Hjem", url: "/" },
+      { name: "Kurs", url: "/kurs" },
+      { name: course.title, url: `/kurs/${course.slug}` },
+    ],
+    baseUrl
+  );
+  const faqSchema = generateFAQSchema(courseFaqs);
+
   return (
     <div className="min-h-screen bg-background">
+      <StructuredData data={[courseSchema, breadcrumbSchema, faqSchema]} />
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
@@ -107,18 +158,10 @@ export default async function CourseDetailPage(props: PageProps) {
             {course.description && (
               <div className="mb-8">
                 <h2 className="text-2xl font-bold mb-4">Om kurset</h2>
-                <div className="prose prose-gray max-w-none dark:prose-invert">
-                  {course.description.split('\n\n').map((paragraph, idx) => (
-                    <p key={idx} className="text-muted-foreground mb-4 leading-relaxed">
-                      {paragraph.split('\n').map((line, lineIdx) => (
-                        <span key={lineIdx}>
-                          {line}
-                          {lineIdx < paragraph.split('\n').length - 1 && <br />}
-                        </span>
-                      ))}
-                    </p>
-                  ))}
-                </div>
+                <div
+                  className="prose prose-gray max-w-none dark:prose-invert text-muted-foreground"
+                  dangerouslySetInnerHTML={{ __html: course.description }}
+                />
               </div>
             )}
 
@@ -138,6 +181,19 @@ export default async function CourseDetailPage(props: PageProps) {
                 Dette kurset passer for deg som skal jobbe med eller allerede jobber med
                 relevante oppgaver i din arbeidshverdag.
               </p>
+            </div>
+
+            {/* FAQ-seksjon — øker AI-synlighet og rich snippets */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-6">Ofte stilte spørsmål</h2>
+              <div className="space-y-4">
+                {courseFaqs.map((faq, idx) => (
+                  <div key={idx} className="border rounded-lg p-4">
+                    <h3 className="font-semibold mb-2">{faq.question}</h3>
+                    <p className="text-muted-foreground text-sm">{faq.answer}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

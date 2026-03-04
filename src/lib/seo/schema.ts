@@ -3,10 +3,14 @@
  * For maksimal SEO og Google Rich Snippets
  */
 
-import { Course, CourseSession, Company } from "@prisma/client";
+import { Course, CourseSession } from "@prisma/client";
+
+const KKS_NAME = "KKS AS";
+const KKS_PHONE = "+47 91 54 08 24";
+const KKS_EMAIL = "post@kksas.no";
 
 export interface SchemaOrgCourse extends Course {
-  sessions?: CourseSession[];
+  sessions?: (CourseSession & { instructor?: { name: string | null } | null })[];
 }
 
 /**
@@ -15,18 +19,20 @@ export interface SchemaOrgCourse extends Course {
  */
 export function generateCourseSchema(course: SchemaOrgCourse, baseUrl: string) {
   const courseUrl = `${baseUrl}/kurs/${course.slug}`;
-  const imageUrl = course.image 
-    ? (course.image.startsWith('http') ? course.image : `${baseUrl}${course.image}`)
+  const imageUrl = course.image
+    ? course.image.startsWith("http")
+      ? course.image
+      : `${baseUrl}${course.image}`
     : `${baseUrl}/placeholder-kurs.jpg`;
 
   return {
     "@context": "https://schema.org",
     "@type": "Course",
     "name": course.title,
-    "description": course.description || `${course.title} - Profesjonell kursing fra KKS`,
+    "description": course.description || `${course.title} - Profesjonell kursing fra ${KKS_NAME}`,
     "provider": {
       "@type": "EducationalOrganization",
-      "name": "KKS AS AS",
+      "name": KKS_NAME,
       "url": baseUrl,
       "logo": {
         "@type": "ImageObject",
@@ -34,19 +40,19 @@ export function generateCourseSchema(course: SchemaOrgCourse, baseUrl: string) {
       },
       "contactPoint": {
         "@type": "ContactPoint",
-        "telephone": "+47-XXX-XX-XXX", // Oppdater med faktisk nummer
+        "telephone": KKS_PHONE,
         "contactType": "customer service",
-        "email": "kontakt@kkskurs.no",
+        "email": KKS_EMAIL,
         "areaServed": "NO",
-        "availableLanguage": ["Norwegian", "English"]
-      }
+        "availableLanguage": ["Norwegian"],
+      },
     },
     "url": courseUrl,
     "image": imageUrl,
     "courseCode": course.code,
-    "hasCourseInstance": course.sessions?.map(session => ({
+    "hasCourseInstance": course.sessions?.map((session) => ({
       "@type": "CourseInstance",
-      "name": `${course.title} - ${new Date(session.startsAt).toLocaleDateString('no-NO')}`,
+      "name": `${course.title} - ${new Date(session.startsAt).toLocaleDateString("no-NO")}`,
       "courseMode": "onsite",
       "location": {
         "@type": "Place",
@@ -54,15 +60,18 @@ export function generateCourseSchema(course: SchemaOrgCourse, baseUrl: string) {
         "address": {
           "@type": "PostalAddress",
           "addressCountry": "NO",
-          "addressLocality": session.location
-        }
+          "addressLocality": session.location,
+        },
       },
       "startDate": session.startsAt.toISOString(),
       "endDate": session.endsAt.toISOString(),
-      "instructor": session.instructorId ? {
-        "@type": "Person",
-        "name": "Sertifisert instruktør",
-      } : undefined,
+      "instructor":
+        session.instructor?.name
+          ? {
+              "@type": "Person",
+              "name": session.instructor.name,
+            }
+          : undefined,
     })) || [],
     "offers": {
       "@type": "Offer",
@@ -80,8 +89,8 @@ export function generateCourseSchema(course: SchemaOrgCourse, baseUrl: string) {
     "educationalCredentialAwarded": {
       "@type": "EducationalOccupationalCredential",
       "name": `${course.title} kompetansebevis`,
-      "credentialCategory": "certificate"
-    }
+      "credentialCategory": "certificate",
+    },
   };
 }
 
@@ -109,25 +118,30 @@ export function generateEventSchema(
       "address": {
         "@type": "PostalAddress",
         "addressCountry": "NO",
-        "addressLocality": session.location
-      }
+        "addressLocality": session.location,
+      },
     },
-    "image": course.image ? `${baseUrl}${course.image}` : `${baseUrl}/placeholder-kurs.jpg`,
+    "image": course.image
+      ? course.image.startsWith("http")
+        ? course.image
+        : `${baseUrl}${course.image}`
+      : `${baseUrl}/placeholder-kurs.jpg`,
     "organizer": {
       "@type": "Organization",
-      "name": "KKS AS AS",
-      "url": baseUrl
+      "name": KKS_NAME,
+      "url": baseUrl,
     },
     "offers": {
       "@type": "Offer",
       "price": course.price,
       "priceCurrency": "NOK",
-      "availability": session.capacity > 0 
-        ? "https://schema.org/InStock" 
-        : "https://schema.org/SoldOut",
+      "availability":
+        session.capacity > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/SoldOut",
       "url": `${baseUrl}/kurs/${course.slug}/pamelding/${session.id}`,
-      "validFrom": new Date().toISOString()
-    }
+      "validFrom": new Date().toISOString(),
+    },
   };
 }
 
@@ -139,29 +153,35 @@ export function generateOrganizationSchema(baseUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
-    "name": "KKS AS AS",
+    "name": KKS_NAME,
     "alternateName": "KKS",
     "url": baseUrl,
-    "logo": `${baseUrl}/logo.png`,
-    "description": "Profesjonell kursing innen HMS, BHT, sikkerhet og kompetanseheving. ISO 9001 og ISO 27001 sertifisert.",
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${baseUrl}/logo.png`,
+      "width": 200,
+      "height": 60,
+    },
+    "description":
+      "KKS AS er en ledende norsk kurstilbyder innen truck, kran, stillas, arbeid på vei, HMS og BHT-opplæring. Vi tilbyr sertifisert opplæring i hele Norge med erfarne instruktører.",
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "NO",
-      // Legg til faktisk adresse
+      "addressLocality": "Norge",
     },
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+47-XXX-XX-XXX",
+      "telephone": KKS_PHONE,
       "contactType": "customer service",
-      "email": "kontakt@kkskurs.no",
+      "email": KKS_EMAIL,
       "areaServed": "NO",
-      "availableLanguage": ["Norwegian", "English"]
+      "availableLanguage": ["Norwegian"],
     },
-    "sameAs": [
-      // Legg til sosiale medier
-      // "https://www.facebook.com/kkskurs",
-      // "https://www.linkedin.com/company/kkskurs"
-    ]
+    "areaServed": {
+      "@type": "Country",
+      "name": "Norway",
+    },
+    "sameAs": [],
   };
 }
 
@@ -214,11 +234,15 @@ export function generateProductSchema(course: Course, baseUrl: string) {
     "@type": "Product",
     "name": course.title,
     "description": course.description || `${course.title} - Profesjonell kursing`,
-    "image": course.image ? `${baseUrl}${course.image}` : `${baseUrl}/placeholder-kurs.jpg`,
+    "image": course.image
+      ? course.image.startsWith("http")
+        ? course.image
+        : `${baseUrl}${course.image}`
+      : `${baseUrl}/placeholder-kurs.jpg`,
     "sku": course.code,
     "brand": {
       "@type": "Brand",
-      "name": "KKS AS"
+      "name": KKS_NAME,
     },
     "offers": {
       "@type": "Offer",
@@ -228,16 +252,9 @@ export function generateProductSchema(course: Course, baseUrl: string) {
       "availability": "https://schema.org/InStock",
       "seller": {
         "@type": "Organization",
-        "name": "KKS AS AS"
-      }
+        "name": KKS_NAME,
+      },
     },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "reviewCount": "127",
-      "bestRating": "5",
-      "worstRating": "1"
-    }
   };
 }
 
@@ -249,16 +266,92 @@ export function generateWebSiteSchema(baseUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "KKS AS",
+    "name": KKS_NAME,
     "url": baseUrl,
     "potentialAction": {
       "@type": "SearchAction",
       "target": {
         "@type": "EntryPoint",
-        "urlTemplate": `${baseUrl}/kurs?search={search_term_string}`
+        "urlTemplate": `${baseUrl}/kurs?search={search_term_string}`,
       },
-      "query-input": "required name=search_term_string"
-    }
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+/**
+ * Generer LocalBusiness Schema for lokasjonssider
+ */
+export function generateLocalBusinessSchema(
+  baseUrl: string,
+  locationSlug: string,
+  locationName: string,
+  region: string
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": `${KKS_NAME} - Kurs i ${locationName}`,
+    "image": `${baseUrl}/logo.png`,
+    "url": `${baseUrl}/lokasjon/${locationSlug}`,
+    "telephone": KKS_PHONE,
+    "email": KKS_EMAIL,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": locationName,
+      "addressRegion": region,
+      "addressCountry": "NO",
+    },
+    "areaServed": {
+      "@type": "AdministrativeArea",
+      "name": region,
+    },
+    "priceRange": "kr kr",
+    "openingHours": "Mo-Fr 08:00-16:00",
+    "description": `KKS AS tilbyr profesjonell kursing i ${locationName} og ${region}. Truck, kran, stillas, HMS og BHT-kurs med sertifiserte instruktører.`,
+    "parentOrganization": {
+      "@type": "EducationalOrganization",
+      "name": KKS_NAME,
+      "url": baseUrl,
+    },
+  };
+}
+
+/**
+ * Generer ItemList Schema for kursoversiktsside
+ */
+export function generateCourseListSchema(
+  courses: Array<{ title: string; slug: string; description?: string | null; price: number }>,
+  baseUrl: string
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Kursoversikt — KKS AS",
+    "description": "Komplett oversikt over alle kurs fra KKS AS innen truck, kran, stillas, HMS og BHT.",
+    "url": `${baseUrl}/kurs`,
+    "numberOfItems": courses.length,
+    "itemListElement": courses.map((course, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "item": {
+        "@type": "Course",
+        "name": course.title,
+        "url": `${baseUrl}/kurs/${course.slug}`,
+        "description": course.description || course.title,
+        "provider": {
+          "@type": "EducationalOrganization",
+          "name": KKS_NAME,
+          "url": baseUrl,
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": course.price,
+          "priceCurrency": "NOK",
+          "availability": "https://schema.org/InStock",
+        },
+      },
+    })),
   };
 }
 

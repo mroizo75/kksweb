@@ -37,6 +37,7 @@ export async function createCredential(
     const course = await db.course.findUnique({
       where: { id: courseId },
       include: { validityPolicy: true },
+      // validityYears er et direktefelt på Course
     });
 
     if (!course) {
@@ -52,10 +53,11 @@ export async function createCredential(
       return { success: false, error: "Person ikke funnet" };
     }
 
-    // Beregn gyldighetsperiode
+    // Beregn gyldighetsperiode – bruker policy hvis satt, ellers validityYears
     const { validFrom, validTo } = calculateValidity({
       completedAt,
       policy: course.validityPolicy,
+      validityYears: course.validityYears,
     });
 
     // Generer unik kode
@@ -76,8 +78,31 @@ export async function createCredential(
       },
     });
 
+    // Opprett automatisk fornyelsesoppgave hvis kurset har gyldighetsperiode
+    if (validTo) {
+      const existingRenewal = await db.renewalTask.findFirst({
+        where: {
+          credentialId: credential.id,
+          status: { in: ["OPEN", "CONTACTED"] },
+        },
+      });
+
+      if (!existingRenewal) {
+        await db.renewalTask.create({
+          data: {
+            personId,
+            courseId,
+            credentialId: credential.id,
+            dueDate: validTo,
+            status: "OPEN",
+          },
+        });
+      }
+    }
+
     revalidatePath("/admin/credentials");
     revalidatePath("/admin/kunder");
+    revalidatePath("/admin/crm/renewals");
 
     return {
       success: true,

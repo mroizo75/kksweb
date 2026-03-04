@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { companyEnrollmentSchema } from "@/lib/validations/enrollment";
 import { sendEnrollmentConfirmation, sendEnrollmentNotification } from "@/lib/email";
+import { triggerCrmEnrollmentHook } from "@/lib/crm-enrollment-hook";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
@@ -127,6 +128,17 @@ export async function enrollCompany(formData: unknown) {
         });
 
         enrollments.push(enrollment);
+
+        // Koble påmelding til CRM
+        await triggerCrmEnrollmentHook({
+          personId: person.id,
+          companyId: company.id,
+          courseTitle: session.course.title,
+          sessionDate: session.startsAt,
+          sessionLocation: session.location,
+          enrollmentStatus: allWaitlist ? "WAITLIST" : "CONFIRMED",
+          isPublicEnrollment: true,
+        });
 
         // Send e-post til deltaker hvis e-post er oppgitt
         if (person.email) {

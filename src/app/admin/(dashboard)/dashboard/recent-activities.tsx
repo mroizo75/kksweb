@@ -41,17 +41,16 @@ export async function RecentActivities() {
     },
   });
 
-  // Hent nylige avvik
-  const recentNonConformances = await db.qmsNonConformance.findMany({
+  // Hent nylige deals
+  const recentDeals = await db.deal.findMany({
     take: 5,
-    orderBy: { createdAt: "desc" },
+    orderBy: { updatedAt: "desc" },
     select: {
       id: true,
-      ncNumber: true,
       title: true,
-      severity: true,
-      status: true,
-      createdAt: true,
+      stage: true,
+      value: true,
+      updatedAt: true,
     },
   });
 
@@ -146,44 +145,31 @@ export async function RecentActivities() {
         </CardContent>
       </Card>
 
-      {/* Nylige Avvik */}
+      {/* Nylige Deals */}
       <Card>
         <CardHeader>
-          <CardTitle>Nylige Avvik</CardTitle>
-          <CardDescription>Siste 5 avvik</CardDescription>
+          <CardTitle>Nylige Deals</CardTitle>
+          <CardDescription>Siste 5 oppdaterte</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {recentNonConformances.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Ingen avvik enda</p>
+            {recentDeals.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Ingen deals ennå</p>
             ) : (
-              recentNonConformances.map((nc) => (
-                <div key={nc.id} className="flex items-start justify-between">
+              recentDeals.map((deal) => (
+                <div key={deal.id} className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium">{nc.ncNumber}</p>
+                    <p className="text-sm font-medium">{deal.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {nc.title.length > 40 ? nc.title.substring(0, 40) + "..." : nc.title}
+                      {new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK", maximumFractionDigits: 0 }).format(deal.value)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(nc.createdAt), "dd.MM.yyyy HH:mm", {
-                        locale: nb,
-                      })}
+                      {format(new Date(deal.updatedAt), "dd.MM.yyyy HH:mm", { locale: nb })}
                     </p>
                   </div>
-                  <div className="space-y-1 text-right">
-                    <Badge
-                      variant={
-                        nc.severity === "CRITICAL"
-                          ? "destructive"
-                          : nc.severity === "MAJOR"
-                          ? "default"
-                          : "secondary"
-                      }
-                    >
-                      {nc.severity}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground">{nc.status}</p>
-                  </div>
+                  <Badge variant={deal.stage === "WON" ? "default" : deal.stage === "LOST" ? "destructive" : "secondary"}>
+                    {deal.stage}
+                  </Badge>
                 </div>
               ))
             )}

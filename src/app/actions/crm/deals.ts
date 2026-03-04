@@ -128,6 +128,31 @@ export async function deleteDeal(id: string): Promise<DealActionResult> {
   }
 }
 
+export async function updateDealStage(
+  id: string,
+  stage: string
+): Promise<DealActionResult> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Ikke autentisert" };
+    }
+
+    const deal = await db.deal.update({
+      where: { id },
+      data: { stage: stage as any },
+    });
+
+    revalidatePath("/admin/crm/deals");
+    revalidatePath("/admin/crm/dashboard");
+
+    return { success: true, dealId: deal.id, message: "Stadie oppdatert" };
+  } catch (error) {
+    if (error instanceof Error) return { success: false, error: error.message };
+    return { success: false, error: "En uventet feil oppstod" };
+  }
+}
+
 export async function closeDeal(
   id: string,
   stage: "WON" | "LOST"

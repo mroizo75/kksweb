@@ -43,37 +43,10 @@ model User {
   notes              Note[]
   renewalTasks       RenewalTask[]
 
-  // QMS-relasjoner
-  ownedDocuments          QmsDocument[]          @relation("QmsDocOwner")
-  approvedDocuments       QmsDocument[]          @relation("QmsDocApprover")
-  createdDocuments        QmsDocument[]          @relation("QmsDocCreator")
-  documentAcknowledgments QmsDocAcknowledgment[]
-
-  reportedNonConformances QmsNonConformance[] @relation("NcReporter")
-  assignedNonConformances QmsNonConformance[] @relation("NcAssignee")
-  verifiedNonConformances QmsNonConformance[] @relation("NcVerifier")
-  closedNonConformances   QmsNonConformance[] @relation("NcCloser")
-
-  responsibleActions QmsCorrectiveAction[] @relation("ActionResponsible")
-  verifiedActions    QmsCorrectiveAction[] @relation("ActionVerifier")
-  createdActions     QmsCorrectiveAction[] @relation("ActionCreator")
-
-  ledAudits     QmsAudit[] @relation("AuditLead")
-  createdAudits QmsAudit[] @relation("AuditCreator")
-
-  ownedRisks   QmsRisk[] @relation("RiskOwner")
-  createdRisks QmsRisk[] @relation("RiskCreator")
-
-  ownedKpis       QmsKpi[]            @relation("KpiOwner")
-  createdKpis     QmsKpi[]            @relation("KpiCreator")
-  kpiMeasurements QmsKpiMeasurement[]
-
-  // ISO 27001 Security
-  twoFactorTokens     TwoFactorToken[]
-  reportedIncidents   SecurityIncident[] @relation("IncidentReporter")
-  assignedIncidents   SecurityIncident[] @relation("IncidentAssignee")
-  auditLogs           AuditLog[]
-  acknowledgedPolicies SecurityPolicyAcknowledgment[]
+  // ISO 27001 - 2FA og audit (beholdes for auth-systemet)
+  twoFactorTokens TwoFactorToken[]
+  auditLogs       AuditLog[]
+  sentEmails      EmailLog[]
 
   @@index([email])
   @@map("users")
@@ -141,10 +114,14 @@ model Person {
   updatedAt DateTime  @updatedAt
 
   // Kompetansebevis-felter
-  profileImage String? // URL/S3-key til profilbilde
+  profileImage String?
   address      String?
   postalCode   String?
   city         String?
+
+  // CRM-felter
+  title       String?
+  linkedinUrl String?
 
   company     Company?     @relation(fields: [companyId], references: [id])
   enrollments Enrollment[]
@@ -157,9 +134,8 @@ model Person {
   activities   Activity[]
   notes        Note[]
   renewalTasks RenewalTask[]
-
-  // QMS-relasjoner
-  nonConformances QmsNonConformance[]
+  emailLogs    EmailLog[]
+  tags         PersonTag[]
 
   @@index([email])
   @@index([companyId])
@@ -175,6 +151,11 @@ model Company {
   address   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // CRM-felter
+  industry    String?
+  website     String?
+  description String? @db.Text
 
   // Lisenssystem
   licenseStatus    LicenseStatus @default(TRIAL)
@@ -196,9 +177,8 @@ model Company {
   deals      Deal[]
   activities Activity[]
   notes      Note[]
-
-  // QMS-relasjoner
-  nonConformances QmsNonConformance[]
+  emailLogs  EmailLog[]
+  tags       CompanyTag[]
 
   @@index([orgNo])
   @@index([licenseStatus])
@@ -239,7 +219,10 @@ model Course {
   image        String?
   published    Boolean @default(true)
 
-  // Gyldighet
+  // Gyldighet – enkelt oppsett: antall år kurset er gyldig (f.eks. 1, 2 eller 5)
+  validityYears Int?
+
+  // Avansert gyldighet via ValidityPolicy (brukes når validityYears ikke er nok)
   validityPolicyId String?
   validityPolicy   ValidityPolicy? @relation("CoursePolicy", fields: [validityPolicyId], references: [id])
 
@@ -252,9 +235,6 @@ model Course {
   variants        CourseVariant[]
   assessments     Assessment[]
   renewalPolicies ValidityPolicy[] @relation("RenewalFor")
-
-  // QMS-relasjoner
-  nonConformances QmsNonConformance[]
 
   @@index([category])
   @@index([published])
@@ -305,9 +285,6 @@ model CourseSession {
   instructor  User?          @relation(fields: [instructorId], references: [id])
   enrollments Enrollment[]
   assessments Assessment[]
-
-  // QMS-relasjoner
-  nonConformances QmsNonConformance[]
 
   @@index([courseId])
   @@index([variantId])
@@ -458,10 +435,95 @@ model Lead {
   assignedTo User?      @relation(fields: [assignedToId], references: [id])
   activities Activity[]
   notesList  Note[]
+  emailLogs  EmailLog[]
+  tags       LeadTag[]
 
   @@index([status])
   @@index([assignedToId])
   @@map("leads")
+}
+
+// ========================================
+// CRM – Tags
+// ========================================
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+
+  leads     LeadTag[]
+  companies CompanyTag[]
+  persons   PersonTag[]
+
+  @@map("tags")
+}
+
+model LeadTag {
+  leadId String
+  tagId  String
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([leadId, tagId])
+  @@map("lead_tags")
+}
+
+model CompanyTag {
+  companyId String
+  tagId     String
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, tagId])
+  @@map("company_tags")
+}
+
+model PersonTag {
+  personId String
+  tagId    String
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([personId, tagId])
+  @@map("person_tags")
+}
+
+// ========================================
+// CRM – E-postlogg
+// ========================================
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  subject   String
+  body      String   @db.Text
+  toEmail   String
+  fromEmail String
+  sentAt    DateTime @default(now())
+  status    String   @default("SENT")
+
+  leadId    String?
+  dealId    String?
+  companyId String?
+  personId  String?
+  sentById  String
+
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  deal    Deal?    @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  company Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  person  Person?  @relation(fields: [personId], references: [id], onDelete: SetNull)
+  sentBy  User     @relation(fields: [sentById], references: [id])
+
+  @@index([leadId])
+  @@index([dealId])
+  @@index([companyId])
+  @@index([personId])
+  @@index([sentAt])
+  @@map("email_logs")
 }
 
 enum LeadStatus {
@@ -492,6 +554,7 @@ model Deal {
   assignedTo User?      @relation(fields: [assignedToId], references: [id])
   activities Activity[]
   notesList  Note[]
+  emailLogs  EmailLog[]
 
   @@index([stage])
   @@index([companyId])
@@ -766,461 +829,6 @@ model Assessment {
   @@map("assessments")
 }
 
-// ========================================
-// KVALITETSSYSTEM (ISO 9001)
-// ========================================
-
-// Dokumenthåndtering
-model QmsDocument {
-  id          String         @id @default(cuid())
-  documentNo  String         @unique // F.eks "1.00", "6.01"
-  title       String
-  description String?        @db.Text
-  category    QmsDocCategory // PROCEDURE, INSTRUCTION, FORM, POLICY, etc.
-
-  // Versjonskontroll
-  version       String // F.eks "1.04"
-  status        QmsDocStatus
-  effectiveDate DateTime?
-  reviewDate    DateTime? // Neste revidering
-
-  // Filer
-  fileKey  String // S3/lokal path
-  fileSize Int?
-
-  // Ansvar
-  ownerId    String // Dokumenteier
-  approvedBy String? // Godkjent av
-  approvedAt DateTime?
-
-  // Metadata
-  createdBy  String
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  archivedAt DateTime?
-
-  // Distribusjonsbekreftelser
-  acknowledgments QmsDocAcknowledgment[]
-
-  // Relasjoner
-  owner    User  @relation("QmsDocOwner", fields: [ownerId], references: [id])
-  approver User? @relation("QmsDocApprover", fields: [approvedBy], references: [id])
-  creator  User  @relation("QmsDocCreator", fields: [createdBy], references: [id])
-
-  @@index([status])
-  @@index([category])
-  @@index([ownerId])
-  @@map("qms_documents")
-}
-
-enum QmsDocCategory {
-  PROCEDURE // Prosedyre
-  INSTRUCTION // Instruksjon
-  FORM // Skjema
-  POLICY // Policy
-  MANUAL // Håndbok
-  RECORD // Protokoll/logg
-  EXTERNAL // Eksternt dokument
-}
-
-enum QmsDocStatus {
-  DRAFT // Under arbeid
-  REVIEW // Til godkjenning
-  APPROVED // Godkjent
-  EFFECTIVE // I bruk
-  SUPERSEDED // Erstattet
-  ARCHIVED // Arkivert
-}
-
-// Lesebekreftelser på dokumenter
-model QmsDocAcknowledgment {
-  id             String   @id @default(cuid())
-  documentId     String
-  userId         String
-  acknowledgedAt DateTime @default(now())
-
-  document QmsDocument @relation(fields: [documentId], references: [id])
-  user     User        @relation(fields: [userId], references: [id])
-
-  @@unique([documentId, userId])
-  @@index([documentId])
-  @@index([userId])
-  @@map("qms_doc_acknowledgments")
-}
-
-// Avvikshåndtering (Non-Conformance)
-model QmsNonConformance {
-  id       String @id @default(cuid())
-  ncNumber String @unique // Auto-generert: NC-2025-001
-
-  // Klassifisering
-  type     NcType
-  severity NcSeverity
-  category NcCategory
-
-  // Beskrivelse
-  title       String
-  description String   @db.Text
-  detectedAt  DateTime
-  location    String?
-
-  // Årsaker
-  rootCause       String? @db.Text
-  rootCauseMethod String? // "5_WHY", "ISHIKAWA", "PARETO"
-
-  // Status og oppfølging
-  status   NcStatus
-  priority Int      @default(2) // 1=Høy, 2=Medium, 3=Lav
-
-  // Ansvar
-  reportedBy String // User ID
-  assignedTo String? // User ID
-  verifiedBy String? // User ID
-  closedBy   String? // User ID
-
-  // Datoer
-  dueDate  DateTime?
-  closedAt DateTime?
-
-  // Relasjoner (valgfritt)
-  companyId String?
-  personId  String?
-  courseId  String?
-  sessionId String?
-
-  // Bilder/dokumentasjon
-  attachments Json? // Array av S3 keys
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Korrigerende tiltak
-  correctiveActions QmsCorrectiveAction[]
-
-  // Relasjoner
-  reporter User           @relation("NcReporter", fields: [reportedBy], references: [id])
-  assignee User?          @relation("NcAssignee", fields: [assignedTo], references: [id])
-  verifier User?          @relation("NcVerifier", fields: [verifiedBy], references: [id])
-  closer   User?          @relation("NcCloser", fields: [closedBy], references: [id])
-  company  Company?       @relation(fields: [companyId], references: [id])
-  person   Person?        @relation(fields: [personId], references: [id])
-  course   Course?        @relation(fields: [courseId], references: [id])
-  session  CourseSession? @relation(fields: [sessionId], references: [id])
-
-  @@index([status])
-  @@index([type])
-  @@index([severity])
-  @@index([reportedBy])
-  @@index([assignedTo])
-  @@index([detectedAt])
-  @@map("qms_non_conformances")
-}
-
-enum NcType {
-  INTERNAL // Internt avvik
-  EXTERNAL // Eksternt avvik
-  CUSTOMER // Kundeklage
-  SUPPLIER // Leverandøravvik
-  AUDIT // Revisjonsfunn
-  REGULATORY // Myndighetskrav
-}
-
-enum NcSeverity {
-  CRITICAL // Kritisk
-  MAJOR // Alvorlig
-  MINOR // Mindre alvorlig
-  OBSERVATION // Observasjon
-}
-
-enum NcCategory {
-  PROCESS // Prosess
-  PRODUCT // Produkt/tjeneste
-  DOCUMENTATION // Dokumentasjon
-  EQUIPMENT // Utstyr
-  PERSONNEL // Personell/kompetanse
-  ENVIRONMENT // Miljø/HMS
-  OTHER // Annet
-}
-
-enum NcStatus {
-  OPEN // Åpen
-  INVESTIGATING // Under undersøkelse
-  ACTION // Tiltak iverksatt
-  VERIFICATION // Til verifisering
-  CLOSED // Lukket
-  REJECTED // Avvist
-}
-
-// Korrigerende tiltak
-model QmsCorrectiveAction {
-  id   String @id @default(cuid())
-  ncId String
-
-  // Beskrivelse
-  title       String
-  description String     @db.Text
-  actionType  ActionType
-
-  // Ansvar og frister
-  responsibleUser String
-  dueDate         DateTime
-  completedAt     DateTime?
-
-  // Status
-  status ActionStatus
-
-  // Effektivitet
-  effectiveness String?   @db.Text // Vurdering av effekt
-  verifiedBy    String?
-  verifiedAt    DateTime?
-
-  // Metadata
-  createdBy String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relasjoner
-  nonConformance QmsNonConformance @relation(fields: [ncId], references: [id], onDelete: Cascade)
-  responsible    User              @relation("ActionResponsible", fields: [responsibleUser], references: [id])
-  verifier       User?             @relation("ActionVerifier", fields: [verifiedBy], references: [id])
-  creator        User              @relation("ActionCreator", fields: [createdBy], references: [id])
-
-  @@index([ncId])
-  @@index([status])
-  @@index([responsibleUser])
-  @@index([dueDate])
-  @@map("qms_corrective_actions")
-}
-
-enum ActionType {
-  IMMEDIATE // Umiddelbar handling
-  CORRECTIVE // Korrigerende tiltak
-  PREVENTIVE // Forebyggende tiltak
-}
-
-enum ActionStatus {
-  PLANNED // Planlagt
-  IN_PROGRESS // Pågår
-  COMPLETED // Fullført
-  VERIFIED // Verifisert
-  OVERDUE // Forfalt
-}
-
-// Revisjoner (Audits)
-model QmsAudit {
-  id      String @id @default(cuid())
-  auditNo String @unique // AUD-2025-001
-
-  // Type og omfang
-  type     AuditType
-  scope    String    @db.Text // Hva skal revideres
-  standard String? // ISO 9001:2015, etc.
-
-  // Planlegging
-  plannedDate     DateTime
-  plannedDuration Int // Antall timer
-  location        String?
-
-  // Status
-  status AuditStatus
-
-  // Team
-  leadAuditor String // User ID
-  auditors    Json? // Array av User IDs
-
-  // Resultater
-  findings      Json? // Array av funn
-  reportFileKey String? // S3 key til rapport
-
-  // Oppfølging
-  followUpDate DateTime?
-  closedAt     DateTime?
-
-  // Metadata
-  createdBy String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relasjoner
-  lead    User @relation("AuditLead", fields: [leadAuditor], references: [id])
-  creator User @relation("AuditCreator", fields: [createdBy], references: [id])
-
-  @@index([status])
-  @@index([type])
-  @@index([plannedDate])
-  @@map("qms_audits")
-}
-
-enum AuditType {
-  INTERNAL // Internrevisjon
-  EXTERNAL // Ekstern revisjon (sertifisering)
-  SUPPLIER // Leverandørrevisjon
-  CUSTOMER // Kunderevisjon
-}
-
-enum AuditStatus {
-  PLANNED // Planlagt
-  IN_PROGRESS // Pågår
-  REPORTING // Rapportskriving
-  COMPLETED // Fullført
-  CLOSED // Lukket
-}
-
-// Risikohåndtering
-model QmsRisk {
-  id     String @id @default(cuid())
-  riskNo String @unique // RISK-001
-
-  // Identifikasjon
-  title       String
-  description String       @db.Text
-  category    RiskCategory
-  process     String? // Hvilken prosess
-
-  // Vurdering (før tiltak)
-  likelihood  Int // 1-5
-  consequence Int // 1-5
-  riskScore   Int // likelihood * consequence
-
-  // Vurdering (etter tiltak)
-  residualLikelihood  Int?
-  residualConsequence Int?
-  residualScore       Int?
-
-  // Tiltak
-  mitigationPlan String? @db.Text
-
-  // Ansvar
-  ownerId    String
-  reviewDate DateTime // Neste gjennomgang
-
-  // Status
-  status RiskStatus
-
-  // Metadata
-  createdBy String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relasjoner
-  owner   User @relation("RiskOwner", fields: [ownerId], references: [id])
-  creator User @relation("RiskCreator", fields: [createdBy], references: [id])
-
-  @@index([status])
-  @@index([category])
-  @@index([riskScore])
-  @@map("qms_risks")
-}
-
-enum RiskCategory {
-  STRATEGIC // Strategisk
-  OPERATIONAL // Operasjonell
-  FINANCIAL // Økonomisk
-  COMPLIANCE // Regelverk
-  REPUTATION // Omdømme
-  SAFETY // HMS/sikkerhet
-}
-
-enum RiskStatus {
-  IDENTIFIED // Identifisert
-  ASSESSED // Vurdert
-  MITIGATED // Tiltak iverksatt
-  MONITORED // Under overvåkning
-  CLOSED // Lukket
-}
-
-// KPI & Mål
-model QmsKpi {
-  id String @id @default(cuid())
-
-  // Definisjon
-  name        String
-  description String?     @db.Text
-  category    KpiCategory
-  unit        String // %, antall, timer, etc.
-
-  // Mål
-  target    Float
-  threshold Float? // Grenseverdi for varsel
-
-  // Måling
-  frequency       KpiFrequency
-  dataSource      String? // Hvor hentes data fra
-  isAutomatic     Boolean      @default(false) // Beregnes automatisk?
-  calculationRule String?      @db.Text // Formel/regel for automatisk beregning
-
-  // Status
-  currentValue Float?
-  lastMeasured DateTime?
-  status       KpiStatus
-
-  // Ansvar
-  ownerId String
-
-  // Metadata
-  active    Boolean  @default(true)
-  createdBy String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Historikk
-  measurements QmsKpiMeasurement[]
-
-  // Relasjoner
-  owner   User @relation("KpiOwner", fields: [ownerId], references: [id])
-  creator User @relation("KpiCreator", fields: [createdBy], references: [id])
-
-  @@index([category])
-  @@index([status])
-  @@index([active])
-  @@index([isAutomatic])
-  @@map("qms_kpis")
-}
-
-enum KpiCategory {
-  QUALITY // Kvalitet
-  DELIVERY // Leveranse/tid
-  CUSTOMER // Kundetilfredshet
-  FINANCIAL // Økonomi
-  PROCESS // Prosess
-  PERSONNEL // Personell
-  SAFETY // HMS
-}
-
-enum KpiFrequency {
-  DAILY
-  WEEKLY
-  MONTHLY
-  QUARTERLY
-  YEARLY
-}
-
-enum KpiStatus {
-  ON_TARGET // På mål
-  WARNING // Varsel
-  OFF_TARGET // Utenfor mål
-  NO_DATA // Ingen data
-}
-
-// KPI målinger (historikk)
-model QmsKpiMeasurement {
-  id    String @id @default(cuid())
-  kpiId String
-
-  value      Float
-  measuredAt DateTime
-  note       String?  @db.Text
-
-  measuredBy String
-
-  kpi      QmsKpi @relation(fields: [kpiId], references: [id], onDelete: Cascade)
-  measurer User   @relation(fields: [measuredBy], references: [id])
-
-  @@index([kpiId])
-  @@index([measuredAt])
-  @@map("qms_kpi_measurements")
-}
 
 // ============================================
 // LISENSSYSTEM
@@ -1305,10 +913,9 @@ model LicenseActivity {
 }
 
 // ========================================
-// ISO 27001 - Informasjonssikkerhet
+// Auth - 2FA & Audit
 // ========================================
 
-// 2FA (Two-Factor Authentication)
 model TwoFactorToken {
   id     String @id @default(cuid())
   userId String
@@ -1325,119 +932,26 @@ model TwoFactorToken {
   @@map("two_factor_tokens")
 }
 
-// Sikkerhetshendelser (Security Incidents)
-enum IncidentType {
-  UNAUTHORIZED_ACCESS    // Uautorisert tilgang
-  DATA_BREACH           // Datainnbrudd
-  MALWARE               // Skadelig programvare
-  PHISHING              // Phishing-forsøk
-  DDOS                  // DDoS-angrep
-  DATA_LOSS             // Datatap
-  SYSTEM_FAILURE        // Systemfeil
-  POLICY_VIOLATION      // Brudd på policy
-  SUSPICIOUS_ACTIVITY   // Mistenkelig aktivitet
-  OTHER                 // Annet
-}
-
-enum IncidentSeverity {
-  CRITICAL  // Kritisk - Umiddelbar handling påkrevd
-  HIGH      // Høy - Handling påkrevd innen 24t
-  MEDIUM    // Medium - Handling påkrevd innen 1 uke
-  LOW       // Lav - Kan håndteres etter prioritet
-}
-
-enum IncidentStatus {
-  REPORTED      // Rapportert
-  INVESTIGATING // Under utredning
-  CONTAINED     // Inneholdt
-  RESOLVED      // Løst
-  CLOSED        // Lukket
-}
-
-model SecurityIncident {
-  id            String   @id @default(cuid())
-  incidentNumber String  @unique // Format: SEC-YYYY-XXXX
-
-  // Klassifisering
-  type          IncidentType
-  severity      IncidentSeverity
-  status        IncidentStatus @default(REPORTED)
-  
-  // Beskrivelse
-  title         String
-  description   String           @db.Text
-  affectedAssets String?         @db.Text // Hvilke systemer/data er påvirket
-  
-  // Tidslinje
-  detectedAt    DateTime
-  reportedAt    DateTime         @default(now())
-  respondedAt   DateTime?
-  resolvedAt    DateTime?
-  closedAt      DateTime?
-  
-  // Ansvar
-  reportedBy    String
-  assignedTo    String?
-  
-  // Respons & tiltak
-  immediateAction String?        @db.Text // Umiddelbare tiltak
-  rootCause      String?         @db.Text // Rotårsak
-  resolution     String?         @db.Text // Løsning
-  preventiveActions String?      @db.Text // Forebyggende tiltak
-  
-  // Metadata
-  impactAssessment String?       @db.Text // Konsekvensanalyse
-  dataAffected     Boolean       @default(false) // Persondata påvirket?
-  notificationRequired Boolean   @default(false) // Varsling påkrevd (GDPR)?
-  
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  
-  reporter      User             @relation("IncidentReporter", fields: [reportedBy], references: [id])
-  assignee      User?            @relation("IncidentAssignee", fields: [assignedTo], references: [id])
-  
-  @@index([status])
-  @@index([severity])
-  @@index([reportedBy])
-  @@index([assignedTo])
-  @@index([detectedAt])
-  @@map("security_incidents")
-}
-
 // Audit Log (Sporingslogg)
 enum AuditAction {
-  // Autentisering
   LOGIN
   LOGOUT
   LOGIN_FAILED
   PASSWORD_CHANGED
   TWO_FACTOR_ENABLED
   TWO_FACTOR_DISABLED
-  
-  // Data operasjoner
   CREATE
   READ
   UPDATE
   DELETE
   EXPORT
-  
-  // Sikkerhet
   ACCESS_DENIED
   PERMISSION_CHANGED
   ROLE_CHANGED
-  
-  // Admin handlinger
   USER_CREATED
   USER_DELETED
   LICENSE_SUSPENDED
   LICENSE_RESUMED
-  
-  // QMS
-  DOCUMENT_APPROVED
-  NONCONFORMANCE_CLOSED
-  RISK_UPDATED
-  
-  // System
   BACKUP_CREATED
   SYSTEM_CONFIG_CHANGED
 }
@@ -1478,93 +992,6 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// Sikkerhetspolitikker (Security Policies)
-enum PolicyCategory {
-  ACCESS_CONTROL        // Tilgangskontroll
-  DATA_PROTECTION       // Databeskyttelse
-  INCIDENT_MANAGEMENT   // Hendelseshåndtering
-  BACKUP_RECOVERY       // Backup og gjenoppretting
-  PASSWORD_POLICY       // Passordpolicy
-  ACCEPTABLE_USE        // Akseptabel bruk
-  CHANGE_MANAGEMENT     // Endringsledelse
-  RISK_MANAGEMENT       // Risikostyring
-  COMPLIANCE            // Compliance
-  TRAINING              // Opplæring
-}
-
-enum PolicyStatus {
-  DRAFT      // Utkast
-  REVIEW     // Til gjennomgang
-  APPROVED   // Godkjent
-  ACTIVE     // Aktiv
-  ARCHIVED   // Arkivert
-}
-
-model SecurityPolicy {
-  id              String         @id @default(cuid())
-  
-  // Identifikasjon
-  policyNumber    String         @unique // Format: POL-SEC-XXX
-  title           String
-  category        PolicyCategory
-  
-  // Innhold
-  description     String         @db.Text
-  purpose         String         @db.Text
-  scope           String         @db.Text
-  policy          String         @db.LongText // Selve policy-teksten
-  procedures      String?        @db.LongText // Prosedyrer
-  
-  // Metadata
-  version         String         @default("1.0")
-  status          PolicyStatus   @default(DRAFT)
-  
-  // Godkjenning
-  approvedBy      String?
-  approvedAt      DateTime?
-  
-  // Gjennomgang
-  reviewSchedule  String?        // "Annually", "Quarterly", etc
-  nextReview      DateTime?
-  lastReviewed    DateTime?
-  
-  // Målgruppe
-  applicableTo    String?        @db.Text // Hvem policyen gjelder for
-  
-  // Metadata
-  effectiveDate   DateTime?
-  expiryDate      DateTime?
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  
-  acknowledgments SecurityPolicyAcknowledgment[]
-  
-  @@index([status])
-  @@index([category])
-  @@map("security_policies")
-}
-
-// Bekreftelse av at policy er lest og forstått
-model SecurityPolicyAcknowledgment {
-  id         String   @id @default(cuid())
-  
-  policyId   String
-  userId     String
-  
-  acknowledged Boolean  @default(false)
-  acknowledgedAt DateTime?
-  
-  createdAt  DateTime @default(now())
-  
-  policy     SecurityPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@unique([policyId, userId])
-  @@index([policyId])
-  @@index([userId])
-  @@map("security_policy_acknowledgments")
-}
 
 // ========================================
 // PRODUKT-LISENSSYSTEM (for Svampen, TaskGuild, etc.)

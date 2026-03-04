@@ -5,15 +5,10 @@ import {
   BookOpen,
   Users,
   TrendingUp,
-  DollarSign,
-  Calendar,
   Award,
   Briefcase,
-  AlertTriangle,
   Building2,
   Key,
-  CheckCircle2,
-  Clock,
 } from "lucide-react";
 import { format, subDays, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { nb } from "date-fns/locale";
@@ -38,7 +33,6 @@ export default async function DashboardPage() {
     activeDeals,
     totalCompanies,
     activeCompanies,
-    openNonConformances,
     activeLicenses,
     enrollmentsByDay,
     dealsByStage,
@@ -85,12 +79,7 @@ export default async function DashboardPage() {
     // Bedrifter
     db.company.count(),
     db.company.count({ where: { licenseStatus: "ACTIVE" } }),
-    
-    // QMS
-    db.qmsNonConformance.count({
-      where: { status: { in: ["OPEN", "INVESTIGATING", "ACTION"] } },
-    }),
-    
+
     // Lisenser
     db.license.count({ where: { status: "ACTIVE" } }),
     
@@ -179,13 +168,6 @@ export default async function DashboardPage() {
       description: `${companyActivityRate}% aktive`,
       icon: Building2,
       color: "text-indigo-600",
-    },
-    {
-      title: "Åpne Avvik",
-      value: openNonConformances.toString(),
-      description: "Krever oppfølging",
-      icon: AlertTriangle,
-      color: "text-red-600",
     },
     {
       title: "Aktive Lisenser",

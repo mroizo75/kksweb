@@ -21,22 +21,16 @@ import {
   FileImage,
   Shield,
   LogOut,
-  AlertTriangle,
-  FileCheck,
-  Search,
-  TrendingUp,
   Target,
   UserCheck,
   Key,
-  ShieldAlert,
-  FileKey,
-  History,
   Settings,
-  UserX,
   Menu,
   X,
   Sparkles,
   BarChart3,
+  Contact,
+  PieChart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
@@ -102,10 +96,13 @@ const navigation = [
   {
     name: "CRM",
     icon: Briefcase,
-    roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR selger inn kurs selv
+    roles: ["ADMIN", "INSTRUCTOR"],
     children: [
+      { name: "Dashboard", href: "/admin/crm/dashboard", icon: PieChart },
       { name: "Leads", href: "/admin/crm/leads", icon: UserPlus },
-      { name: "Avtaler", href: "/admin/crm/deals", icon: FileText },
+      { name: "Pipeline", href: "/admin/crm/deals", icon: BarChart3 },
+      { name: "Bedrifter", href: "/admin/crm/bedrifter", icon: Building2 },
+      { name: "Kontakter", href: "/admin/crm/kontakter", icon: Contact },
       { name: "Aktiviteter", href: "/admin/crm/activities", icon: CheckSquare },
       { name: "Fornyelser", href: "/admin/crm/renewals", icon: RefreshCw },
     ],
@@ -133,29 +130,6 @@ const navigation = [
     href: "/admin/gyldighet",
     icon: Shield,
     roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR kan se gyldighetsregler
-  },
-  {
-    name: "Kvalitet (ISO 9001)",
-    icon: CheckSquare,
-    roles: ["ADMIN", "INSTRUCTOR"], // INSTRUCTOR kan se kvalitetssystem
-    children: [
-      { name: "Avvik", href: "/admin/kvalitet/avvik", icon: AlertTriangle },
-      { name: "Dokumenter", href: "/admin/kvalitet/dokumenter", icon: FileCheck },
-      { name: "Revisjoner", href: "/admin/kvalitet/revisjoner", icon: Search },
-      { name: "Risiko", href: "/admin/kvalitet/risiko", icon: TrendingUp },
-      { name: "KPI & Mål", href: "/admin/kvalitet/kpi", icon: Target },
-    ],
-  },
-  {
-    name: "Sikkerhet (ISO 27001)",
-    icon: ShieldAlert,
-    roles: ["ADMIN"], // Kun ADMIN - INSTRUCTOR har IKKE tilgang
-    children: [
-      { name: "Hendelser", href: "/admin/sikkerhet/hendelser", icon: AlertTriangle },
-      { name: "Politikk", href: "/admin/sikkerhet/politikk", icon: FileKey },
-      { name: "Audit Log", href: "/admin/sikkerhet/audit", icon: History },
-      { name: "GDPR", href: "/admin/sikkerhet/gdpr", icon: UserX },
-    ],
   },
 ];
 

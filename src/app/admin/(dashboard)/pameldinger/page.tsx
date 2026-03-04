@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EnrollmentDetailsDialog } from "@/components/admin/EnrollmentDetailsDialog";
+import { ManualEnrollmentDialog } from "@/components/admin/ManualEnrollmentDialog";
 import { Plus, Search } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
@@ -43,6 +44,7 @@ export default function AdminEnrollmentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentWithRelations | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -102,7 +104,7 @@ export default function AdminEnrollmentsPage() {
             Oversikt over alle kurspåmeldinger
           </p>
         </div>
-        <Button className="w-full sm:w-auto">
+        <Button className="w-full sm:w-auto" onClick={() => setManualDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Manuell påmelding
         </Button>
@@ -212,6 +214,12 @@ export default function AdminEnrollmentsPage() {
         enrollment={selectedEnrollment}
         open={dialogOpen}
         onOpenChange={handleCloseDialog}
+      />
+
+      <ManualEnrollmentDialog
+        open={manualDialogOpen}
+        onOpenChange={setManualDialogOpen}
+        onSuccess={fetchEnrollments}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,9 @@ import {
 import { courseSchema, type CourseInput } from "@/lib/validations/course";
 import { createCourse, updateCourse } from "@/app/actions/createCourse";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 import type { Course } from "@prisma/client";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 
 interface CourseDialogProps {
   open: boolean;
@@ -99,6 +100,9 @@ const availableImages = [
 
 export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<CourseInput>({
     resolver: zodResolver(courseSchema),
@@ -112,6 +116,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
       price: 0,
       image: "",
       published: true,
+      validityYears: null,
     },
   });
 
@@ -129,6 +134,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           price: course.price,
           image: course.image || "",
           published: course.published,
+          validityYears: course.validityYears ?? null,
         });
       } else {
         form.reset({
@@ -145,6 +151,27 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
       }
     }
   }, [open, course, form]);
+
+  const handleFileUpload = async (file: File, setImageValue: (v: string) => void) => {
+    setIsUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.message ?? "Opplasting feilet");
+        return;
+      }
+      setImageValue(json.path);
+      setUploadPreview(json.path);
+      toast.success("Bilde lastet opp");
+    } catch {
+      toast.error("Opplasting feilet");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const onSubmit = async (data: CourseInput) => {
     setIsSubmitting(true);
@@ -278,18 +305,21 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                 <FormItem>
                   <FormLabel>Beskrivelse</FormLabel>
                   <FormControl>
-                    <textarea
-                      className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    <RichTextEditor
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
                       placeholder="Beskrivelse av kurset..."
-                      {...field}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Støtter formatering: overskrifter, fet/kursiv, lister
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="durationDays"
@@ -327,6 +357,38 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="validityYears"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gyldighet (år)</FormLabel>
+                    <Select
+                      onValueChange={(v) =>
+                        field.onChange(v === "none" ? null : parseInt(v))
+                      }
+                      value={field.value == null ? "none" : String(field.value)}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Ingen utløp" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Ingen utløp</SelectItem>
+                        <SelectItem value="1">1 år</SelectItem>
+                        <SelectItem value="2">2 år</SelectItem>
+                        <SelectItem value="3">3 år</SelectItem>
+                        <SelectItem value="5">5 år</SelectItem>
+                        <SelectItem value="10">10 år</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>Kurs som YSK/Diisocyanater: 5 år</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
@@ -336,8 +398,9 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                 <FormItem>
                   <FormLabel>Kursbilde</FormLabel>
                   <Tabs defaultValue="gallery" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="gallery">Velg fra galleri</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="gallery">Galleri</TabsTrigger>
+                      <TabsTrigger value="upload">Last opp</TabsTrigger>
                       <TabsTrigger value="manual">Manuell URL</TabsTrigger>
                     </TabsList>
                     
@@ -391,6 +454,60 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                       </div>
                     </TabsContent>
                     
+                    <TabsContent value="upload" className="space-y-3">
+                      <FormDescription>
+                        Last opp eget bilde (JPEG, PNG, WebP — maks 5 MB)
+                      </FormDescription>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, field.onChange);
+                        }}
+                      />
+                      {field.value && (
+                        <div className="relative inline-block">
+                          <img
+                            src={field.value}
+                            alt="Forhåndsvisning"
+                            className="h-32 w-auto rounded-md border object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              field.onChange("");
+                              setUploadPreview(null);
+                            }}
+                            className="absolute -right-2 -top-2 rounded-full bg-destructive p-0.5 text-destructive-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isUploading}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Laster opp...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Velg bilde fra disk
+                          </>
+                        )}
+                      </Button>
+                    </TabsContent>
+
                     <TabsContent value="manual">
                       <FormDescription>
                         Eller lim inn en ekstern bilde-URL
