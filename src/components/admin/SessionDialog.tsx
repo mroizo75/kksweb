@@ -69,32 +69,50 @@ export function SessionDialog({ open, onOpenChange, session }: SessionDialogProp
 
   const form = useForm<SessionInput>({
     resolver: zodResolver(sessionSchema),
-    defaultValues: session
-      ? {
-          courseId: session.courseId,
-          startsAt: format(new Date(session.startsAt), "yyyy-MM-dd'T'HH:mm"),
-          endsAt: format(new Date(session.endsAt), "yyyy-MM-dd'T'HH:mm"),
-          location: session.location,
-          capacity: session.capacity,
-          instructorId: session.instructorId || undefined,
-          status: session.status,
-          repeat: false,
-          repeatInterval: undefined,
-          repeatCount: undefined,
-        }
-      : {
-          courseId: "",
-          startsAt: "",
-          endsAt: "",
-          location: "",
-          capacity: 12,
-          instructorId: undefined,
-          status: "DRAFT",
-          repeat: false,
-          repeatInterval: undefined,
-          repeatCount: undefined,
-        },
+    defaultValues: {
+      courseId: "",
+      startsAt: "",
+      endsAt: "",
+      location: "",
+      capacity: 12,
+      instructorId: undefined,
+      status: "DRAFT",
+      repeat: false,
+      repeatInterval: undefined,
+      repeatCount: undefined,
+    },
   });
+
+  useEffect(() => {
+    if (!open) return;
+    if (session) {
+      form.reset({
+        courseId: session.courseId,
+        startsAt: format(new Date(session.startsAt), "yyyy-MM-dd'T'HH:mm"),
+        endsAt: format(new Date(session.endsAt), "yyyy-MM-dd'T'HH:mm"),
+        location: session.location,
+        capacity: session.capacity,
+        instructorId: session.instructorId || undefined,
+        status: session.status,
+        repeat: false,
+        repeatInterval: undefined,
+        repeatCount: undefined,
+      });
+    } else {
+      form.reset({
+        courseId: "",
+        startsAt: "",
+        endsAt: "",
+        location: "",
+        capacity: 12,
+        instructorId: undefined,
+        status: "DRAFT",
+        repeat: false,
+        repeatInterval: undefined,
+        repeatCount: undefined,
+      });
+    }
+  }, [open, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const repeatEnabled = form.watch("repeat");
 
