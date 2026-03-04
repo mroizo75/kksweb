@@ -40,7 +40,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
     const current = editor.getHTML();
     const normalized = current === "<p></p>" ? "" : current;
     if (normalized !== value) {
-      editor.commands.setContent(value || "", false);
+      editor.commands.setContent(value || "", { emitUpdate: false });
     }
   }, [value, editor]);
 
