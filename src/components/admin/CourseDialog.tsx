@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { Loader2, Upload, X } from "lucide-react";
 import type { Course } from "@prisma/client";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CourseDialogProps {
   open: boolean;
@@ -117,6 +118,8 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
       image: "",
       published: true,
       validityYears: null,
+      learningOutcomes: null,
+      targetAudience: null,
     },
   });
 
@@ -135,6 +138,8 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           image: course.image || "",
           published: course.published,
           validityYears: course.validityYears ?? null,
+          learningOutcomes: course.learningOutcomes ?? null,
+          targetAudience: course.targetAudience ?? null,
         });
       } else {
         form.reset({
@@ -147,6 +152,8 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           price: 0,
           image: "",
           published: true,
+          learningOutcomes: null,
+          targetAudience: null,
         });
       }
     }
@@ -313,6 +320,51 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                   </FormControl>
                   <FormDescription>
                     Støtter formatering: overskrifter, fet/kursiv, lister
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="learningOutcomes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hva du lærer (SEO)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder={`["Punkt 1", "Punkt 2", "Punkt 3"]`}
+                      className="font-mono text-sm"
+                      rows={4}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    JSON-array med læringsmål, f.eks.: ["Sikker bruk av truck", "Lovkrav og forskrifter", "Praktisk eksamen"]. La stå tom for standard læringsmål.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="targetAudience"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hvem bør ta kurset (SEO)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Kurset passer for deg som jobber med..."
+                      rows={3}
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Beskriv målgruppen spesifikt. Vises på kurssiden og forbedrer SEO.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

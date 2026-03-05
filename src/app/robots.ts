@@ -27,6 +27,7 @@ export default function robots(): MetadataRoute.Robots {
           "/admin/*",
           "/min-side/*",
           "/api/*",
+          "/verify/*",
         ],
       },
     ],

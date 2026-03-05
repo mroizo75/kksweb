@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -120,11 +121,14 @@ export default async function CourseDetailPage(props: PageProps) {
           <div className="lg:col-span-2">
             {/* Course Image */}
             {course.image && (
-              <div className="mb-6 rounded-xl overflow-hidden shadow-lg">
-                <img 
-                  src={course.image} 
+              <div className="mb-6 rounded-xl overflow-hidden shadow-lg relative w-full h-[400px]">
+                <Image
+                  src={course.image}
                   alt={course.title}
-                  className="w-full h-auto object-cover max-h-[400px]"
+                  fill
+                  priority
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 800px"
                 />
               </div>
             )}
@@ -167,19 +171,29 @@ export default async function CourseDetailPage(props: PageProps) {
 
             <div className="mb-8">
               <h2 className="text-2xl font-bold mb-4">Hva du lærer</h2>
-              <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                <li>Grunnleggende sikkerhetsprosedyrer</li>
-                <li>Praktisk opplæring med erfarne instruktører</li>
-                <li>Teoretisk og praktisk eksamen</li>
-                <li>Offisielt kursbevis ved bestått</li>
-              </ul>
+              {course.learningOutcomes ? (
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+                  {(JSON.parse(course.learningOutcomes) as string[]).map(
+                    (outcome, i) => (
+                      <li key={i}>{outcome}</li>
+                    )
+                  )}
+                </ul>
+              ) : (
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+                  <li>Grunnleggende sikkerhetsprosedyrer og lovkrav</li>
+                  <li>Praktisk opplæring med erfarne instruktører</li>
+                  <li>Teoretisk og praktisk eksamen</li>
+                  <li>Offisielt kompetansebevis ved bestått</li>
+                </ul>
+              )}
             </div>
 
             <div className="mb-8">
               <h2 className="text-2xl font-bold mb-4">Hvem bør ta kurset</h2>
               <p className="text-muted-foreground">
-                Dette kurset passer for deg som skal jobbe med eller allerede jobber med
-                relevante oppgaver i din arbeidshverdag.
+                {course.targetAudience ||
+                  `${course.title} passer for deg som skal jobbe med, eller allerede jobber med, ${course.category.toLowerCase()}-relaterte oppgaver i din arbeidshverdag. Kurset er relevant for ansatte i bygg, industri, anlegg og logistikk.`}
               </p>
             </div>
 

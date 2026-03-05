@@ -14,8 +14,9 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Om oss - KKS AS",
-  description: "Lær mer om KKS AS - din partner for profesjonell opplæring og kompetanseutvikling i Norge",
+  title: "Om KKS AS — ISO-sertifisert kursleverandør for truck, kran og HMS i Norge",
+  description:
+    "KKS AS (Kurs og Kompetansesystemer) er en ISO 9001-sertifisert norsk kursleverandør godkjent av Arbeidstilsynet. Vi tilbyr truck-, kran-, stillas-, HMS- og BHT-kurs med erfarne instruktører over hele Norge.",
 };
 
 const values = [

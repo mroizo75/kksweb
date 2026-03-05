@@ -19,8 +19,9 @@ import {
 import Link from "next/link";
 
 export const metadata = {
-  title: "Kontakt oss - KKS AS",
-  description: "Ta kontakt med KKS AS for spørsmål om kurs, bedriftsløsninger eller samarbeid",
+  title: "Kontakt KKS AS — Spørsmål om truckkurs, HMS og bedriftsopplæring",
+  description:
+    "Ring oss på +47 91 54 08 24 eller send e-post til post@kksas.no. Vi hjelper deg med truckkurs, krankurs, HMS og bedriftsavtaler. Åpent Man–Fre 08:00–16:00.",
 };
 
 const contactInfo = [

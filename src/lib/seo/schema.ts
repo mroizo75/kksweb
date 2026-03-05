@@ -167,7 +167,6 @@ export function generateOrganizationSchema(baseUrl: string) {
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "NO",
-      "addressLocality": "Norge",
     },
     "contactPoint": {
       "@type": "ContactPoint",
@@ -181,7 +180,10 @@ export function generateOrganizationSchema(baseUrl: string) {
       "@type": "Country",
       "name": "Norway",
     },
-    "sameAs": [],
+    "sameAs": [
+      "https://www.facebook.com/kursogkompetansesystemer",
+      "https://www.linkedin.com/company/kurs-og-kompetansesystemer-as/",
+    ],
   };
 }
 

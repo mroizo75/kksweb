@@ -20,6 +20,8 @@ import { Footer } from "@/components/public/Footer";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { generateCourseListSchema, generateBreadcrumbSchema } from "@/lib/seo/schema";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
 export const metadata: Metadata = {
   title: "Alle kurs — Truck, Kran, Stillas, HMS og BHT | KKS AS",
   description:
@@ -37,16 +39,20 @@ export const metadata: Metadata = {
     "sertifisering",
   ],
   alternates: {
-    canonical: `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no"}/kurs`,
+    canonical: `${BASE_URL}/kurs`,
   },
   openGraph: {
     title: "Alle kurs — KKS AS",
     description:
       "Finn og meld deg på kurs innen truck, kran, stillas, HMS og mer. KKS AS — sertifiserte instruktører i hele Norge.",
-    url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no"}/kurs`,
+    url: `${BASE_URL}/kurs`,
     siteName: "KKS AS",
     locale: "nb_NO",
     type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

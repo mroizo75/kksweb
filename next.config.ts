@@ -1,17 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Ensure static files are served correctly
-  output: undefined, // Default output mode (not standalone)
-  
-  // Allow all image domains (for course images, etc)
+  output: undefined,
+
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**',
+        protocol: "https",
+        hostname: "**",
       },
     ],
+  },
+
+  webpack(config) {
+    config.infrastructureLogging = { level: "error" };
+    return config;
   },
 };
 

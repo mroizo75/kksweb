@@ -97,12 +97,12 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:32px_32px]" />
         <div className="container mx-auto px-4 relative">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Profesjonell opplæring for<br />din sikkerhet og kompetanse
+            <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
+              Truckkurs, Krankurs, HMS og Stillasmontørkurs i Norge
             </h1>
             <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
-              Finn og meld deg på kurs innen truck, kran, stillas, HMS og mer.
-              Godkjente kurs med erfarne instruktører - din partner for faglig utvikling.
+              Godkjent og sertifisert opplæring innen truck, kran, stillas, arbeid på vei og BHT-opplæring.
+              Erfarne instruktører i hele Norge — din partner for faglig utvikling og sikkert arbeid.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/kurs">

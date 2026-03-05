@@ -219,6 +219,10 @@ model Course {
   image        String?
   published    Boolean @default(true)
 
+  // SEO – kursinnhold for kurssiden
+  learningOutcomes String? @db.Text // JSON-array: ["Punkt 1", "Punkt 2", ...]
+  targetAudience   String? @db.Text // Fritekst: hvem bør ta kurset
+
   // Gyldighet – enkelt oppsett: antall år kurset er gyldig (f.eks. 1, 2 eller 5)
   validityYears Int?
 

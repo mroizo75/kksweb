@@ -19,23 +19,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   });
 
-  // Hent alle kommende kurssesjoner
-  const sessions = await db.courseSession.findMany({
-    where: {
-      startsAt: {
-        gte: new Date(),
-      },
-      status: "OPEN",
-    },
-    include: {
-      course: {
-        select: {
-          slug: true,
-        },
-      },
-    },
-  });
-
   // Lokasjonssider for lokal SEO
   const locations = ["oslo", "bergen", "trondheim", "stavanger", "kristiansand", "tromso"];
   const locationPages = locations.map((location) => ({
@@ -63,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/saas`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
-      priority: 0.95,
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/bedrift`,
@@ -81,7 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/portefolje`,
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
-      priority: 0.7,
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/om-oss`,
@@ -95,6 +78,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     },
+    {
+      url: `${baseUrl}/personvern`,
+      lastModified: new Date(),
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/vilkar`,
+      lastModified: new Date(),
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+    },
   ];
 
   // Kurssider
@@ -105,14 +100,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Påmeldingssider
-  const enrollmentPages = sessions.map((session) => ({
-    url: `${baseUrl}/kurs/${session.course.slug}/pamelding/${session.id}`,
-    lastModified: new Date(),
-    changeFrequency: "daily" as const,
-    priority: 0.7,
-  }));
-
-  return [...staticPages, ...locationPages, ...coursePages, ...enrollmentPages];
+  return [...staticPages, ...locationPages, ...coursePages];
 }
 
