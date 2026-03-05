@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TemplateDialog } from "@/components/admin/TemplateDialog";
+import { DiplomaDialog } from "@/components/admin/DiplomaDialog";
 import { Badge } from "@/components/ui/badge";
 import { Search, FileText, Award, File } from "lucide-react";
 
@@ -94,11 +95,14 @@ export default async function TemplatesPage({
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <TemplateDialog existingTemplate={template} />
-                  <Button variant="outline" size="sm" disabled={!template.fileKey}>
-                    Forhåndsvis
-                  </Button>
+                  {template.kind === "DIPLOMA" && (
+                    <DiplomaDialog
+                      templateId={template.id}
+                      templateName={template.name}
+                    />
+                  )}
                 </div>
               </div>
             );

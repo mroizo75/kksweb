@@ -504,6 +504,64 @@ export interface LicenseResumedData {
   newExpiryDate: string;
 }
 
+// ============================================
+// DIPLOM E-POST
+// ============================================
+
+export interface DiplomaEmailData {
+  personName: string;
+  email: string;
+  courseName: string;
+  completedDate: string;
+  pdfBytes: Uint8Array;
+}
+
+export async function sendDiplomaEmail(data: DiplomaEmailData) {
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
+      to: [data.email],
+      subject: `Diplom – ${data.courseName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #0e4fa8; padding: 30px 20px; border-radius: 8px 8px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 28px; letter-spacing: 4px;">DIPLOM</h1>
+          </div>
+          <div style="background-color: #f9fafb; padding: 30px 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+            <p style="font-size: 16px; color: #374151; margin: 0 0 8px 0;">Hei ${data.personName},</p>
+            <p style="font-size: 16px; color: #374151; line-height: 1.7; margin: 0 0 24px 0;">
+              Gratulerer! Vi er glade for å kunne dele ut ditt diplom for å ha fullført
+              <strong>${data.courseName}</strong> den ${data.completedDate}.
+            </p>
+            <p style="font-size: 15px; color: #6b7280;">
+              Diplomet er vedlagt denne e-posten som PDF.
+            </p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+            <p style="font-size: 13px; color: #9ca3af; margin: 0;">
+              Med vennlig hilsen,<br/>KKS AS
+            </p>
+          </div>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `diplom-${data.courseName.replace(/\s+/g, "-").toLowerCase()}.pdf`,
+          content: Buffer.from(data.pdfBytes),
+        },
+      ],
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return emailData;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export async function sendLicenseResumed(data: LicenseResumedData) {
   try {
     const { data: emailData, error } = await resend.emails.send({

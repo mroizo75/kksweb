@@ -13,6 +13,7 @@ export const courseSchema = z.object({
   validityYears: z.number().int().min(1).max(20).nullable().optional(),
   learningOutcomes: z.string().optional().nullable(),
   targetAudience: z.string().optional().nullable(),
+  priceIncludes: z.string().optional().nullable(),
 });
 
 export const sessionSchema = z.object({

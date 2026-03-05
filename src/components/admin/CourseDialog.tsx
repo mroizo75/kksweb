@@ -140,6 +140,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           validityYears: course.validityYears ?? null,
           learningOutcomes: course.learningOutcomes ?? null,
           targetAudience: course.targetAudience ?? null,
+          priceIncludes: course.priceIncludes ?? null,
         });
       } else {
         form.reset({
@@ -154,6 +155,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           published: true,
           learningOutcomes: null,
           targetAudience: null,
+          priceIncludes: null,
         });
       }
     }
@@ -320,6 +322,27 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                   </FormControl>
                   <FormDescription>
                     Støtter formatering: overskrifter, fet/kursiv, lister
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="priceIncludes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hva er inkludert i prisen?</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="kursmateriell, kursbevis og lunsj hver dag"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Vises i FAQ på kurssiden, f.eks. "kursmateriell og kursbevis" eller "kursmateriell, kursbevis og lunsj hver dag". La stå tom for standard tekst.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

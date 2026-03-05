@@ -82,7 +82,7 @@ export default async function CourseDetailPage(props: PageProps) {
       question: `Hva koster ${course.title}?`,
       answer: course.price === 0
         ? `${course.title} er gratis. Kontakt oss for mer informasjon.`
-        : `${course.title} koster kr ${course.price.toLocaleString("nb-NO")},-. Prisen inkluderer kursmateriell og kursbevis.`,
+        : `${course.title} koster kr ${course.price.toLocaleString("nb-NO")},-. Prisen inkluderer ${course.priceIncludes ?? "kursmateriell og kursbevis"}.`,
     },
     {
       question: `Hvem tilbyr ${course.title} i Norge?`,

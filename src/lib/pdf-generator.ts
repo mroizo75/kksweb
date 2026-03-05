@@ -319,3 +319,140 @@ export async function generateQRCode(data: string): Promise<string> {
   });
 }
 
+export interface DiplomaPayload {
+  personName: string;
+  courseName: string;
+  completedDate: Date;
+}
+
+/**
+ * Generer et enkelt diploma-PDF uten tilknyttet credential
+ */
+export async function generateDiplomaPdf(payload: DiplomaPayload): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595, 842]);
+  const { width, height } = page.getSize();
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const primaryColor = rgb(0.05, 0.3, 0.6);
+  const gold = rgb(0.75, 0.6, 0.1);
+
+  page.drawRectangle({
+    x: 30,
+    y: 30,
+    width: width - 60,
+    height: height - 60,
+    borderColor: primaryColor,
+    borderWidth: 3,
+  });
+
+  page.drawRectangle({
+    x: 38,
+    y: 38,
+    width: width - 76,
+    height: height - 76,
+    borderColor: gold,
+    borderWidth: 1,
+  });
+
+  let y = height - 110;
+
+  const title = "DIPLOM";
+  const titleWidth = fontBold.widthOfTextAtSize(title, 36);
+  page.drawText(title, {
+    x: (width - titleWidth) / 2,
+    y,
+    size: 36,
+    font: fontBold,
+    color: primaryColor,
+  });
+
+  y -= 50;
+
+  const sub = "Dette bekrefter at";
+  const subWidth = font.widthOfTextAtSize(sub, 13);
+  page.drawText(sub, {
+    x: (width - subWidth) / 2,
+    y,
+    size: 13,
+    font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+
+  y -= 45;
+
+  const nameWidth = fontBold.widthOfTextAtSize(payload.personName, 26);
+  page.drawText(payload.personName, {
+    x: (width - nameWidth) / 2,
+    y,
+    size: 26,
+    font: fontBold,
+    color: primaryColor,
+  });
+
+  y -= 20;
+  page.drawLine({
+    start: { x: (width - 200) / 2, y },
+    end: { x: (width + 200) / 2, y },
+    thickness: 1,
+    color: gold,
+  });
+
+  y -= 55;
+
+  const har = "har fullført";
+  const harWidth = font.widthOfTextAtSize(har, 13);
+  page.drawText(har, {
+    x: (width - harWidth) / 2,
+    y,
+    size: 13,
+    font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+
+  y -= 40;
+
+  const courseWidth = fontBold.widthOfTextAtSize(payload.courseName, 20);
+  page.drawText(payload.courseName, {
+    x: (width - courseWidth) / 2,
+    y,
+    size: 20,
+    font: fontBold,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+
+  y -= 80;
+
+  const completedStr = `Fullført: ${format(payload.completedDate, "dd. MMMM yyyy", { locale: nb })}`;
+  const completedWidth = font.widthOfTextAtSize(completedStr, 12);
+  page.drawText(completedStr, {
+    x: (width - completedWidth) / 2,
+    y,
+    size: 12,
+    font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+
+  page.drawText("KKS AS", {
+    x: 60,
+    y: 55,
+    size: 10,
+    font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+
+  const issuedStr = `Utstedt: ${format(new Date(), "dd.MM.yyyy")}`;
+  const issuedWidth = font.widthOfTextAtSize(issuedStr, 9);
+  page.drawText(issuedStr, {
+    x: width - issuedWidth - 60,
+    y: 55,
+    size: 9,
+    font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+
+  return await pdfDoc.save();
+}
+
