@@ -8,6 +8,8 @@ import type { Template, Credential, Person, Course, CredentialType } from "@pris
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { COMPETENCE_CODES, getCompetenceCode } from "./competence-codes";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
 export interface DocumentPayload {
   person: Pick<Person, "firstName" | "lastName" | "birthDate" | "profileImage" | "address" | "phone" | "email">;
@@ -330,13 +332,13 @@ export interface DiplomaPayload {
 function wrapText(
   text: string,
   maxWidth: number,
-  font: ReturnType<typeof Object.create>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  font: any,
   fontSize: number
 ): string[] {
   const words = text.split(" ");
   const lines: string[] = [];
   let current = "";
-
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word;
     if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
@@ -351,207 +353,165 @@ function wrapText(
 }
 
 /**
- * Generer et representativt diploma-PDF
+ * Generer et representativt diploma-PDF (A4 portrait) med KKS AS-logo
  */
 export async function generateDiplomaPdf(payload: DiplomaPayload): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
 
-  // Liggende A4
-  const page = pdfDoc.addPage([842, 595]);
+  // A4 portrait
+  const page = pdfDoc.addPage([595, 842]);
   const { width, height } = page.getSize();
 
-  const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  const margin = 36;
+  const contentW = width - margin * 2;
+
+  const font      = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const fontBold  = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
   const fontItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
-  const fontSans = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontSansBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontSans  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontSansB = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  const navy = rgb(0.04, 0.18, 0.42);
-  const gold = rgb(0.72, 0.57, 0.1);
-  const lightGold = rgb(0.9, 0.82, 0.45);
-  const darkGray = rgb(0.2, 0.2, 0.2);
-  const midGray = rgb(0.45, 0.45, 0.45);
-  const lightBg = rgb(0.98, 0.97, 0.94);
+  const navy     = rgb(0.04, 0.18, 0.42);
+  const gold     = rgb(0.72, 0.57, 0.1);
+  const darkGray = rgb(0.2,  0.2,  0.2);
+  const midGray  = rgb(0.45, 0.45, 0.45);
+  const cream    = rgb(0.985, 0.975, 0.955);
 
-  // Bakgrunn
-  page.drawRectangle({ x: 0, y: 0, width, height, color: lightBg });
+  // ── Bakgrunn ──────────────────────────────────────────────────────
+  page.drawRectangle({ x: 0, y: 0, width, height, color: cream });
 
-  // Ytre ramme – tykk navy
-  page.drawRectangle({
-    x: 18, y: 18,
-    width: width - 36, height: height - 36,
-    borderColor: navy, borderWidth: 4,
-  });
+  // ── Ytre og indre ramme ───────────────────────────────────────────
+  page.drawRectangle({ x: 16, y: 16, width: width - 32, height: height - 32, borderColor: navy, borderWidth: 3 });
+  page.drawRectangle({ x: 22, y: 22, width: width - 44, height: height - 44, borderColor: gold, borderWidth: 1 });
 
-  // Indre ramme – tynn gull
-  page.drawRectangle({
-    x: 26, y: 26,
-    width: width - 52, height: height - 52,
-    borderColor: gold, borderWidth: 1.5,
-  });
-
-  // Toppbanner – navy bakgrunn
-  const bannerH = 80;
-  page.drawRectangle({
-    x: 18, y: height - 18 - bannerH,
-    width: width - 36, height: bannerH,
-    color: navy,
-  });
-
-  // KKS AS – logo-tekst i banner
-  const logoText = "KKS AS";
-  const logoW = fontSansBold.widthOfTextAtSize(logoText, 22);
-  page.drawText(logoText, {
-    x: (width - logoW) / 2,
-    y: height - 18 - bannerH + 42,
-    size: 22, font: fontSansBold, color: lightGold,
-  });
-
-  const tagline = "Kurs og Kompetanse";
-  const tagW = fontSans.widthOfTextAtSize(tagline, 10);
-  page.drawText(tagline, {
-    x: (width - tagW) / 2,
-    y: height - 18 - bannerH + 24,
-    size: 10, font: fontSans, color: rgb(0.8, 0.8, 0.8),
-  });
+  // ── Toppbanner (navy) ─────────────────────────────────────────────
+  const bannerH = 105;
+  const bannerY = height - 16 - bannerH;
+  page.drawRectangle({ x: 16, y: bannerY, width: width - 32, height: bannerH, color: navy });
 
   // Gullstripe under banner
-  page.drawRectangle({
-    x: 18, y: height - 18 - bannerH - 5,
-    width: width - 36, height: 5,
-    color: gold,
-  });
+  page.drawRectangle({ x: 16, y: bannerY - 5, width: width - 32, height: 5, color: gold });
 
-  let y = height - 18 - bannerH - 50;
+  // Logo (hvit versjon) i banneret
+  try {
+    const logoPath = join(process.cwd(), "public", "logo-white-kks.png");
+    const logoBytes = await readFile(logoPath);
+    const logoImg   = await pdfDoc.embedPng(logoBytes);
+    const logoNatW  = logoImg.width;
+    const logoNatH  = logoImg.height;
+    const maxLogoW  = 190;
+    const maxLogoH  = 75;
+    const scale     = Math.min(maxLogoW / logoNatW, maxLogoH / logoNatH);
+    const lw = logoNatW * scale;
+    const lh = logoNatH * scale;
+    page.drawImage(logoImg, {
+      x: (width - lw) / 2,
+      y: bannerY + (bannerH - lh) / 2,
+      width: lw,
+      height: lh,
+    });
+  } catch {
+    // Fallback til tekst hvis logo ikke finnes
+    const txt = "KKS AS";
+    const tw = fontSansB.widthOfTextAtSize(txt, 24);
+    page.drawText(txt, { x: (width - tw) / 2, y: bannerY + 40, size: 24, font: fontSansB, color: rgb(0.9, 0.82, 0.45) });
+    const sub = "Kurs og Kompetansesystemer AS";
+    const sw = fontSans.widthOfTextAtSize(sub, 9);
+    page.drawText(sub, { x: (width - sw) / 2, y: bannerY + 22, size: 9, font: fontSans, color: rgb(0.78, 0.78, 0.78) });
+  }
 
-  // DIPLOM tittel
-  const diplomTxt = "D I P L O M";
-  const diplomW = fontBold.widthOfTextAtSize(diplomTxt, 38);
-  page.drawText(diplomTxt, {
-    x: (width - diplomW) / 2, y,
-    size: 38, font: fontBold, color: navy,
-  });
+  // ── Innhold ───────────────────────────────────────────────────────
+  let y = bannerY - 42;
 
+  // DIPLOM
+  const titleTxt = "D I P L O M";
+  const titleSize = 34;
+  const titleW = fontBold.widthOfTextAtSize(titleTxt, titleSize);
+  page.drawText(titleTxt, { x: (width - titleW) / 2, y, size: titleSize, font: fontBold, color: navy });
+  y -= 20;
+
+  // Dekorative linjer
+  const lx1 = (width - 240) / 2;
+  const lx2 = (width + 240) / 2;
+  page.drawLine({ start: { x: lx1, y }, end: { x: lx2, y }, thickness: 2, color: gold });
+  page.drawLine({ start: { x: lx1 + 12, y: y - 5 }, end: { x: lx2 - 12, y: y - 5 }, thickness: 0.8, color: gold });
+  y -= 30;
+
+  // "Dette bekrefter at"
+  const herbyTxt = "Dette bekrefter at";
+  const herbyW   = fontItalic.widthOfTextAtSize(herbyTxt, 12);
+  page.drawText(herbyTxt, { x: (width - herbyW) / 2, y, size: 12, font: fontItalic, color: midGray });
+  y -= 38;
+
+  // Navn
+  const nameSize = Math.max(22, Math.min(28, 28 - Math.max(0, payload.personName.length - 22)));
+  const nameW    = fontBold.widthOfTextAtSize(payload.personName, nameSize);
+  page.drawText(payload.personName, { x: (width - nameW) / 2, y, size: nameSize, font: fontBold, color: navy });
+  y -= 12;
+  page.drawLine({ start: { x: (width - nameW) / 2, y }, end: { x: (width + nameW) / 2, y }, thickness: 1.5, color: gold });
   y -= 28;
 
-  // Dekorativ linje under tittelen
-  const lineX1 = (width - 260) / 2;
-  const lineX2 = (width + 260) / 2;
-  page.drawLine({ start: { x: lineX1, y }, end: { x: lineX2, y }, thickness: 2, color: gold });
-  page.drawLine({ start: { x: lineX1 + 10, y: y - 4 }, end: { x: lineX2 - 10, y: y - 4 }, thickness: 0.5, color: gold });
-
-  y -= 32;
-
-  const herbyTxt = "Dette bekrefter at";
-  const herbyW = fontItalic.widthOfTextAtSize(herbyTxt, 13);
-  page.drawText(herbyTxt, {
-    x: (width - herbyW) / 2, y,
-    size: 13, font: fontItalic, color: midGray,
-  });
-
-  y -= 40;
-
-  // Navn – fremhevet
-  const nameSize = Math.min(32, 32 - Math.max(0, payload.personName.length - 20) * 0.5);
-  const nameW = fontBold.widthOfTextAtSize(payload.personName, nameSize);
-  page.drawText(payload.personName, {
-    x: (width - nameW) / 2, y,
-    size: nameSize, font: fontBold, color: navy,
-  });
-
+  // Brødtekst (fra mal)
+  const bodyRaw   = payload.bodyText?.trim() || "har fullført og bestått kurset";
+  const bodyLines = wrapText(bodyRaw, contentW - 40, fontItalic, 12);
+  for (const line of bodyLines) {
+    const lw = fontItalic.widthOfTextAtSize(line, 12);
+    page.drawText(line, { x: (width - lw) / 2, y, size: 12, font: fontItalic, color: darkGray });
+    y -= 18;
+  }
   y -= 14;
 
-  // Underline under navn
-  page.drawLine({
-    start: { x: (width - nameW) / 2, y },
-    end: { x: (width + nameW) / 2, y },
-    thickness: 1.5, color: gold,
-  });
-
-  y -= 28;
-
-  // Brødtekst fra mal (eller standardtekst)
-  const bodyText = payload.bodyText?.trim() || "har fullført og bestått kurset";
-  const bodyLines = wrapText(bodyText, 600, fontItalic, 13);
-  for (const line of bodyLines) {
-    const lw = fontItalic.widthOfTextAtSize(line, 13);
-    page.drawText(line, {
-      x: (width - lw) / 2, y,
-      size: 13, font: fontItalic, color: darkGray,
-    });
-    y -= 19;
-  }
-
-  y -= 12;
-
   // Kursboks
-  const boxW = Math.min(500, fontBold.widthOfTextAtSize(payload.courseName, 18) + 60);
-  const boxX = (width - boxW) / 2;
-  page.drawRectangle({
-    x: boxX, y: y - 14,
-    width: boxW, height: 36,
-    color: navy,
-    borderColor: gold, borderWidth: 1,
-  });
-  const courseW = fontBold.widthOfTextAtSize(payload.courseName, 18);
-  page.drawText(payload.courseName, {
-    x: (width - courseW) / 2, y: y - 6,
-    size: 18, font: fontBold, color: rgb(1, 1, 1),
-  });
+  const courseSize = 16;
+  const courseRaw  = payload.courseName;
+  const courseLines = wrapText(courseRaw, contentW - 60, fontBold, courseSize);
+  const boxPadV    = 10;
+  const boxH       = courseLines.length * 22 + boxPadV * 2;
+  const boxX       = margin + 10;
+  const boxW       = contentW - 20;
+  page.drawRectangle({ x: boxX, y: y - boxH, width: boxW, height: boxH, color: navy, borderColor: gold, borderWidth: 1 });
+  let cy = y - boxPadV - 16;
+  for (const cline of courseLines) {
+    const clw = fontBold.widthOfTextAtSize(cline, courseSize);
+    page.drawText(cline, { x: (width - clw) / 2, y: cy, size: courseSize, font: fontBold, color: rgb(1, 1, 1) });
+    cy -= 22;
+  }
+  y = y - boxH - 20;
 
-  y -= 50;
-
-  // Dato
+  // Fullføringsdato
   const dateStr = format(payload.completedDate, "dd. MMMM yyyy", { locale: nb });
   const dateTxt = `Fullført: ${dateStr}`;
-  const dateW = font.widthOfTextAtSize(dateTxt, 12);
-  page.drawText(dateTxt, {
-    x: (width - dateW) / 2, y,
-    size: 12, font, color: midGray,
-  });
+  const dateW   = font.widthOfTextAtSize(dateTxt, 11);
+  page.drawText(dateTxt, { x: (width - dateW) / 2, y, size: 11, font, color: midGray });
+  y -= 48;
 
-  y -= 52;
+  // Signaturlinjer
+  const sigLineLen = 140;
+  const leftSigX   = width / 2 - 155;
+  const rightSigX  = width / 2 + 15;
 
-  // Signaturlinje
-  const sigY = y;
-  const leftSigX = width / 2 - 160;
-  const rightSigX = width / 2 + 30;
-  const sigLineLen = 130;
+  page.drawLine({ start: { x: leftSigX,  y }, end: { x: leftSigX  + sigLineLen, y }, thickness: 0.8, color: midGray });
+  page.drawLine({ start: { x: rightSigX, y }, end: { x: rightSigX + sigLineLen, y }, thickness: 0.8, color: midGray });
 
-  page.drawLine({ start: { x: leftSigX, y: sigY }, end: { x: leftSigX + sigLineLen, y: sigY }, thickness: 1, color: midGray });
-  page.drawLine({ start: { x: rightSigX, y: sigY }, end: { x: rightSigX + sigLineLen, y: sigY }, thickness: 1, color: midGray });
-
-  if (payload.instructor) {
-    const instrW = fontSans.widthOfTextAtSize(payload.instructor, 9);
-    page.drawText(payload.instructor, {
-      x: leftSigX + (sigLineLen - instrW) / 2, y: sigY - 13,
-      size: 9, font: fontSans, color: darkGray,
-    });
+  const instrName = payload.instructor ?? "";
+  if (instrName) {
+    const iw = fontSans.widthOfTextAtSize(instrName, 8);
+    page.drawText(instrName, { x: leftSigX + (sigLineLen - iw) / 2, y: y - 13, size: 8, font: fontSans, color: darkGray });
   }
-  page.drawText("Instruktør", {
-    x: leftSigX + (sigLineLen - fontSans.widthOfTextAtSize("Instruktør", 8)) / 2,
-    y: sigY - 23,
-    size: 8, font: fontSans, color: midGray,
-  });
+  const instrLbl  = "Instruktør";
+  const instrLblW = fontSans.widthOfTextAtSize(instrLbl, 8);
+  page.drawText(instrLbl, { x: leftSigX + (sigLineLen - instrLblW) / 2, y: y - 24, size: 8, font: fontSans, color: midGray });
 
-  page.drawText("KKS AS", {
-    x: rightSigX + (sigLineLen - fontSansBold.widthOfTextAtSize("KKS AS", 9)) / 2,
-    y: sigY - 13,
-    size: 9, font: fontSansBold, color: darkGray,
-  });
-  page.drawText("Daglig leder", {
-    x: rightSigX + (sigLineLen - fontSans.widthOfTextAtSize("Daglig leder", 8)) / 2,
-    y: sigY - 23,
-    size: 8, font: fontSans, color: midGray,
-  });
+  const kksW = fontSansB.widthOfTextAtSize("KKS AS", 8);
+  page.drawText("KKS AS", { x: rightSigX + (sigLineLen - kksW) / 2, y: y - 13, size: 8, font: fontSansB, color: darkGray });
+  const dlLbl  = "Daglig leder";
+  const dlLblW = fontSans.widthOfTextAtSize(dlLbl, 8);
+  page.drawText(dlLbl, { x: rightSigX + (sigLineLen - dlLblW) / 2, y: y - 24, size: 8, font: fontSans, color: midGray });
 
-  // Bunnlinje med dato
+  // Utstedelsesdato nederst
   const issuedStr = `Utstedt: ${format(new Date(), "dd.MM.yyyy")}`;
-  page.drawText(issuedStr, {
-    x: width - fontSans.widthOfTextAtSize(issuedStr, 8) - 34,
-    y: 34,
-    size: 8, font: fontSans, color: midGray,
-  });
+  const issuedW   = fontSans.widthOfTextAtSize(issuedStr, 7);
+  page.drawText(issuedStr, { x: width - issuedW - 30, y: 28, size: 7, font: fontSans, color: midGray });
 
   return await pdfDoc.save();
 }
