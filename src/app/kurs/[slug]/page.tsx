@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { stripHtml } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -69,7 +70,9 @@ export default async function CourseDetailPage(props: PageProps) {
   const courseFaqs = [
     {
       question: `Hva er ${course.title}?`,
-      answer: course.description || `${course.title} er et profesjonelt kurs fra KKS AS som gir deg nødvendig kompetanse og sertifisering.`,
+      answer: course.description
+        ? stripHtml(course.description).slice(0, 300).trim() + (stripHtml(course.description).length > 300 ? "..." : "")
+        : `${course.title} er et profesjonelt kurs fra KKS AS som gir deg nødvendig kompetanse og sertifisering.`,
     },
     {
       question: `Hvor lang tid tar ${course.title}?`,
