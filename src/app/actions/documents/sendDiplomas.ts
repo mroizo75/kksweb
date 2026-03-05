@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { generateDiplomaPdf } from "@/lib/pdf-generator";
 import { sendDiplomaEmail } from "@/lib/email";
 import { format } from "date-fns";
@@ -15,6 +16,7 @@ export interface SendDiplomasInput {
   templateId: string;
   courseName: string;
   completedDate: string;
+  instructorOverride?: string;
   participants: DiplomaParticipant[];
 }
 
@@ -34,19 +36,23 @@ export async function sendDiplomas(
     return { success: false, sent: 0, failed: 0, errors: [] };
   }
 
-  const { courseName, completedDate, participants } = input;
+  const { templateId, courseName, completedDate, instructorOverride, participants } = input;
   const completedAt = new Date(completedDate);
 
-  const results: { name: string; email: string; error: string }[] = [];
+  const template = await db.template.findUnique({
+    where: { id: templateId },
+    select: { diplomaBodyText: true, diplomaInstructor: true },
+  });
+
+  const bodyText = template?.diplomaBodyText ?? undefined;
+  const instructor = instructorOverride?.trim() || template?.diplomaInstructor || undefined;
+
+  const errors: { name: string; email: string; error: string }[] = [];
   let sent = 0;
 
   for (const participant of participants) {
     if (!participant.email) {
-      results.push({
-        name: participant.name,
-        email: "",
-        error: "Mangler e-postadresse",
-      });
+      errors.push({ name: participant.name, email: "", error: "Mangler e-postadresse" });
       continue;
     }
 
@@ -55,6 +61,8 @@ export async function sendDiplomas(
         personName: participant.name,
         courseName,
         completedDate: completedAt,
+        bodyText,
+        instructor,
       });
 
       await sendDiplomaEmail({
@@ -67,19 +75,13 @@ export async function sendDiplomas(
 
       sent++;
     } catch (error) {
-      results.push({
+      errors.push({
         name: participant.name,
         email: participant.email,
-        error:
-          error instanceof Error ? error.message : "Ukjent feil ved sending",
+        error: error instanceof Error ? error.message : "Ukjent feil ved sending",
       });
     }
   }
 
-  return {
-    success: results.length === 0,
-    sent,
-    failed: results.length,
-    errors: results,
-  };
+  return { success: errors.length === 0, sent, failed: errors.length, errors };
 }

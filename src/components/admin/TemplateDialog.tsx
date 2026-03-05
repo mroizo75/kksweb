@@ -30,6 +30,8 @@ const templateSchema = z.object({
   kind: z.enum(["DIPLOMA", "TEMP_CERT", "CERTIFICATE", "CARD"]),
   description: z.string().optional(),
   fileKey: z.string().optional(),
+  diplomaBodyText: z.string().optional(),
+  diplomaInstructor: z.string().optional(),
 });
 
 type TemplateForm = z.infer<typeof templateSchema>;
@@ -58,6 +60,8 @@ export function TemplateDialog({ existingTemplate }: TemplateDialogProps) {
           kind: existingTemplate.kind,
           description: existingTemplate.description || "",
           fileKey: existingTemplate.fileKey || "",
+          diplomaBodyText: existingTemplate.diplomaBodyText || "",
+          diplomaInstructor: existingTemplate.diplomaInstructor || "",
         }
       : undefined,
   });
@@ -168,6 +172,35 @@ export function TemplateDialog({ existingTemplate }: TemplateDialogProps) {
               Sti til malfilen i S3/Cloudflare R2 (implementeres senere)
             </p>
           </div>
+
+          {watch("kind") === "DIPLOMA" && (
+            <>
+              <div>
+                <Label htmlFor="diplomaBodyText">Diplom – brødtekst</Label>
+                <Textarea
+                  id="diplomaBodyText"
+                  {...register("diplomaBodyText")}
+                  placeholder="F.eks. har fullført og bestått obligatorisk opplæring i samsvar med gjeldende regelverk"
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Teksten som vises mellom deltakerens navn og kursnavn på diplomet.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="diplomaInstructor">Standard instruktørnavn</Label>
+                <Input
+                  id="diplomaInstructor"
+                  {...register("diplomaInstructor")}
+                  placeholder="F.eks. Kari Nordmann"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Vises på signaturlinjen. Kan overstyres ved sending.
+                </p>
+              </div>
+            </>
+          )}
 
           <div className="bg-muted p-4 rounded-lg">
             <h4 className="font-semibold mb-2">Tilgjengelige variabler:</h4>

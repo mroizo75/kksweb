@@ -707,6 +707,11 @@ model Template {
   version     Int          @default(1)
   active      Boolean      @default(true)
   description String?      @db.Text
+
+  // Diplom-spesifikke felter
+  diplomaBodyText  String? @db.Text // Brødtekst på diplomet (f.eks. "for gjennomføring av...")
+  diplomaInstructor String? // Standard instruktørnavn for denne malen
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 

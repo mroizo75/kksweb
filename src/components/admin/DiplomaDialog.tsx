@@ -82,6 +82,7 @@ export function DiplomaDialog({ templateId, templateName }: DiplomaDialogProps) 
   );
 
   const [manualCourseName, setManualCourseName] = useState("");
+  const [instructorOverride, setInstructorOverride] = useState("");
   const [kursParticipants, setKursParticipants] = useState<Participant[]>([]);
   const [manualParticipants, setManualParticipants] = useState<Participant[]>([
     { id: "m1", name: "", email: "", selected: true },
@@ -114,6 +115,7 @@ export function DiplomaDialog({ templateId, templateName }: DiplomaDialogProps) 
     setSelectedSessionId("");
     setKursParticipants([]);
     setManualCourseName("");
+    setInstructorOverride("");
     setManualParticipants([{ id: "m1", name: "", email: "", selected: true }]);
     setResult(null);
     setSent(false);
@@ -182,6 +184,7 @@ export function DiplomaDialog({ templateId, templateName }: DiplomaDialogProps) 
         templateId,
         courseName: finalCourseName,
         completedDate,
+        instructorOverride: instructorOverride.trim() || undefined,
         participants: activeParticipants.map((p) => ({
           name: p.name,
           email: p.email,
@@ -229,6 +232,15 @@ export function DiplomaDialog({ templateId, templateName }: DiplomaDialogProps) 
                   type="date"
                   value={completedDate}
                   onChange={(e) => setCompletedDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="instructorOverride">Instruktør (overstyring)</Label>
+                <Input
+                  id="instructorOverride"
+                  value={instructorOverride}
+                  onChange={(e) => setInstructorOverride(e.target.value)}
+                  placeholder="Hentes fra mal hvis tom"
                 />
               </div>
             </div>
