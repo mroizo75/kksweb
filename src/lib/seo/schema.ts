@@ -147,14 +147,15 @@ export function generateEventSchema(
 
 /**
  * Generer Organization Schema
- * Vises i Knowledge Graph
+ * Vises i Knowledge Graph og brukes av AI-systemer for entity-forståelse
  */
 export function generateOrganizationSchema(baseUrl: string) {
   return {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
+    "@id": `${baseUrl}/#organization`,
     "name": KKS_NAME,
-    "alternateName": "KKS",
+    "alternateName": ["KKS", "Kurs og Kompetansesystemer AS"],
     "url": baseUrl,
     "logo": {
       "@type": "ImageObject",
@@ -163,23 +164,71 @@ export function generateOrganizationSchema(baseUrl: string) {
       "height": 60,
     },
     "description":
-      "KKS AS er en ledende norsk kurstilbyder innen truck, kran, stillas, arbeid på vei, HMS og BHT-opplæring. Vi tilbyr sertifisert opplæring i hele Norge med erfarne instruktører.",
+      "KKS AS (Kurs og Kompetansesystemer AS) er en ISO 9001- og ISO 27001-sertifisert norsk kursleverandør godkjent av Arbeidstilsynet. Vi tilbyr truck-, kran-, stillas-, arbeid på vei-, HMS- og BHT-opplæring i hele Norge med sertifiserte instruktører.",
+    "foundingDate": "2020",
     "address": {
       "@type": "PostalAddress",
       "addressCountry": "NO",
+      "addressRegion": "Norge",
     },
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "telephone": KKS_PHONE,
-      "contactType": "customer service",
-      "email": KKS_EMAIL,
-      "areaServed": "NO",
-      "availableLanguage": ["Norwegian"],
-    },
+    "contactPoint": [
+      {
+        "@type": "ContactPoint",
+        "telephone": KKS_PHONE,
+        "contactType": "customer service",
+        "email": KKS_EMAIL,
+        "areaServed": "NO",
+        "availableLanguage": ["Norwegian"],
+        "hoursAvailable": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "08:00",
+          "closes": "16:00",
+        },
+      },
+      {
+        "@type": "ContactPoint",
+        "telephone": "+47 99 11 29 16",
+        "contactType": "technical support",
+        "email": KKS_EMAIL,
+        "areaServed": "NO",
+      },
+    ],
     "areaServed": {
       "@type": "Country",
       "name": "Norway",
     },
+    "knowsAbout": [
+      "Truckkurs og truckfører-sertifisering",
+      "Krankurs og kranfører-sertifisering",
+      "Stillasmontørkurs og stillasopplæring",
+      "HMS-opplæring og grunnkurs HMS",
+      "Arbeid på vei og vegopplæring",
+      "BHT-opplæring og bedriftshelsepersonell",
+      "Maskinførerkurs og maskinoperatøropplæring",
+      "Arbeidsmiljølov og Arbeidstilsynets krav",
+      "ISO 9001 kvalitetsledelse",
+      "Sertifisering av arbeidsoperatører i Norge",
+    ],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Kurskatalog KKS AS",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": "Truckfører kurs (T1-T8)" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": "Kranfører kurs (G4, G8, G11)" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": "Stillasbruker og stillasmontørkurs" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": "HMS grunnkurs og verneombud" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": "Arbeid på vei og arbeidsvarslingskurs" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": "BHT obligatorisk kurs" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": "Maskinføreropplæring (M1-M6)" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": "Personløfter og fallsikringskurs" } },
+      ],
+    },
+    "award": [
+      "ISO 9001:2015 — Kvalitetsledelsessystem",
+      "ISO 27001:2013 — Informasjonssikkerhet",
+      "Godkjent kursleverandør av Arbeidstilsynet",
+    ],
     "sameAs": [
       "https://www.facebook.com/kursogkompetansesystemer",
       "https://www.linkedin.com/company/kurs-og-kompetansesystemer-as/",
@@ -317,6 +366,91 @@ export function generateLocalBusinessSchema(
       "url": baseUrl,
     },
   };
+}
+
+/**
+ * Generer HowTo Schema — vises i AI-svar og Google Featured Snippets
+ * Brukes for å forklare påmeldingsprosessen
+ */
+export function generateHowToSchema(baseUrl: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "Slik melder du deg på kurs hos KKS AS",
+    "description": "Steg-for-steg guide for å melde deg på et kurs hos KKS AS. Fra å finne riktig kurs til å motta ditt kompetansebevis.",
+    "totalTime": "PT10M",
+    "tool": [
+      { "@type": "HowToTool", "name": "Internett-tilgang" },
+      { "@type": "HowToTool", "name": "E-postadresse" },
+    ],
+    "step": [
+      {
+        "@type": "HowToStep",
+        "position": 1,
+        "name": "Finn riktig kurs",
+        "text": "Gå til kursoversikten på kksas.no og velg kurstype (truck, kran, stillas, HMS, arbeid på vei eller BHT). Filtrer på kategori for å finne akkurat det kurset du trenger.",
+        "url": `${baseUrl}/kurs`,
+      },
+      {
+        "@type": "HowToStep",
+        "position": 2,
+        "name": "Velg dato og sted",
+        "text": "Klikk på ønsket kurs og velg en kursdato fra listen over kommende sesjoner. Vi har kurs i Oslo, Bergen, Trondheim, Stavanger og ellers i hele Norge.",
+        "url": `${baseUrl}/kurs`,
+      },
+      {
+        "@type": "HowToStep",
+        "position": 3,
+        "name": "Fyll ut påmeldingsskjema",
+        "text": "Fyll ut ditt navn, e-postadresse og eventuell bedrift i påmeldingsskjemaet. For bedrifter kan vi fakturere direkte.",
+        "url": `${baseUrl}/kurs`,
+      },
+      {
+        "@type": "HowToStep",
+        "position": 4,
+        "name": "Motta bekreftelse",
+        "text": "Du mottar en bekreftelse på e-post med kursinformasjon, adresse og eventuelle forberedelser.",
+      },
+      {
+        "@type": "HowToStep",
+        "position": 5,
+        "name": "Gjennomfør kurset og få kompetansebevis",
+        "text": "Etter bestått kurs mottar du et offisielt kompetansebevis fra KKS AS. Beviset er godkjent av Arbeidstilsynet og dokumenterer din sertifisering.",
+      },
+    ],
+  };
+}
+
+/**
+ * Generer Speakable Schema — markerer innhold som AI-assistenter og voice search kan sitere
+ */
+export function generateSpeakableSchema(cssSelectors: string[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "speakable": {
+      "@type": "SpeakableSpecification",
+      "cssSelector": cssSelectors,
+    },
+  };
+}
+
+/**
+ * Generer DefinedTerm Schema — forklarer bransjebegreper for AI-systemer
+ */
+export function generateDefinedTermSchema(
+  terms: Array<{ name: string; description: string }>
+) {
+  return terms.map((term) => ({
+    "@context": "https://schema.org",
+    "@type": "DefinedTerm",
+    "name": term.name,
+    "description": term.description,
+    "inDefinedTermSet": {
+      "@type": "DefinedTermSet",
+      "name": "Kursvilkår og sertifiseringer — KKS AS",
+    },
+  }));
 }
 
 /**

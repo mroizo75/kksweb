@@ -18,7 +18,7 @@ import { nb } from "date-fns/locale";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { StructuredData } from "@/components/seo/StructuredData";
-import { generateCourseListSchema, generateBreadcrumbSchema } from "@/lib/seo/schema";
+import { generateCourseListSchema, generateBreadcrumbSchema, generateDefinedTermSchema } from "@/lib/seo/schema";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
 
@@ -118,10 +118,36 @@ export default async function CoursesPage(props: PageProps) {
     ],
     baseUrl
   );
+  const definedTermSchemas = generateDefinedTermSchema([
+    {
+      name: "Truckfører (T1–T8)",
+      description: "Sertifisert truckfører i Norge må gjennomføre godkjent truckfører kurs (T1–T8) i henhold til Arbeidstilsynets krav. Kursene dekker ulike trucktyper: T1 (motvektstruck), T2 (reachtruck), T4 (teleskoptruck) osv. KKS AS er godkjent leverandør av truckfører-opplæring.",
+    },
+    {
+      name: "Kranfører (G4, G8, G11)",
+      description: "Kranfører-sertifisering i Norge krever godkjent opplæring i henhold til FOR-2009-06-01-607. G4 er traverskran, G8 er lastebilmontert kran og G11 er løfteredskap. KKS AS tilbyr kurs i alle kranklasser.",
+    },
+    {
+      name: "HMS grunnkurs",
+      description: "HMS grunnkurs er lovpålagt for verneombud og ledere med personalansvar i norske virksomheter, jf. arbeidsmiljøloven § 3-5 og § 6-5. Kurset er 40 timer og dekker arbeidsmiljølovgivning, risikovurdering og systematisk HMS-arbeid.",
+    },
+    {
+      name: "Stillasmontørkurs",
+      description: "Stillasopplæring er krav etter Byggherreforskriften og FOR-2011-12-19-1355. Kurs for stillasmontør dekker stillas inntil 2 meter, 2–9 meter og over 9 meter. KKS AS tilbyr alle nivåer.",
+    },
+    {
+      name: "BHT (Bedriftshelsetjeneste)",
+      description: "Bedriftshelsetjeneste (BHT) er lovpålagt for mange norske virksomheter etter arbeidsmiljøloven § 3-3. KKS AS tilbyr obligatorisk BHT-kurs og BHT-medlemskapsprogram via Dr Dropin.",
+    },
+    {
+      name: "Arbeid på vei",
+      description: "Arbeid på og ved veg krever godkjent opplæring i henhold til Statens vegvesens krav og Vegtrafikklovens bestemmelser. KKS AS tilbyr kurs i arbeidsvarsling og arbeid på vei.",
+    },
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
-      <StructuredData data={[courseListSchema, breadcrumbSchema]} />
+      <StructuredData data={[courseListSchema, breadcrumbSchema, ...definedTermSchemas]} />
       <Header />
 
       <div className="container mx-auto px-4 py-8">
