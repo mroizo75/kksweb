@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { stripHtml } from "@/lib/utils";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -316,7 +317,7 @@ export default async function LocationPage(props: PageProps) {
                   </Badge>
                   <CardTitle className="text-lg">{course.title}</CardTitle>
                   <CardDescription className="line-clamp-2">
-                    {course.description?.substring(0, 80)}...
+                    {course.description ? stripHtml(course.description).substring(0, 120) : ""}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

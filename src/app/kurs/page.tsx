@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { stripHtml } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -173,7 +174,7 @@ export default async function CoursesPage(props: PageProps) {
                     </div>
                     <CardTitle className="text-xl">{course.title}</CardTitle>
                     <CardDescription className="line-clamp-2">
-                      {course.description || "Ingen beskrivelse"}
+                      {course.description ? stripHtml(course.description) : "Ingen beskrivelse"}
                     </CardDescription>
                   </CardHeader>
 
