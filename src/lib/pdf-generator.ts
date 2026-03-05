@@ -420,6 +420,13 @@ export async function generateDiplomaPdf(payload: DiplomaPayload): Promise<Uint8
     page.drawText(sub, { x: (width - sw) / 2, y: bannerY + 22, size: 9, font: fontSans, color: rgb(0.78, 0.78, 0.78) });
   }
 
+  // Rens tekstfelter for tegn pdf-lib ikke støtter (linjeskift, tabs osv.)
+  const sanitize = (s: string) => s.replace(/[\r\n\t]+/g, " ").trim();
+  const safePersonName = sanitize(payload.personName);
+  const safeCourseName = sanitize(payload.courseName);
+  const safeBodyText   = payload.bodyText ? sanitize(payload.bodyText) : undefined;
+  const safeInstructor = payload.instructor ? sanitize(payload.instructor) : undefined;
+
   // ── Innhold ───────────────────────────────────────────────────────
   let y = bannerY - 42;
 
@@ -444,15 +451,15 @@ export async function generateDiplomaPdf(payload: DiplomaPayload): Promise<Uint8
   y -= 38;
 
   // Navn
-  const nameSize = Math.max(22, Math.min(28, 28 - Math.max(0, payload.personName.length - 22)));
-  const nameW    = fontBold.widthOfTextAtSize(payload.personName, nameSize);
-  page.drawText(payload.personName, { x: (width - nameW) / 2, y, size: nameSize, font: fontBold, color: navy });
+  const nameSize = Math.max(22, Math.min(28, 28 - Math.max(0, safePersonName.length - 22)));
+  const nameW    = fontBold.widthOfTextAtSize(safePersonName, nameSize);
+  page.drawText(safePersonName, { x: (width - nameW) / 2, y, size: nameSize, font: fontBold, color: navy });
   y -= 12;
   page.drawLine({ start: { x: (width - nameW) / 2, y }, end: { x: (width + nameW) / 2, y }, thickness: 1.5, color: gold });
   y -= 28;
 
   // Brødtekst (fra mal)
-  const bodyRaw   = payload.bodyText?.trim() || "har fullført og bestått kurset";
+  const bodyRaw   = safeBodyText || "har fullført og bestått kurset";
   const bodyLines = wrapText(bodyRaw, contentW - 40, fontItalic, 12);
   for (const line of bodyLines) {
     const lw = fontItalic.widthOfTextAtSize(line, 12);
@@ -462,9 +469,8 @@ export async function generateDiplomaPdf(payload: DiplomaPayload): Promise<Uint8
   y -= 14;
 
   // Kursboks
-  const courseSize = 16;
-  const courseRaw  = payload.courseName;
-  const courseLines = wrapText(courseRaw, contentW - 60, fontBold, courseSize);
+  const courseSize  = 16;
+  const courseLines = wrapText(safeCourseName, contentW - 60, fontBold, courseSize);
   const boxPadV    = 10;
   const boxH       = courseLines.length * 22 + boxPadV * 2;
   const boxX       = margin + 10;
@@ -479,7 +485,7 @@ export async function generateDiplomaPdf(payload: DiplomaPayload): Promise<Uint8
   y = y - boxH - 20;
 
   // Fullføringsdato
-  const dateStr = format(payload.completedDate, "dd. MMMM yyyy", { locale: nb });
+  const dateStr = sanitize(format(payload.completedDate, "dd. MMMM yyyy", { locale: nb }));
   const dateTxt = `Fullført: ${dateStr}`;
   const dateW   = font.widthOfTextAtSize(dateTxt, 11);
   page.drawText(dateTxt, { x: (width - dateW) / 2, y, size: 11, font, color: midGray });
@@ -493,7 +499,7 @@ export async function generateDiplomaPdf(payload: DiplomaPayload): Promise<Uint8
   page.drawLine({ start: { x: leftSigX,  y }, end: { x: leftSigX  + sigLineLen, y }, thickness: 0.8, color: midGray });
   page.drawLine({ start: { x: rightSigX, y }, end: { x: rightSigX + sigLineLen, y }, thickness: 0.8, color: midGray });
 
-  const instrName = payload.instructor ?? "";
+  const instrName = safeInstructor ?? "";
   if (instrName) {
     const iw = fontSans.widthOfTextAtSize(instrName, 8);
     page.drawText(instrName, { x: leftSigX + (sigLineLen - iw) / 2, y: y - 13, size: 8, font: fontSans, color: darkGray });
