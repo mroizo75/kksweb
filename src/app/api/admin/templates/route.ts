@@ -41,6 +41,8 @@ export async function POST(request: Request) {
         variables: {},
         active: true,
         version: 1,
+        diplomaBodyText: data.diplomaBodyText || null,
+        diplomaInstructor: data.diplomaInstructor || null,
       },
     });
 
@@ -70,6 +72,8 @@ export async function PUT(request: Request) {
         kind: data.kind,
         description: data.description || null,
         fileKey: data.fileKey || "default-template.pdf",
+        diplomaBodyText: data.diplomaBodyText || null,
+        diplomaInstructor: data.diplomaInstructor || null,
       },
     });
 
