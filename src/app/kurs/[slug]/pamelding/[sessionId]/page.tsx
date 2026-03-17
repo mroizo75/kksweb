@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
 
 interface PageProps {
   params: Promise<{
@@ -77,6 +78,8 @@ export default async function EnrollmentPage(props: PageProps) {
               locale: nb,
             })}
             location={session.location}
+            basePrice={session.course.price}
+            bookingAddOns={parseCourseBookingAddOns(session.course.bookingAddOns)}
           />
         )}
       </div>

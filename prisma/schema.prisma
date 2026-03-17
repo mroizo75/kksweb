@@ -223,6 +223,7 @@ model Course {
   learningOutcomes String? @db.Text // JSON-array: ["Punkt 1", "Punkt 2", ...]
   targetAudience   String? @db.Text // Fritekst: hvem bør ta kurset
   priceIncludes    String? // Hva prisen inkluderer, f.eks. "kursmateriell, kursbevis og lunsj hver dag"
+  bookingAddOns    Json?   // Valgfrie tillegg i bestillingsflyten [{ id, title, description?, price }]
 
   // Gyldighet – enkelt oppsett: antall år kurset er gyldig (f.eks. 1, 2 eller 5)
   validityYears Int?
@@ -314,6 +315,10 @@ model Enrollment {
   companyId String?
   status    EnrollmentStatus @default(PENDING)
   notes     String?          @db.Text
+  basePrice    Int  @default(0) // Grunnpris per deltaker
+  addOnPrice   Int  @default(0) // Tilleggspris per deltaker
+  totalPrice   Int  @default(0) // Totalpris per deltaker (base + tillegg)
+  selectedAddOns Json? // Valgte tillegg for påmeldingen
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 

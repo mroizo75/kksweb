@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -31,9 +32,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { courseSchema, type CourseInput } from "@/lib/validations/course";
+import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
 import { createCourse, updateCourse } from "@/app/actions/createCourse";
 import { toast } from "sonner";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Plus, Upload, X } from "lucide-react";
 import type { Course } from "@prisma/client";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { Textarea } from "@/components/ui/textarea";
@@ -120,7 +122,17 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
       validityYears: null,
       learningOutcomes: null,
       targetAudience: null,
+      bookingAddOns: [],
     },
+  });
+
+  const {
+    fields: addOnFields,
+    append: appendAddOn,
+    remove: removeAddOn,
+  } = useFieldArray({
+    control: form.control,
+    name: "bookingAddOns",
   });
 
   // Oppdater form verdier når dialogen åpnes med et kurs
@@ -141,6 +153,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           learningOutcomes: course.learningOutcomes ?? null,
           targetAudience: course.targetAudience ?? null,
           priceIncludes: course.priceIncludes ?? null,
+          bookingAddOns: parseCourseBookingAddOns(course.bookingAddOns),
         });
       } else {
         form.reset({
@@ -156,6 +169,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           learningOutcomes: null,
           targetAudience: null,
           priceIncludes: null,
+          bookingAddOns: [],
         });
       }
     }
@@ -465,6 +479,190 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                 )}
               />
             </div>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Tillegg i bestilling</CardTitle>
+                    <CardDescription>
+                      Valgfrie tillegg som praksis, maskiner eller annet ekstrautstyr.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      appendAddOn({
+                        id: crypto.randomUUID(),
+                        title: "",
+                        description: "",
+                        image: "",
+                        price: 0,
+                      })
+                    }
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Legg til tillegg
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {addOnFields.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Ingen tillegg lagt til. Kunden betaler kun grunnprisen.
+                  </p>
+                ) : (
+                  addOnFields.map((field, index) => (
+                    <div key={field.id} className="rounded-lg border p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">Tillegg {index + 1}</p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAddOn(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`bookingAddOns.${index}.title`}
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel>Navn</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Praksis dag 2" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`bookingAddOns.${index}.price`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Pris (kr)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={field.value}
+                                  onChange={(e) =>
+                                    field.onChange(parseInt(e.target.value || "0", 10))
+                                  }
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name={`bookingAddOns.${index}.image`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Lite bilde (valgfritt)</FormLabel>
+                            <div className="flex items-start gap-3">
+                              {field.value ? (
+                                <img
+                                  src={field.value}
+                                  alt={`Tillegg ${index + 1}`}
+                                  className="h-14 w-14 rounded-md border object-cover"
+                                />
+                              ) : (
+                                <div className="h-14 w-14 rounded-md border bg-muted" />
+                              )}
+                              <div className="flex-1 space-y-2">
+                                <Input
+                                  placeholder="/uploads/tillegg.png eller https://..."
+                                  value={field.value ?? ""}
+                                  onChange={field.onChange}
+                                />
+                                <input
+                                  id={`add-on-image-${index}`}
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp,image/gif"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    void handleFileUpload(file, (value) =>
+                                      form.setValue(
+                                        `bookingAddOns.${index}.image`,
+                                        value,
+                                        { shouldValidate: true }
+                                      )
+                                    );
+                                  }}
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const input = document.getElementById(
+                                        `add-on-image-${index}`
+                                      ) as HTMLInputElement | null;
+                                      input?.click();
+                                    }}
+                                  >
+                                    Last opp bilde
+                                  </Button>
+                                  {field.value && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        form.setValue(
+                                          `bookingAddOns.${index}.image`,
+                                          "",
+                                          { shouldValidate: true }
+                                        )
+                                      }
+                                    >
+                                      Fjern
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <FormDescription>
+                              Bruk et lite ikon/mini-bilde som forklarer tillegget visuelt.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`bookingAddOns.${index}.description`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Beskrivelse (valgfritt)</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Maskinleie og veiledning"
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
 
             <FormField
               control={form.control}

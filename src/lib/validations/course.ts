@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { bookingAddOnArraySchema } from "@/lib/booking-add-ons";
 
 export const courseSchema = z.object({
   title: z.string().min(3, "Tittel må være minst 3 tegn"),
@@ -14,6 +15,7 @@ export const courseSchema = z.object({
   learningOutcomes: z.string().optional().nullable(),
   targetAudience: z.string().optional().nullable(),
   priceIncludes: z.string().optional().nullable(),
+  bookingAddOns: bookingAddOnArraySchema.optional(),
 });
 
 export const sessionSchema = z.object({

@@ -22,6 +22,7 @@ import {
   generateBreadcrumbSchema,
   generateFAQSchema,
 } from "@/lib/seo/schema";
+import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -66,6 +67,7 @@ export default async function CourseDetailPage(props: PageProps) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+  const bookingAddOns = parseCourseBookingAddOns(course.bookingAddOns);
 
   const courseFaqs = [
     {
@@ -278,6 +280,20 @@ export default async function CourseDetailPage(props: PageProps) {
                               {session.instructor && (
                                 <p className="text-sm text-muted-foreground">
                                   Instruktør: {session.instructor.name}
+                                </p>
+                              )}
+
+                              {bookingAddOns.length > 0 && (
+                                <p className="mt-3 text-xs text-muted-foreground">
+                                  Valgfrie tillegg fra{" "}
+                                  <span className="font-medium text-foreground">
+                                    +{" "}
+                                    {Math.min(
+                                      ...bookingAddOns.map((addOn) => addOn.price)
+                                    ).toLocaleString("nb-NO")}{" "}
+                                    kr
+                                  </span>{" "}
+                                  i bestillingssteget
                                 </p>
                               )}
 

@@ -7,10 +7,14 @@ import { revalidatePath } from "next/cache";
 export async function createCourse(formData: unknown) {
   try {
     const validatedData = courseSchema.parse(formData);
+    const normalizedData = {
+      ...validatedData,
+      bookingAddOns: validatedData.bookingAddOns ?? [],
+    };
 
     // Sjekk om slug allerede eksisterer
     const existingSlug = await db.course.findUnique({
-      where: { slug: validatedData.slug },
+      where: { slug: normalizedData.slug },
     });
 
     if (existingSlug) {
@@ -19,7 +23,7 @@ export async function createCourse(formData: unknown) {
 
     // Sjekk om code allerede eksisterer
     const existingCode = await db.course.findUnique({
-      where: { code: validatedData.code },
+      where: { code: normalizedData.code },
     });
 
     if (existingCode) {
@@ -27,7 +31,7 @@ export async function createCourse(formData: unknown) {
     }
 
     const course = await db.course.create({
-      data: validatedData,
+      data: normalizedData,
     });
 
     revalidatePath("/admin/kurs");
@@ -51,11 +55,15 @@ export async function createCourse(formData: unknown) {
 export async function updateCourse(id: string, formData: unknown) {
   try {
     const validatedData = courseSchema.parse(formData);
+    const normalizedData = {
+      ...validatedData,
+      bookingAddOns: validatedData.bookingAddOns ?? [],
+    };
 
     // Sjekk om slug brukes av et annet kurs
     const existingSlug = await db.course.findFirst({
       where: {
-        slug: validatedData.slug,
+        slug: normalizedData.slug,
         NOT: { id },
       },
     });
@@ -67,7 +75,7 @@ export async function updateCourse(id: string, formData: unknown) {
     // Sjekk om code brukes av et annet kurs
     const existingCode = await db.course.findFirst({
       where: {
-        code: validatedData.code,
+        code: normalizedData.code,
         NOT: { id },
       },
     });
@@ -78,7 +86,7 @@ export async function updateCourse(id: string, formData: unknown) {
 
     const course = await db.course.update({
       where: { id },
-      data: validatedData,
+      data: normalizedData,
     });
 
     revalidatePath("/admin/kurs");

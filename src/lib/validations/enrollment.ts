@@ -7,6 +7,7 @@ export const personEnrollmentSchema = z.object({
   email: z.string().email("Ugyldig e-postadresse"),
   phone: z.string().min(8, "Telefonnummer må være minst 8 siffer"),
   birthDate: z.string().optional(),
+  selectedAddOnIds: z.array(z.string()).optional(),
 });
 
 export const companyEnrollmentSchema = z.object({
@@ -29,6 +30,7 @@ export const companyEnrollmentSchema = z.object({
       phone: z.string().optional(),
     })
   ).min(1, "Minimum én deltaker må legges til"),
+  selectedAddOnIds: z.array(z.string()).optional(),
 });
 
 export type PersonEnrollmentInput = z.infer<typeof personEnrollmentSchema>;

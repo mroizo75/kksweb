@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -26,12 +26,18 @@ import { enrollPerson } from "@/app/actions/enrollPerson";
 import { enrollCompany } from "@/app/actions/enrollCompany";
 import { User, Building2, CheckCircle, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import {
+  calculateEnrollmentPricing,
+  type BookingAddOn,
+} from "@/lib/booking-add-ons";
 
 interface EnrollmentWizardProps {
   sessionId: string;
   courseName: string;
   courseDate: string;
   location: string;
+  basePrice: number;
+  bookingAddOns: BookingAddOn[];
 }
 
 type EnrollmentType = "person" | "company";
@@ -42,6 +48,8 @@ export function EnrollmentWizard({
   courseName,
   courseDate,
   location,
+  basePrice,
+  bookingAddOns,
 }: EnrollmentWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState<WizardStep>("type");
@@ -58,6 +66,7 @@ export function EnrollmentWizard({
       email: "",
       phone: "",
       birthDate: "",
+      selectedAddOnIds: [],
     },
   });
 
@@ -83,6 +92,7 @@ export function EnrollmentWizard({
           phone: "",
         },
       ],
+      selectedAddOnIds: [],
     },
   });
 
@@ -90,6 +100,118 @@ export function EnrollmentWizard({
     control: companyForm.control,
     name: "participants",
   });
+
+  const personSelectedAddOns = personForm.watch("selectedAddOnIds") ?? [];
+  const companySelectedAddOns = companyForm.watch("selectedAddOnIds") ?? [];
+  const participantCount = fields.length;
+
+  const personPricing = useMemo(
+    () =>
+      calculateEnrollmentPricing(
+        basePrice,
+        personSelectedAddOns,
+        bookingAddOns,
+        1
+      ),
+    [basePrice, bookingAddOns, personSelectedAddOns]
+  );
+
+  const companyPricing = useMemo(
+    () =>
+      calculateEnrollmentPricing(
+        basePrice,
+        companySelectedAddOns,
+        bookingAddOns,
+        participantCount
+      ),
+    [basePrice, bookingAddOns, companySelectedAddOns, participantCount]
+  );
+
+  const formatNok = (value: number) => `${value.toLocaleString("nb-NO")} kr`;
+
+  const togglePersonAddOn = (addOnId: string, checked: boolean) => {
+    const existing = personForm.getValues("selectedAddOnIds") ?? [];
+    const selected = checked
+      ? [...existing, addOnId]
+      : existing.filter((id) => id !== addOnId);
+    personForm.setValue("selectedAddOnIds", selected, { shouldValidate: true });
+  };
+
+  const toggleCompanyAddOn = (addOnId: string, checked: boolean) => {
+    const existing = companyForm.getValues("selectedAddOnIds") ?? [];
+    const selected = checked
+      ? [...existing, addOnId]
+      : existing.filter((id) => id !== addOnId);
+    companyForm.setValue("selectedAddOnIds", selected, { shouldValidate: true });
+  };
+
+  const renderAddOnSelector = (
+    selectedAddOnIds: string[],
+    onToggle: (addOnId: string, checked: boolean) => void,
+    idPrefix: string,
+    description: string
+  ) => {
+    if (bookingAddOns.length === 0) {
+      return null;
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Legg til ekstra tjenester</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {bookingAddOns.map((addOn) => {
+            const checked = selectedAddOnIds.includes(addOn.id);
+            return (
+              <label
+                key={addOn.id}
+                htmlFor={`${idPrefix}-${addOn.id}`}
+                className={`flex items-start justify-between gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                  checked
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/60"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {addOn.image ? (
+                    <img
+                      src={addOn.image}
+                      alt={addOn.title}
+                      className="h-12 w-12 rounded-md border object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-md border bg-muted" />
+                  )}
+                  <div>
+                    <p className="font-medium">{addOn.title}</p>
+                    {addOn.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {addOn.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-medium whitespace-nowrap">
+                    + {formatNok(addOn.price)}
+                  </span>
+                  <Checkbox
+                    id={`${idPrefix}-${addOn.id}`}
+                    checked={checked}
+                    onCheckedChange={(value) =>
+                      onToggle(addOn.id, value === true)
+                    }
+                  />
+                </div>
+              </label>
+            );
+          })}
+        </CardContent>
+      </Card>
+    );
+  };
 
   const handleTypeSelection = (type: EnrollmentType) => {
     setEnrollmentType(type);
@@ -202,6 +324,61 @@ export function EnrollmentWizard({
 
         <Form {...personForm}>
           <form onSubmit={personForm.handleSubmit(onSubmitPerson)} className="space-y-6">
+            {renderAddOnSelector(
+              personSelectedAddOns,
+              togglePersonAddOn,
+              "person-addon",
+              "Velg tillegg før du fyller inn resten av bestillingen."
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Pris før bestilling</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Kurspris</span>
+                  <span>{formatNok(personPricing.baseUnitPrice)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Tillegg</span>
+                  <span>{formatNok(personPricing.addOnUnitPrice)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Antall deltakere</span>
+                  <span>{personPricing.participantCount}</span>
+                </div>
+                <div className="border-t pt-2 flex items-center justify-between font-semibold">
+                  <span>Totalpris</span>
+                  <span>{formatNok(personPricing.totalPrice)}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Om kurset</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Kurs:</span>
+                  <span className="font-medium">{courseName}</span>
+                </div>
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Dato:</span>
+                  <span className="font-medium">{courseDate}</span>
+                </div>
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Sted:</span>
+                  <span className="font-medium">{location}</span>
+                </div>
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Grunnpris:</span>
+                  <span className="font-medium">{formatNok(basePrice)}</span>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Personlige opplysninger</CardTitle>
@@ -285,26 +462,6 @@ export function EnrollmentWizard({
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Kursdetaljer</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="grid grid-cols-2 text-sm">
-                  <span className="text-muted-foreground">Kurs:</span>
-                  <span className="font-medium">{courseName}</span>
-                </div>
-                <div className="grid grid-cols-2 text-sm">
-                  <span className="text-muted-foreground">Dato:</span>
-                  <span className="font-medium">{courseDate}</span>
-                </div>
-                <div className="grid grid-cols-2 text-sm">
-                  <span className="text-muted-foreground">Sted:</span>
-                  <span className="font-medium">{location}</span>
-                </div>
-              </CardContent>
-            </Card>
-
             <div className="flex gap-4">
               <Button
                 type="button"
@@ -344,6 +501,69 @@ export function EnrollmentWizard({
 
         <Form {...companyForm}>
           <form onSubmit={companyForm.handleSubmit(onSubmitCompany)} className="space-y-6">
+            {renderAddOnSelector(
+              companySelectedAddOns,
+              toggleCompanyAddOn,
+              "company-addon",
+              "Velg tillegg først. Pris oppdateres automatisk per deltaker."
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Pris før bestilling</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Kurspris per deltaker</span>
+                  <span>{formatNok(companyPricing.baseUnitPrice)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Tillegg per deltaker</span>
+                  <span>{formatNok(companyPricing.addOnUnitPrice)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Sum per deltaker</span>
+                  <span>{formatNok(companyPricing.unitTotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Antall deltakere</span>
+                  <span>{companyPricing.participantCount}</span>
+                </div>
+                <div className="border-t pt-2 flex items-center justify-between font-semibold">
+                  <span>Totalpris</span>
+                  <span>{formatNok(companyPricing.totalPrice)}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Om kurset</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Kurs:</span>
+                  <span className="font-medium">{courseName}</span>
+                </div>
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Dato:</span>
+                  <span className="font-medium">{courseDate}</span>
+                </div>
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Sted:</span>
+                  <span className="font-medium">{location}</span>
+                </div>
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Antall deltakere:</span>
+                  <span className="font-medium">{fields.length}</span>
+                </div>
+                <div className="grid grid-cols-2 text-sm">
+                  <span className="text-muted-foreground">Grunnpris per deltaker:</span>
+                  <span className="font-medium">{formatNok(basePrice)}</span>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Bedriftsinformasjon</CardTitle>
@@ -574,30 +794,6 @@ export function EnrollmentWizard({
                     </div>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Kursdetaljer</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="grid grid-cols-2 text-sm">
-                  <span className="text-muted-foreground">Kurs:</span>
-                  <span className="font-medium">{courseName}</span>
-                </div>
-                <div className="grid grid-cols-2 text-sm">
-                  <span className="text-muted-foreground">Dato:</span>
-                  <span className="font-medium">{courseDate}</span>
-                </div>
-                <div className="grid grid-cols-2 text-sm">
-                  <span className="text-muted-foreground">Sted:</span>
-                  <span className="font-medium">{location}</span>
-                </div>
-                <div className="grid grid-cols-2 text-sm">
-                  <span className="text-muted-foreground">Antall deltakere:</span>
-                  <span className="font-medium">{fields.length}</span>
-                </div>
               </CardContent>
             </Card>
 

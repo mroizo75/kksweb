@@ -7,6 +7,10 @@ import { triggerCrmEnrollmentHook } from "@/lib/crm-enrollment-hook";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
+import {
+  calculateEnrollmentPricing,
+  parseCourseBookingAddOns,
+} from "@/lib/booking-add-ons";
 
 export async function enrollCompany(formData: unknown) {
   try {
@@ -29,6 +33,27 @@ export async function enrollCompany(formData: unknown) {
     if (!session) {
       return { success: false, error: "Kurset finnes ikke" };
     }
+
+    const availableAddOns = parseCourseBookingAddOns(session.course.bookingAddOns);
+    const availableAddOnIds = new Set(availableAddOns.map((addOn) => addOn.id));
+    const selectedAddOnIds = validatedData.selectedAddOnIds ?? [];
+
+    const hasInvalidAddOn = selectedAddOnIds.some(
+      (addOnId) => !availableAddOnIds.has(addOnId)
+    );
+    if (hasInvalidAddOn) {
+      return { success: false, error: "Valgt tillegg er ikke gyldig for kurset" };
+    }
+
+    const pricing = calculateEnrollmentPricing(
+      session.course.price,
+      selectedAddOnIds,
+      availableAddOns,
+      validatedData.participants.length
+    );
+    const selectedAddOns = availableAddOns.filter((addOn) =>
+      selectedAddOnIds.includes(addOn.id)
+    );
 
     // Sjekk kapasitet for alle deltakere
     const currentEnrollments = session.enrollments.length;
@@ -124,6 +149,10 @@ export async function enrollCompany(formData: unknown) {
             personId: person.id,
             companyId: company.id,
             status: allWaitlist ? "WAITLIST" : "CONFIRMED",
+            basePrice: pricing.baseUnitPrice,
+            addOnPrice: pricing.addOnUnitPrice,
+            totalPrice: pricing.unitTotal,
+            selectedAddOns,
           },
         });
 
