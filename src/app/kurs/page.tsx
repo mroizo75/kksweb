@@ -65,57 +65,81 @@ export default async function CoursesPage(props: PageProps) {
   const { category, search } = searchParams;
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+  let courses: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    code: string;
+    category: string;
+    description: string | null;
+    durationDays: number;
+    price: number;
+    image: string | null;
+    sessions: Array<{
+      startsAt: Date;
+      location: string;
+      capacity: number;
+      _count: { enrollments: number };
+    }>;
+  }> = [];
 
-  const courses = await db.course.findMany({
-    where: {
-      ...(category && { category }),
-      ...(search && {
-        OR: [
-          { title: { contains: search } },
-          { description: { contains: search } },
-          { code: { contains: search } },
-        ],
-      }),
-      published: true,
-    },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      code: true,
-      category: true,
-      description: true,
-      durationDays: true,
-      price: true,
-      image: true,
-      sessions: {
+  let categories: Array<{ category: string }> = [];
+
+  try {
+    [courses, categories] = await Promise.all([
+      db.course.findMany({
         where: {
-          startsAt: { gte: new Date() },
-          status: { in: ["OPEN"] },
+          ...(category && { category }),
+          ...(search && {
+            OR: [
+              { title: { contains: search } },
+              { description: { contains: search } },
+              { code: { contains: search } },
+            ],
+          }),
+          published: true,
         },
-        orderBy: { startsAt: "asc" },
-        take: 1,
-        include: {
-          _count: {
-            select: {
-              enrollments: {
-                where: {
-                  status: { in: ["PENDING", "CONFIRMED", "ATTENDED"] },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          code: true,
+          category: true,
+          description: true,
+          durationDays: true,
+          price: true,
+          image: true,
+          sessions: {
+            where: {
+              startsAt: { gte: new Date() },
+              status: { in: ["OPEN"] },
+            },
+            orderBy: { startsAt: "asc" },
+            take: 1,
+            include: {
+              _count: {
+                select: {
+                  enrollments: {
+                    where: {
+                      status: { in: ["PENDING", "CONFIRMED", "ATTENDED"] },
+                    },
+                  },
                 },
               },
             },
           },
         },
-      },
-    },
-    orderBy: { title: "asc" },
-  });
-
-  const categories = await db.course.findMany({
-    where: { published: true },
-    select: { category: true },
-    distinct: ["category"],
-  });
+        orderBy: { title: "asc" },
+      }),
+      db.course.findMany({
+        where: { published: true },
+        select: { category: true },
+        distinct: ["category"],
+      }),
+    ]);
+  } catch (error) {
+    console.error("Feil ved lasting av /kurs:", error);
+  }
 
   const uniqueCategories = categories.map((c) => c.category);
 
