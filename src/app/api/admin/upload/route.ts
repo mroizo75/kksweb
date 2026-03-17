@@ -50,7 +50,9 @@ export async function POST(req: NextRequest) {
     const fileName = `${slug}-${Date.now()}.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const { url } = await uploadToR2(buffer, fileName, file.type, "courses");
+    const { url, key } = await uploadToR2(buffer, fileName, file.type, "courses");
+
+    console.log("Upload OK:", { url, key, r2PublicUrl: process.env.R2_PUBLIC_URL });
 
     return NextResponse.json({ path: url });
   } catch (error) {
