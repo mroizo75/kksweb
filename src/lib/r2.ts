@@ -55,6 +55,25 @@ export interface UploadResult {
   key: string;
 }
 
+function getR2PublicBaseUrl(): string {
+  const raw =
+    process.env.R2_PUBLIC_URL ??
+    process.env.R2_PUBLIC_BASE_URL ??
+    process.env.R2_CUSTOM_DOMAIN;
+
+  if (!raw) {
+    throw new Error(
+      "R2 public URL mangler. Sett R2_PUBLIC_URL (evt. R2_PUBLIC_BASE_URL/R2_CUSTOM_DOMAIN)."
+    );
+  }
+
+  const withProtocol = raw.startsWith("http://") || raw.startsWith("https://")
+    ? raw
+    : `https://${raw}`;
+
+  return withProtocol.replace(/\/$/, "");
+}
+
 /**
  * Last opp en fil til Cloudflare R2 og returner offentlig URL
  */
@@ -65,20 +84,7 @@ export async function uploadToR2(
   folder = "uploads"
 ): Promise<UploadResult> {
   const bucket = getR2BucketName();
-  const endpoint =
-    process.env.R2_ENDPOINT ??
-    (process.env.R2_ACCOUNT_ID
-      ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
-      : undefined);
-  const publicUrl = (
-    process.env.R2_PUBLIC_URL ?? (endpoint ? `${endpoint}/${bucket}` : undefined)
-  )?.replace(/\/$/, "");
-
-  if (!publicUrl) {
-    throw new Error(
-      "R2 public URL mangler. Sett R2_PUBLIC_URL (evt. R2_ENDPOINT + bucket)."
-    );
-  }
+  const publicBaseUrl = getR2PublicBaseUrl();
 
   const key = `${folder}/${fileName}`;
   const client = getR2Client();
@@ -94,7 +100,7 @@ export async function uploadToR2(
   );
 
   return {
-    url: `${publicUrl}/${key}`,
+    url: `${publicBaseUrl}/${key}`,
     key,
   };
 }
