@@ -20,7 +20,17 @@ export async function GET(request: NextRequest) {
         }),
         published,
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        code: true,
+        category: true,
+        description: true,
+        durationDays: true,
+        price: true,
+        image: true,
+        published: true,
         sessions: {
           where: {
             startsAt: { gte: new Date() },

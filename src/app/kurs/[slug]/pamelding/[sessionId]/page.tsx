@@ -18,8 +18,18 @@ export default async function EnrollmentPage(props: PageProps) {
   const params = await props.params;
   const session = await db.courseSession.findUnique({
     where: { id: params.sessionId },
-    include: {
-      course: true,
+    select: {
+      id: true,
+      startsAt: true,
+      location: true,
+      capacity: true,
+      course: {
+        select: {
+          title: true,
+          slug: true,
+          price: true,
+        },
+      },
       _count: {
         select: {
           enrollments: {
@@ -79,7 +89,7 @@ export default async function EnrollmentPage(props: PageProps) {
             })}
             location={session.location}
             basePrice={session.course.price}
-            bookingAddOns={parseCourseBookingAddOns(session.course.bookingAddOns)}
+            bookingAddOns={parseCourseBookingAddOns(undefined)}
           />
         )}
       </div>

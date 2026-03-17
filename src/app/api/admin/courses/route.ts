@@ -11,7 +11,24 @@ export async function GET() {
     }
 
     const courses = await db.course.findMany({
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        code: true,
+        category: true,
+        description: true,
+        durationDays: true,
+        price: true,
+        image: true,
+        published: true,
+        validityYears: true,
+        learningOutcomes: true,
+        targetAudience: true,
+        priceIncludes: true,
+        createdAt: true,
+        updatedAt: true,
+        validityPolicyId: true,
         _count: {
           select: {
             sessions: true,

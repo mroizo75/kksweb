@@ -78,7 +78,16 @@ export default async function CoursesPage(props: PageProps) {
       }),
       published: true,
     },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      code: true,
+      category: true,
+      description: true,
+      durationDays: true,
+      price: true,
+      image: true,
       sessions: {
         where: {
           startsAt: { gte: new Date() },

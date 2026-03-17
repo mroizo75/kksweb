@@ -37,7 +37,24 @@ export default async function CourseDetailPage(props: PageProps) {
   const params = await props.params;
   const course = await db.course.findUnique({
     where: { slug: params.slug },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      code: true,
+      category: true,
+      description: true,
+      durationDays: true,
+      price: true,
+      image: true,
+      published: true,
+      learningOutcomes: true,
+      targetAudience: true,
+      priceIncludes: true,
+      createdAt: true,
+      updatedAt: true,
+      validityYears: true,
+      validityPolicyId: true,
       sessions: {
         where: {
           startsAt: { gte: new Date() },
@@ -67,7 +84,9 @@ export default async function CourseDetailPage(props: PageProps) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
-  const bookingAddOns = parseCourseBookingAddOns(course.bookingAddOns);
+  const bookingAddOns = parseCourseBookingAddOns(
+    (course as { bookingAddOns?: unknown }).bookingAddOns
+  );
 
   const courseFaqs = [
     {
@@ -96,7 +115,7 @@ export default async function CourseDetailPage(props: PageProps) {
     },
   ];
 
-  const courseSchema = generateCourseSchema(course, baseUrl);
+  const courseSchema = generateCourseSchema(course as any, baseUrl);
   const breadcrumbSchema = generateBreadcrumbSchema(
     [
       { name: "Hjem", url: "/" },

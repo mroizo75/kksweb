@@ -4,7 +4,15 @@ import { db } from "@/lib/db";
 export async function generateCourseMetadata(slug: string): Promise<Metadata> {
   const course = await db.course.findUnique({
     where: { slug },
-    include: {
+    select: {
+      slug: true,
+      image: true,
+      description: true,
+      title: true,
+      durationDays: true,
+      price: true,
+      category: true,
+      code: true,
       sessions: {
         where: {
           startsAt: {

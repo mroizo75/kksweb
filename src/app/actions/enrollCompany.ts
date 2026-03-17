@@ -11,6 +11,7 @@ import {
   calculateEnrollmentPricing,
   parseCourseBookingAddOns,
 } from "@/lib/booking-add-ons";
+import { isMissingColumnError } from "@/lib/prisma-compat";
 
 export async function enrollCompany(formData: unknown) {
   try {
@@ -20,8 +21,20 @@ export async function enrollCompany(formData: unknown) {
     // Hent sesjon med kursinfo
     const session = await db.courseSession.findUnique({
       where: { id: validatedData.sessionId },
-      include: {
-        course: true,
+      select: {
+        id: true,
+        startsAt: true,
+        capacity: true,
+        location: true,
+        course: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            durationDays: true,
+            price: true,
+          },
+        },
         enrollments: {
           where: {
             status: { in: ["PENDING", "CONFIRMED", "ATTENDED"] },
@@ -34,7 +47,7 @@ export async function enrollCompany(formData: unknown) {
       return { success: false, error: "Kurset finnes ikke" };
     }
 
-    const availableAddOns = parseCourseBookingAddOns(session.course.bookingAddOns);
+    const availableAddOns = parseCourseBookingAddOns(undefined);
     const availableAddOnIds = new Set(availableAddOns.map((addOn) => addOn.id));
     const selectedAddOnIds = validatedData.selectedAddOnIds ?? [];
 
@@ -143,18 +156,42 @@ export async function enrollCompany(formData: unknown) {
       });
 
       if (!existingEnrollment) {
-        const enrollment = await db.enrollment.create({
-          data: {
-            sessionId: validatedData.sessionId,
-            personId: person.id,
-            companyId: company.id,
-            status: allWaitlist ? "WAITLIST" : "CONFIRMED",
-            basePrice: pricing.baseUnitPrice,
-            addOnPrice: pricing.addOnUnitPrice,
-            totalPrice: pricing.unitTotal,
-            selectedAddOns,
-          },
-        });
+        const enrollment = await (async () => {
+          try {
+            return await db.enrollment.create({
+              data: {
+                sessionId: validatedData.sessionId,
+                personId: person.id,
+                companyId: company.id,
+                status: allWaitlist ? "WAITLIST" : "CONFIRMED",
+                basePrice: pricing.baseUnitPrice,
+                addOnPrice: pricing.addOnUnitPrice,
+                totalPrice: pricing.unitTotal,
+                selectedAddOns,
+              },
+            });
+          } catch (error) {
+            if (
+              !isMissingColumnError(error, [
+                "basePrice",
+                "addOnPrice",
+                "totalPrice",
+                "selectedAddOns",
+              ])
+            ) {
+              throw error;
+            }
+
+            return db.enrollment.create({
+              data: {
+                sessionId: validatedData.sessionId,
+                personId: person.id,
+                companyId: company.id,
+                status: allWaitlist ? "WAITLIST" : "CONFIRMED",
+              },
+            });
+          }
+        })();
 
         enrollments.push(enrollment);
 

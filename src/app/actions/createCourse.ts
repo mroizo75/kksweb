@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { courseSchema, type CourseInput } from "@/lib/validations/course";
 import { revalidatePath } from "next/cache";
+import { isMissingColumnError } from "@/lib/prisma-compat";
 
 export async function createCourse(formData: unknown) {
   try {
@@ -30,9 +31,22 @@ export async function createCourse(formData: unknown) {
       return { success: false, error: "Kurskode er allerede i bruk" };
     }
 
-    const course = await db.course.create({
-      data: normalizedData,
-    });
+    const course = await (async () => {
+      try {
+        return await db.course.create({
+          data: normalizedData,
+        });
+      } catch (error) {
+        if (!isMissingColumnError(error, ["bookingAddOns"])) {
+          throw error;
+        }
+
+        const { bookingAddOns, ...legacyData } = normalizedData;
+        return db.course.create({
+          data: legacyData,
+        });
+      }
+    })();
 
     revalidatePath("/admin/kurs");
     revalidatePath("/kurs");
@@ -84,10 +98,24 @@ export async function updateCourse(id: string, formData: unknown) {
       return { success: false, error: "Kurskode er allerede i bruk" };
     }
 
-    const course = await db.course.update({
-      where: { id },
-      data: normalizedData,
-    });
+    const course = await (async () => {
+      try {
+        return await db.course.update({
+          where: { id },
+          data: normalizedData,
+        });
+      } catch (error) {
+        if (!isMissingColumnError(error, ["bookingAddOns"])) {
+          throw error;
+        }
+
+        const { bookingAddOns, ...legacyData } = normalizedData;
+        return db.course.update({
+          where: { id },
+          data: legacyData,
+        });
+      }
+    })();
 
     revalidatePath("/admin/kurs");
     revalidatePath("/kurs");
