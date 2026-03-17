@@ -17,6 +17,7 @@ import {
   generateFAQSchema,
   generateBreadcrumbSchema,
 } from "@/lib/seo/schema";
+import { normalizeR2ImageUrl } from "@/lib/r2";
 
 interface PageProps {
   params: Promise<{ location: string }>;
@@ -306,7 +307,7 @@ export default async function LocationPage(props: PageProps) {
                 {course.image && (
                   <div className="h-48 overflow-hidden rounded-t-lg relative">
                     <Image
-                      src={course.image}
+                      src={normalizeR2ImageUrl(course.image)}
                       alt={course.title}
                       fill
                       className="object-cover"

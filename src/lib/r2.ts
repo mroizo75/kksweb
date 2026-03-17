@@ -112,29 +112,45 @@ export async function uploadToR2(
 export function normalizeR2ImageUrl(url: string | null | undefined): string {
   if (!url) return "";
 
-  const r2ApiMatch = url.match(
-    /^https?:\/\/[a-f0-9]+\.r2\.cloudflarestorage\.com\/(.+)$/
-  );
-  if (!r2ApiMatch) return url;
+  const normalizedInput = url.trim().replace(/^['"]+|['"]+$/g, "");
+  if (!normalizedInput) return "";
+  if (!normalizedInput.startsWith("http://") && !normalizedInput.startsWith("https://")) {
+    return normalizedInput;
+  }
 
   const publicBaseUrl =
     process.env.R2_PUBLIC_URL ??
     process.env.R2_PUBLIC_BASE_URL ??
     process.env.R2_CUSTOM_DOMAIN;
 
-  if (!publicBaseUrl) return url;
+  if (!publicBaseUrl) return normalizedInput;
 
   const base = (
     publicBaseUrl.startsWith("http") ? publicBaseUrl : `https://${publicBaseUrl}`
   ).replace(/\/$/, "");
 
-  let pathAfterEndpoint = r2ApiMatch[1];
-  const bucket = process.env.R2_BUCKET ?? process.env.R2_BUCKET_NAME;
-  if (bucket && pathAfterEndpoint.startsWith(`${bucket}/`)) {
-    pathAfterEndpoint = pathAfterEndpoint.slice(bucket.length + 1);
-  }
+  try {
+    const parsed = new URL(normalizedInput);
+    if (!parsed.hostname.endsWith(".r2.cloudflarestorage.com")) {
+      return normalizedInput;
+    }
 
-  return `${base}/${pathAfterEndpoint}`;
+    let pathAfterEndpoint = parsed.pathname.replace(/^\/+/, "");
+    const bucket = process.env.R2_BUCKET ?? process.env.R2_BUCKET_NAME;
+
+    // Path-style URL: /<bucket>/<key> -> /<key>
+    if (bucket && pathAfterEndpoint.startsWith(`${bucket}/`)) {
+      pathAfterEndpoint = pathAfterEndpoint.slice(bucket.length + 1);
+    }
+
+    if (!pathAfterEndpoint) {
+      return normalizedInput;
+    }
+
+    return `${base}/${pathAfterEndpoint}`;
+  } catch {
+    return normalizedInput;
+  }
 }
 
 /**

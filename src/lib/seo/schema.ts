@@ -4,6 +4,7 @@
  */
 
 import { Course, CourseSession } from "@prisma/client";
+import { normalizeR2ImageUrl } from "@/lib/r2";
 
 const KKS_NAME = "KKS AS";
 const KKS_PHONE = "+47 91 54 08 24";
@@ -19,10 +20,11 @@ export interface SchemaOrgCourse extends Course {
  */
 export function generateCourseSchema(course: SchemaOrgCourse, baseUrl: string) {
   const courseUrl = `${baseUrl}/kurs/${course.slug}`;
-  const imageUrl = course.image
-    ? course.image.startsWith("http")
-      ? course.image
-      : `${baseUrl}${course.image}`
+  const normalizedImage = normalizeR2ImageUrl(course.image);
+  const imageUrl = normalizedImage
+    ? normalizedImage.startsWith("http")
+      ? normalizedImage
+      : `${baseUrl}${normalizedImage}`
     : `${baseUrl}/placeholder-kurs.jpg`;
 
   return {
@@ -121,11 +123,13 @@ export function generateEventSchema(
         "addressLocality": session.location,
       },
     },
-    "image": course.image
-      ? course.image.startsWith("http")
-        ? course.image
-        : `${baseUrl}${course.image}`
-      : `${baseUrl}/placeholder-kurs.jpg`,
+    "image": (() => {
+      const normalizedImage = normalizeR2ImageUrl(course.image);
+      if (!normalizedImage) return `${baseUrl}/placeholder-kurs.jpg`;
+      return normalizedImage.startsWith("http")
+        ? normalizedImage
+        : `${baseUrl}${normalizedImage}`;
+    })(),
     "organizer": {
       "@type": "Organization",
       "name": KKS_NAME,
@@ -285,11 +289,13 @@ export function generateProductSchema(course: Course, baseUrl: string) {
     "@type": "Product",
     "name": course.title,
     "description": course.description || `${course.title} - Profesjonell kursing`,
-    "image": course.image
-      ? course.image.startsWith("http")
-        ? course.image
-        : `${baseUrl}${course.image}`
-      : `${baseUrl}/placeholder-kurs.jpg`,
+    "image": (() => {
+      const normalizedImage = normalizeR2ImageUrl(course.image);
+      if (!normalizedImage) return `${baseUrl}/placeholder-kurs.jpg`;
+      return normalizedImage.startsWith("http")
+        ? normalizedImage
+        : `${baseUrl}${normalizedImage}`;
+    })(),
     "sku": course.code,
     "brand": {
       "@type": "Brand",
