@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { db } from "@/lib/db";
+import { normalizeR2ImageUrl } from "@/lib/r2";
 
 export async function generateCourseMetadata(slug: string): Promise<Metadata> {
   const course = await db.course.findUnique({
@@ -35,10 +36,11 @@ export async function generateCourseMetadata(slug: string): Promise<Metadata> {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
   const courseUrl = `${baseUrl}/kurs/${course.slug}`;
-  const imageUrl = course.image
-    ? course.image.startsWith("http")
-      ? course.image
-      : `${baseUrl}${course.image}`
+  const normalizedImage = normalizeR2ImageUrl(course.image);
+  const imageUrl = normalizedImage
+    ? normalizedImage.startsWith("http")
+      ? normalizedImage
+      : `${baseUrl}${normalizedImage}`
     : `${baseUrl}/placeholder-kurs.jpg`;
 
   const description =

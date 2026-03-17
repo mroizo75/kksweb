@@ -23,6 +23,7 @@ import {
   generateFAQSchema,
 } from "@/lib/seo/schema";
 import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
+import { normalizeR2ImageUrl } from "@/lib/r2";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -55,6 +56,7 @@ export default async function CourseDetailPage(props: PageProps) {
       updatedAt: true,
       validityYears: true,
       validityPolicyId: true,
+      bookingAddOns: true,
       sessions: {
         where: {
           startsAt: { gte: new Date() },
@@ -84,9 +86,13 @@ export default async function CourseDetailPage(props: PageProps) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+  const courseImage = normalizeR2ImageUrl(course.image);
   const bookingAddOns = parseCourseBookingAddOns(
     (course as { bookingAddOns?: unknown }).bookingAddOns
-  );
+  ).map((addOn) => ({
+    ...addOn,
+    image: normalizeR2ImageUrl(addOn.image),
+  }));
 
   const courseFaqs = [
     {
@@ -144,10 +150,10 @@ export default async function CourseDetailPage(props: PageProps) {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Course Image */}
-            {course.image && (
+            {courseImage && (
               <div className="mb-6 rounded-xl overflow-hidden shadow-lg relative w-full h-[400px]">
                 <Image
-                  src={course.image}
+                  src={courseImage}
                   alt={course.title}
                   fill
                   priority

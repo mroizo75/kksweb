@@ -6,6 +6,7 @@ import { nb } from "date-fns/locale";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
+import { normalizeR2ImageUrl } from "@/lib/r2";
 
 interface PageProps {
   params: Promise<{
@@ -28,6 +29,7 @@ export default async function EnrollmentPage(props: PageProps) {
           title: true,
           slug: true,
           price: true,
+          bookingAddOns: true,
         },
       },
       _count: {
@@ -89,7 +91,12 @@ export default async function EnrollmentPage(props: PageProps) {
             })}
             location={session.location}
             basePrice={session.course.price}
-            bookingAddOns={parseCourseBookingAddOns(undefined)}
+            bookingAddOns={parseCourseBookingAddOns(
+              (session.course as { bookingAddOns?: unknown }).bookingAddOns
+            ).map((addOn) => ({
+              ...addOn,
+              image: normalizeR2ImageUrl(addOn.image),
+            }))}
           />
         )}
       </div>

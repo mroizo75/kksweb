@@ -106,6 +106,38 @@ export async function uploadToR2(
 }
 
 /**
+ * Rewrites stale R2 API-endpoint URLs to the configured public URL.
+ * Handles URLs saved before R2_PUBLIC_URL was correctly configured.
+ */
+export function normalizeR2ImageUrl(url: string | null | undefined): string {
+  if (!url) return "";
+
+  const r2ApiMatch = url.match(
+    /^https?:\/\/[a-f0-9]+\.r2\.cloudflarestorage\.com\/(.+)$/
+  );
+  if (!r2ApiMatch) return url;
+
+  const publicBaseUrl =
+    process.env.R2_PUBLIC_URL ??
+    process.env.R2_PUBLIC_BASE_URL ??
+    process.env.R2_CUSTOM_DOMAIN;
+
+  if (!publicBaseUrl) return url;
+
+  const base = (
+    publicBaseUrl.startsWith("http") ? publicBaseUrl : `https://${publicBaseUrl}`
+  ).replace(/\/$/, "");
+
+  let pathAfterEndpoint = r2ApiMatch[1];
+  const bucket = process.env.R2_BUCKET ?? process.env.R2_BUCKET_NAME;
+  if (bucket && pathAfterEndpoint.startsWith(`${bucket}/`)) {
+    pathAfterEndpoint = pathAfterEndpoint.slice(bucket.length + 1);
+  }
+
+  return `${base}/${pathAfterEndpoint}`;
+}
+
+/**
  * Slett en fil fra Cloudflare R2
  */
 export async function deleteFromR2(key: string): Promise<void> {
