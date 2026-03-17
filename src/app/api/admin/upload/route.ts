@@ -54,7 +54,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ path: url });
   } catch (error) {
-    console.error("Feil ved bildeopplasting:", error);
+    console.error("Feil ved bildeopplasting:", {
+      error,
+      storageType: process.env.STORAGE_TYPE,
+      r2Endpoint: process.env.R2_ENDPOINT,
+      r2Bucket: process.env.R2_BUCKET ?? process.env.R2_BUCKET_NAME,
+    });
     return NextResponse.json(
       { code: "UPLOAD_FAILED", message: "Opplasting feilet, prøv igjen" },
       { status: 500 }

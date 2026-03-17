@@ -25,7 +25,7 @@ function getR2BucketName(): string {
 }
 
 function getR2Client(): S3Client {
-  const explicitEndpoint = process.env.R2_ENDPOINT;
+  const explicitEndpoint = process.env.R2_ENDPOINT?.replace(/\/$/, "");
   const accountId =
     process.env.R2_ACCOUNT_ID ?? parseAccountIdFromEndpoint(explicitEndpoint);
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
@@ -41,6 +41,8 @@ function getR2Client(): S3Client {
     region: "auto",
     endpoint:
       explicitEndpoint ?? `https://${accountId}.r2.cloudflarestorage.com`,
+    // R2 fungerer stabilt med path-style i mange Node-runtime-miljøer.
+    forcePathStyle: true,
     credentials: {
       accessKeyId,
       secretAccessKey,
