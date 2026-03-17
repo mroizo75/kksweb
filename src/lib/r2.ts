@@ -17,9 +17,9 @@ function parseAccountIdFromEndpoint(endpoint?: string): string | null {
 }
 
 function getR2BucketName(): string {
-  const bucket = process.env.R2_BUCKET_NAME ?? process.env.R2_BUCKET;
+  const bucket = process.env.R2_BUCKET ?? process.env.R2_BUCKET_NAME;
   if (!bucket) {
-    throw new Error("R2 bucket mangler. Sett R2_BUCKET_NAME (eller legacy R2_BUCKET).");
+    throw new Error("R2 bucket mangler. Sett R2_BUCKET (eller legacy R2_BUCKET_NAME).");
   }
   return bucket;
 }
