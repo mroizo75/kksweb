@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   output: undefined,
 
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
