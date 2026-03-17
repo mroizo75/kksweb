@@ -48,7 +48,11 @@ export async function exportPersonData(personId?: string) {
     ] = await Promise.all([
       db.enrollment.findMany({
         where: { personId: person.id },
-        include: {
+        select: {
+          id: true,
+          status: true,
+          notes: true,
+          createdAt: true,
           session: {
             include: {
               course: true,

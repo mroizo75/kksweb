@@ -17,7 +17,10 @@ export async function RecentActivities() {
   const recentEnrollments = await db.enrollment.findMany({
     take: 5,
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      status: true,
+      createdAt: true,
       person: { select: { firstName: true, lastName: true } },
       session: {
         select: {

@@ -103,8 +103,12 @@ export default async function DashboardPage() {
       where: { published: true },
       include: {
         sessions: {
-          include: {
-            enrollments: true,
+          select: {
+            _count: {
+              select: {
+                enrollments: true,
+              },
+            },
           },
         },
       },
@@ -125,7 +129,7 @@ export default async function DashboardPage() {
     .map((c) => ({
       title: c.title,
       enrollmentCount: c.sessions.reduce(
-        (total, session) => total + session.enrollments.length,
+        (total, session) => total + session._count.enrollments,
         0
       ),
     }))

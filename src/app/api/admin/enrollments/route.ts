@@ -11,7 +11,12 @@ export async function GET() {
     }
 
     const enrollments = await db.enrollment.findMany({
-      include: {
+      select: {
+        id: true,
+        status: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
         person: true,
         company: {
           select: { name: true, orgNo: true },
