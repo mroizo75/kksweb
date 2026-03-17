@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { stripHtml } from "@/lib/utils";
@@ -306,12 +305,11 @@ export default async function LocationPage(props: PageProps) {
               <Card key={course.id} className="hover:shadow-lg transition-shadow">
                 {course.image && (
                   <div className="h-48 overflow-hidden rounded-t-lg relative">
-                    <Image
+                    <img
                       src={normalizeR2ImageUrl(course.image)}
                       alt={course.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 300px"
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
                   </div>
                 )}

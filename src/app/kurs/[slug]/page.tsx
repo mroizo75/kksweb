@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -152,13 +151,11 @@ export default async function CourseDetailPage(props: PageProps) {
             {/* Course Image */}
             {courseImage && (
               <div className="mb-6 rounded-xl overflow-hidden shadow-lg relative w-full h-[400px]">
-                <Image
+                <img
                   src={courseImage}
                   alt={course.title}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 66vw, 800px"
+                  loading="eager"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
               </div>
             )}
