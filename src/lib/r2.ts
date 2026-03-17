@@ -112,7 +112,10 @@ export async function uploadToR2(
 export function normalizeR2ImageUrl(url: string | null | undefined): string {
   if (!url) return "";
 
-  const normalizedInput = url.trim().replace(/^['"]+|['"]+$/g, "");
+  const normalizedInput = url
+    .trim()
+    // Tolerer feilkopierte URL-er med omsluttende tegn fra logger/markdown.
+    .replace(/^[\s"'<>]+|[\s"'<>]+$/g, "");
   if (!normalizedInput) return "";
   if (!normalizedInput.startsWith("http://") && !normalizedInput.startsWith("https://")) {
     return normalizedInput;
