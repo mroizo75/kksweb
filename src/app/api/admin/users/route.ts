@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { hash } from "bcryptjs";
+import { isMissingColumnError } from "@/lib/prisma-compat";
+
+function getDbSyncErrorMessage(error: unknown): string | null {
+  if (isMissingColumnError(error, ["twoFactor", "backupCodes", "users"])) {
+    return "Database er ikke synkronisert med kodebasen. Kjør: npx prisma db push";
+  }
+
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2021"
+  ) {
+    return "Mangler tabell i databasen. Kjør: npx prisma db push";
+  }
+
+  return null;
+}
 
 /**
  * POST /api/admin/users - Opprett admin bruker (kun for initial setup)
@@ -17,9 +34,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password, name, role } = body;
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : "";
 
     // Validering
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return NextResponse.json(
         { error: "E-post og passord er påkrevd" },
         { status: 400 }
@@ -28,7 +47,8 @@ export async function POST(request: NextRequest) {
 
     // Sjekk om bruker allerede eksisterer
     const existingUser = await db.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
+      select: { id: true },
     });
 
     if (existingUser) {
@@ -44,8 +64,11 @@ export async function POST(request: NextRequest) {
     // Opprett bruker
     const user = await db.user.create({
       data: {
-        email,
-        name: name || email.split("@")[0],
+        email: normalizedEmail,
+        name:
+          (typeof name === "string" && name.trim().length > 0
+            ? name.trim()
+            : normalizedEmail.split("@")[0]),
         hashedPassword,
         role: role === "ADMIN" ? "ADMIN" : "INSTRUCTOR",
       },
@@ -65,6 +88,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error creating user:", error);
+
+    const syncMessage = getDbSyncErrorMessage(error);
+    if (syncMessage) {
+      return NextResponse.json({ error: syncMessage }, { status: 503 });
+    }
+
     return NextResponse.json(
       { error: "Kunne ikke opprette bruker" },
       { status: 500 }
@@ -94,6 +123,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
+
+    const syncMessage = getDbSyncErrorMessage(error);
+    if (syncMessage) {
+      return NextResponse.json({ error: syncMessage }, { status: 503 });
+    }
+
     return NextResponse.json(
       { error: "Kunne ikke hente brukere" },
       { status: 500 }
