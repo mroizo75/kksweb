@@ -26,6 +26,7 @@ export async function GET() {
         learningOutcomes: true,
         targetAudience: true,
         priceIncludes: true,
+        bookingAddOns: true,
         createdAt: true,
         updatedAt: true,
         validityPolicyId: true,
