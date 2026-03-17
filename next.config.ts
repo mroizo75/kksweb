@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // R2_PUBLIC_URL settes som env-variabel, f.eks. https://assets.kksas.no
+  // next/image håndterer dette automatisk via remotePatterns wildcard over
 
   webpack(config) {
     config.infrastructureLogging = { level: "error" };
