@@ -33,7 +33,6 @@ import {
 } from "@/components/ui/select";
 import { courseSchema, type CourseInput } from "@/lib/validations/course";
 import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
-import { createCourse, updateCourse } from "@/app/actions/createCourse";
 import { toast } from "sonner";
 import { Loader2, Plus, Upload, X } from "lucide-react";
 import type { Course } from "@prisma/client";
@@ -200,9 +199,12 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
     setIsSubmitting(true);
 
     try {
-      const result = course
-        ? await updateCourse(course.id, data)
-        : await createCourse(data);
+      const response = await fetch("/api/admin/courses", {
+        method: course ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(course ? { id: course.id, data } : data),
+      });
+      const result = await response.json();
 
       if (result.success) {
         toast.success(course ? "Kurs oppdatert" : "Kurs opprettet");

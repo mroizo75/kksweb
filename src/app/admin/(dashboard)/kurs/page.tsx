@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { CourseDialog } from "@/components/admin/CourseDialog";
-import { deleteCourse } from "@/app/actions/createCourse";
 import { toast } from "sonner";
 import type { Course } from "@prisma/client";
 
@@ -47,7 +46,10 @@ export default function AdminCoursesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Er du sikker på at du vil slette dette kurset?")) return;
 
-    const result = await deleteCourse(id);
+    const response = await fetch(`/api/admin/courses?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    const result = await response.json();
     if (result.success) {
       toast.success("Kurs slettet");
       loadCourses();
