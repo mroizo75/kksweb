@@ -1,19 +1,24 @@
 import { getCourseCategoryLabel } from "@/lib/course-categories";
 
-export const OSLO_LOCATION_NAME = "Oslo";
-export const OSLO_REGION_NAME = "Oslo og Akershus";
-
-export function buildOsloCourseKeywords(courseTitle: string, courseCategory: string, courseCode: string): string[] {
+export function buildLocalCourseKeywords(
+  courseTitle: string,
+  courseCategory: string,
+  courseCode: string,
+  locationName: string,
+  regionName: string
+): string[] {
   const categoryLabel = getCourseCategoryLabel(courseCategory).toLowerCase();
+  const location = locationName.toLowerCase();
+  const region = regionName.toLowerCase();
 
   return [
-    `${courseTitle} i Oslo`,
-    `${courseTitle} kurs Oslo`,
-    `${courseTitle} ${OSLO_LOCATION_NAME}`,
-    `${categoryLabel} kurs Oslo`,
-    `kurs ${OSLO_LOCATION_NAME.toLowerCase()}`,
-    `bedriftskurs ${OSLO_LOCATION_NAME.toLowerCase()}`,
-    `${OSLO_REGION_NAME.toLowerCase()} kurs`,
+    `${courseTitle} i ${locationName}`,
+    `${courseTitle} kurs ${locationName}`,
+    `${courseTitle} ${locationName}`,
+    `${categoryLabel} kurs ${locationName}`,
+    `kurs ${location}`,
+    `bedriftskurs ${location}`,
+    `${region} kurs`,
     courseCode,
   ];
 }

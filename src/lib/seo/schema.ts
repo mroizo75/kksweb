@@ -501,3 +501,26 @@ export function generateCourseListSchema(
   };
 }
 
+/**
+ * Generer ItemList Schema for relaterte kurslenker
+ */
+export function generateRelatedCourseItemListSchema(
+  items: Array<{ name: string; url: string }>,
+  baseUrl: string,
+  listName: string,
+  listDescription?: string
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": listName,
+    "description": listDescription ?? `Relaterte kurslenker for ${listName}`,
+    "itemListElement": items.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": item.url.startsWith("http") ? item.url : `${baseUrl}${item.url}`,
+      "name": item.name,
+    })),
+  };
+}
+

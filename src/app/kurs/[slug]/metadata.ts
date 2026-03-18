@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { db } from "@/lib/db";
 import { normalizeR2ImageUrl } from "@/lib/r2";
 import { stripHtml } from "@/lib/utils";
-import { buildOsloCourseKeywords, OSLO_LOCATION_NAME, OSLO_REGION_NAME } from "@/lib/local-seo";
+import { getCourseCategoryLabel } from "@/lib/course-categories";
 
 export async function generateCourseMetadata(slug: string): Promise<Metadata> {
   const course = await db.course.findUnique({
@@ -45,31 +45,30 @@ export async function generateCourseMetadata(slug: string): Promise<Metadata> {
       : `${baseUrl}${normalizedImage}`
     : `${baseUrl}/placeholder-kurs.jpg`;
 
+  const categoryLabel = getCourseCategoryLabel(course.category).toLowerCase();
   const baseDescription = course.description
     ? stripHtml(course.description).replace(/\s+/g, " ").trim()
     : `${course.title} — Profesjonell kursing fra KKS AS. ${course.durationDays} ${
       course.durationDays === 1 ? "dag" : "dager"
     }. Fra kr ${course.price.toLocaleString("nb-NO")},-. Meld deg på i dag.`;
-  const localDescription = `${course.title} i ${OSLO_LOCATION_NAME}. Vi tilbyr kurs for bedrifter og privatpersoner i ${OSLO_REGION_NAME}.`;
-  const description = `${baseDescription.slice(0, 120)} ${localDescription}`.slice(0, 160);
-  const localKeywords = buildOsloCourseKeywords(course.title, course.category, course.code);
+  const description = `${baseDescription.slice(0, 130)} Kurs i hele Norge for bedrifter og privatpersoner.`.slice(0, 160);
 
   return {
-    title: `${course.title} i ${OSLO_LOCATION_NAME} | KKS AS`,
+    title: `${course.title} | KKS AS`,
     description,
     keywords: [
       course.title,
       `${course.title} kurs`,
       `${course.title} sertifisering`,
-      course.category,
+      `${categoryLabel} kurs`,
       "HMS kurs",
       "BHT kurs",
       "kurs Norge",
-      ...localKeywords,
+      course.code,
     ],
     authors: [{ name: "KKS AS" }],
     openGraph: {
-      title: `${course.title} i ${OSLO_LOCATION_NAME} — KKS AS`,
+      title: `${course.title} — KKS AS`,
       description,
       url: courseUrl,
       siteName: "KKS AS",
@@ -86,7 +85,7 @@ export async function generateCourseMetadata(slug: string): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${course.title} i ${OSLO_LOCATION_NAME} — KKS AS`,
+      title: `${course.title} — KKS AS`,
       description,
       images: [imageUrl],
     },

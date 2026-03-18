@@ -17,121 +17,17 @@ import {
   generateBreadcrumbSchema,
 } from "@/lib/seo/schema";
 import { normalizeR2ImageUrl } from "@/lib/r2";
-import { getCourseCategoryLabel } from "@/lib/course-categories";
+import { getCourseCategoryLabel, primaryCourseCategoryListText } from "@/lib/course-categories";
+import { buildSessionLocationOrFilter } from "@/lib/location-matching";
+import { locationConfig, supportedLocationSlugs, type LocationSlug } from "@/lib/locations";
 
 interface PageProps {
   params: Promise<{ location: string }>;
 }
 
-// Støttede lokasjoner med metadata
-const locations = {
-  "oslo": {
-    name: "Oslo",
-    region: "Oslo og Akershus",
-    description: "Profesjonell kursvirksomhet i hovedstaden",
-    phone: "+47 91 54 08 24",
-    email: "post@kksas.no",
-    keywords: "kurs oslo, maskinførerkurs oslo, truckfører oslo, kranfører oslo, HMS kurs oslo",
-    heroText: "Profesjonelle kurs i Oslo og Akershus",
-    about: "KKS AS tilbyr et bredt spekter av profesjonelle kurs i Oslo-området. Med over 10 års erfaring og sertifiserte instruktører, er vi din foretrukne partner for truck-, kran-, stillas- og HMS-opplæring i hovedstaden. Vi kommer gjerne ut til din bedrift.",
-    benefits: [
-      "Vi kommer til din bedrift",
-      "Erfarne lokale instruktører",
-      "Moderne utstyr og fasiliteter",
-      "Fleksible kurstider og lokasjoner",
-      "Spar tid - vi kommer til dere",
-    ],
-  },
-  "bergen": {
-    name: "Bergen",
-    region: "Bergen og Vestland",
-    description: "Kurs og kompetanse på Vestlandet",
-    phone: "+47 91 54 08 24",
-    email: "post@kksas.no",
-    keywords: "kurs bergen, maskinførerkurs bergen, truckfører bergen, kranfører bergen, HMS kurs bergen",
-    heroText: "Profesjonelle kurs i Bergen og Vestland",
-    about: "KKS AS er din lokale kursleverandør i Bergen og på Vestlandet. Vi tilbyr sertifisert opplæring innen truck, kran, stillas og HMS med fokus på sikkerhet og kvalitet. Vi kommer gjerne ut til din bedrift.",
-    benefits: [
-      "Vi kommer til din bedrift",
-      "Lokalkunnskap i Bergen-området",
-      "Erfarne vestlandsinstruktører",
-      "Fleksible kurstider og lokasjoner",
-      "Spar tid - vi kommer til dere",
-    ],
-  },
-  "trondheim": {
-    name: "Trondheim",
-    region: "Trondheim og Trøndelag",
-    description: "Kvalitetskurs i Midt-Norge",
-    phone: "+47 91 54 08 24",
-    email: "post@kksas.no",
-    keywords: "kurs trondheim, maskinførerkurs trondheim, truckfører trondheim, kranfører trondheim",
-    heroText: "Profesjonelle kurs i Trondheim og Trøndelag",
-    about: "I Trondheim og Trøndelag tilbyr KKS AS komplett opplæring innen maskinføring, HMS og sikkerhet. Våre instruktører har lang erfaring fra regionen og kommer gjerne ut til din bedrift.",
-    benefits: [
-      "Vi kommer til din bedrift",
-      "Lokale instruktører fra Trøndelag",
-      "Tilpasset lokale forhold",
-      "Fleksible kurstider og lokasjoner",
-      "Spar tid - vi kommer til dere",
-    ],
-  },
-  "stavanger": {
-    name: "Stavanger",
-    region: "Stavanger og Rogaland",
-    description: "Profesjonell opplæring i Rogaland",
-    phone: "+47 91 54 08 24",
-    email: "post@kksas.no",
-    keywords: "kurs stavanger, maskinførerkurs stavanger, truckfører stavanger, kranfører stavanger",
-    heroText: "Profesjonelle kurs i Stavanger og Rogaland",
-    about: "KKS AS leverer førsteklasses opplæring i Stavanger og Rogaland-området. Med spesialkompetanse innen offshore-relaterte kurs og tradisjonell maskinføring. Vi kommer gjerne ut til din bedrift.",
-    benefits: [
-      "Vi kommer til din bedrift",
-      "Erfaring med offshore-industrien",
-      "Lokale instruktører",
-      "Tilpasset Rogalands næringsliv",
-      "Rask oppstart og fleksibilitet",
-    ],
-  },
-  "kristiansand": {
-    name: "Kristiansand",
-    region: "Kristiansand og Agder",
-    description: "Kurs og HMS i Sørlandet",
-    phone: "+47 91 54 08 24",
-    email: "post@kksas.no",
-    keywords: "kurs kristiansand, maskinførerkurs kristiansand, truckfører kristiansand",
-    heroText: "Profesjonelle kurs i Kristiansand og Agder",
-    about: "På Sørlandet tilbyr KKS AS komplett kursportefølje for bedrifter og privatpersoner. Sertifisert opplæring med fokus på sikkerhet. Vi kommer gjerne ut til din bedrift.",
-    benefits: [
-      "Vi kommer til din bedrift",
-      "Lokale instruktører fra Agder",
-      "Moderne utstyr",
-      "Fleksible kurstider og lokasjoner",
-      "God oppfølging",
-    ],
-  },
-  "tromso": {
-    name: "Tromsø",
-    region: "Tromsø og Nord-Norge",
-    description: "Nordnorsk kompetanse og kvalitet",
-    phone: "+47 91 54 08 24",
-    email: "post@kksas.no",
-    keywords: "kurs tromsø, maskinførerkurs tromsø, truckfører tromsø, nord-norge",
-    heroText: "Profesjonelle kurs i Tromsø og Nord-Norge",
-    about: "KKS AS tilbyr profesjonell opplæring i Tromsø og Nord-Norge. Våre instruktører har erfaring med nordnorske forhold og værforhold. Vi kommer gjerne ut til din bedrift.",
-    benefits:[
-      "Vi kommer til din bedrift",
-      "Tilpasset nordnorske forhold",
-      "Erfarne instruktører",
-      "Vinteropplæring",
-      "Fleksible kurstider og lokasjoner",
-    ],
-  },
-};
-
 export async function generateMetadata(props: PageProps) {
   const params = await props.params;
-  const location = locations[params.location as keyof typeof locations];
+  const location = locationConfig[params.location as LocationSlug];
 
   if (!location) {
     return {
@@ -139,10 +35,20 @@ export async function generateMetadata(props: PageProps) {
     };
   }
 
+  const locationSessionOrFilter = buildSessionLocationOrFilter(params.location);
+  const openLocalSessionsCount = await db.courseSession.count({
+    where: {
+      startsAt: { gte: new Date() },
+      status: "OPEN",
+      ...(locationSessionOrFilter.length > 0 && { OR: locationSessionOrFilter }),
+    },
+  });
+
   return {
-    title: `Kurs i ${location.name} - Truck, Kran, Stillas, HMS | KKS AS`,
+    title: `Kurs i ${location.name} - ${primaryCourseCategoryListText} | KKS AS`,
     description: `${location.about.substring(0, 155)}`,
     keywords: location.keywords,
+    robots: openLocalSessionsCount > 0 ? undefined : { index: false, follow: true },
     openGraph: {
       title: `Kurs i ${location.name} - KKS AS`,
       description: location.description,
@@ -152,20 +58,21 @@ export async function generateMetadata(props: PageProps) {
 }
 
 export async function generateStaticParams() {
-  return Object.keys(locations).map((location) => ({
+  return supportedLocationSlugs.map((location) => ({
     location,
   }));
 }
 
 export default async function LocationPage(props: PageProps) {
   const params = await props.params;
-  const location = locations[params.location as keyof typeof locations];
+  const location = locationConfig[params.location as LocationSlug];
 
   if (!location) {
     notFound();
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+  const locationSessionOrFilter = buildSessionLocationOrFilter(params.location);
 
   const locationFaqs = [
     {
@@ -207,6 +114,7 @@ export default async function LocationPage(props: PageProps) {
     where: {
       startsAt: { gte: new Date() },
       status: "OPEN",
+      ...(locationSessionOrFilter.length > 0 && { OR: locationSessionOrFilter }),
     },
     include: {
       course: {
@@ -224,7 +132,16 @@ export default async function LocationPage(props: PageProps) {
 
   // Hent alle kurs for visning
   const courses = await db.course.findMany({
-    where: { published: true },
+    where: {
+      published: true,
+      sessions: {
+        some: {
+          startsAt: { gte: new Date() },
+          status: "OPEN",
+          ...(locationSessionOrFilter.length > 0 && { OR: locationSessionOrFilter }),
+        },
+      },
+    },
     select: {
       id: true,
       title: true,
@@ -234,6 +151,7 @@ export default async function LocationPage(props: PageProps) {
       price: true,
       image: true,
     },
+    orderBy: { title: "asc" },
     take: 8,
   });
 
@@ -301,51 +219,57 @@ export default async function LocationPage(props: PageProps) {
           <h2 className="text-3xl font-bold mb-8 text-center">
             Våre kurs i {location.name}
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {courses.map((course) => (
-              <Card key={course.id} className="hover:shadow-lg transition-shadow">
-                {course.image && (
-                  <div className="overflow-hidden rounded-t-lg relative aspect-[4/3] sm:aspect-[16/10]">
-                    <img
-                      src={normalizeR2ImageUrl(course.image)}
-                      alt={course.title}
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-                <CardHeader>
-                  <Badge variant="secondary" className="w-fit mb-2">
-                    {getCourseCategoryLabel(course.category)}
-                  </Badge>
-                  <CardTitle className="text-lg">{course.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">
-                    {course.description ? stripHtml(course.description).substring(0, 120) : ""}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-primary">
-                      {course.price === 0 ? "Gratis" : `${course.price.toLocaleString("nb-NO")} kr`}
-                    </span>
-                  </div>
-                  <Link
-                    href={
-                      params.location === "oslo"
-                        ? `/lokasjon/oslo/${course.slug}`
-                        : `/kurs/${course.slug}`
-                    }
-                    title={`${course.title} i ${location.name}`}
-                  >
-                    <Button className="w-full mt-4">
-                      Les mer om {course.title} i {location.name}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {courses.length === 0 ? (
+            <Card className="max-w-2xl mx-auto">
+              <CardContent className="pt-6 text-center">
+                <p className="text-muted-foreground">
+                  Ingen åpne kurssesjoner i {location.name} akkurat nå. Kontakt oss for rask oppstart i {location.region}.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+              {courses.map((course) => (
+                <Card key={course.id} className="hover:shadow-lg transition-shadow">
+                  {course.image && (
+                    <div className="overflow-hidden rounded-t-lg relative aspect-[4/3] sm:aspect-[16/10]">
+                      <img
+                        src={normalizeR2ImageUrl(course.image)}
+                        alt={course.title}
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <CardHeader>
+                    <Badge variant="secondary" className="w-fit mb-2">
+                      {getCourseCategoryLabel(course.category)}
+                    </Badge>
+                    <CardTitle className="text-lg">{course.title}</CardTitle>
+                    <CardDescription className="line-clamp-2">
+                      {course.description ? stripHtml(course.description).substring(0, 120) : ""}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-primary">
+                        {course.price === 0 ? "Gratis" : `${course.price.toLocaleString("nb-NO")} kr`}
+                      </span>
+                    </div>
+                    <Link
+                      href={`/lokasjon/${params.location}/${course.slug}`}
+                      title={`${course.title} i ${location.name}`}
+                    >
+                      <Button className="w-full mt-4">
+                        Les mer om {course.title} i {location.name}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
           <div className="text-center mt-8">
             <Button size="lg" variant="outline" asChild>
               <Link href="/kurs">
@@ -356,6 +280,32 @@ export default async function LocationPage(props: PageProps) {
           </div>
         </div>
       </section>
+
+      {courses.length > 0 && (
+        <section className="py-12 border-t bg-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="max-w-5xl mx-auto">
+              <h2 className="text-2xl md:text-3xl font-bold mb-3">
+                Kurshub {location.name}: raske lenker
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Direkte lenker til kurs i {location.name} og {location.region}. Bruk disse for rask navigasjon til riktig kurs.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {courses.map((course) => (
+                  <Link
+                    key={course.id}
+                    href={`/lokasjon/${params.location}/${course.slug}`}
+                    className="rounded-lg border bg-background px-4 py-3 text-sm font-medium hover:border-primary hover:text-primary transition-colors"
+                  >
+                    {course.title} i {location.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Upcoming Sessions */}
       {sessions.length > 0 && (

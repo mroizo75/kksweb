@@ -1,5 +1,7 @@
 import { MetadataRoute } from "next";
 import { db } from "@/lib/db";
+import { supportedLocationSlugs } from "@/lib/locations";
+import { getSessionLocationKeywords } from "@/lib/location-matching";
 
 /**
  * Dynamisk Sitemap Generator
@@ -20,8 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   // Lokasjonssider for lokal SEO
-  const locations = ["oslo", "bergen", "trondheim", "stavanger", "kristiansand", "tromso"];
-  const locationPages = locations.map((location) => ({
+  const locationPages = supportedLocationSlugs.map((location) => ({
     url: `${baseUrl}/lokasjon/${location}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
@@ -100,14 +101,57 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Lokale kurssider for Oslo SEO
-  const osloCoursePages = courses.map((course) => ({
-    url: `${baseUrl}/lokasjon/oslo/${course.slug}`,
-    lastModified: course.updatedAt,
-    changeFrequency: "weekly" as const,
-    priority: 0.85,
-  }));
+  const openSessions = await db.courseSession.findMany({
+    where: {
+      startsAt: { gte: new Date() },
+      status: "OPEN",
+      course: { published: true },
+    },
+    select: {
+      location: true,
+      updatedAt: true,
+      course: {
+        select: {
+          slug: true,
+          updatedAt: true,
+        },
+      },
+    },
+  });
 
-  return [...staticPages, ...locationPages, ...coursePages, ...osloCoursePages];
+  const localCoursePageMap = new Map<string, Date>();
+  for (const session of openSessions) {
+    const sessionLocation = session.location.toLowerCase();
+    for (const locationSlug of supportedLocationSlugs) {
+      const keywords = getSessionLocationKeywords(locationSlug);
+      const isMatch = keywords.some((keyword) => sessionLocation.includes(keyword));
+      if (!isMatch) {
+        continue;
+      }
+
+      const key = `${locationSlug}:${session.course.slug}`;
+      const candidateDate = session.updatedAt > session.course.updatedAt
+        ? session.updatedAt
+        : session.course.updatedAt;
+      const existingDate = localCoursePageMap.get(key);
+      if (!existingDate || candidateDate > existingDate) {
+        localCoursePageMap.set(key, candidateDate);
+      }
+    }
+  }
+
+  const localCoursePages = Array.from(localCoursePageMap.entries()).map(
+    ([key, lastModified]) => {
+      const [locationSlug, courseSlug] = key.split(":");
+      return {
+        url: `${baseUrl}/lokasjon/${locationSlug}/${courseSlug}`,
+        lastModified,
+        changeFrequency: "weekly" as const,
+        priority: 0.86,
+      };
+    }
+  );
+
+  return [...staticPages, ...locationPages, ...coursePages, ...localCoursePages];
 }
 

@@ -20,11 +20,13 @@ import {
   generateCourseSchema,
   generateBreadcrumbSchema,
   generateFAQSchema,
+  generateRelatedCourseItemListSchema,
 } from "@/lib/seo/schema";
 import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
 import { normalizeR2ImageUrl } from "@/lib/r2";
 import { getCourseCategoryLabel } from "@/lib/course-categories";
-import { OSLO_LOCATION_NAME, OSLO_REGION_NAME } from "@/lib/local-seo";
+import { locationConfig, supportedLocationSlugs } from "@/lib/locations";
+import { getRelatedLocalCourseLinkGroups } from "@/lib/related-local-course-links";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -95,6 +97,12 @@ export default async function CourseDetailPage(props: PageProps) {
     image: normalizeR2ImageUrl(addOn.image),
   }));
   const categoryLabel = getCourseCategoryLabel(course.category);
+  const relatedLocalLinkGroups = await getRelatedLocalCourseLinkGroups({
+    currentCourseId: course.id,
+    category: course.category,
+    maxLocations: 6,
+    maxLinksPerLocation: 2,
+  });
 
   const courseFaqs = [
     {
@@ -122,8 +130,8 @@ export default async function CourseDetailPage(props: PageProps) {
       answer: `Ja. Etter bestått ${course.title} mottar du et offisielt kompetansebevis fra KKS AS som dokumenterer din sertifisering.`,
     },
     {
-      question: `Tilbyr dere ${course.title} i ${OSLO_LOCATION_NAME}?`,
-      answer: `Ja. KKS AS tilbyr ${course.title} i ${OSLO_LOCATION_NAME} og ${OSLO_REGION_NAME}. Vi kan gjennomføre kurset hos din bedrift eller i innleid kurslokale.`,
+      question: `Tilbyr dere ${course.title} over hele Norge?`,
+      answer: `Ja. KKS AS tilbyr ${course.title} i hele Norge og kan gjennomføre kurset hos din bedrift eller i innleid kurslokale.`,
     },
   ];
 
@@ -137,10 +145,30 @@ export default async function CourseDetailPage(props: PageProps) {
     baseUrl
   );
   const faqSchema = generateFAQSchema(courseFaqs);
+  const relatedCourseSchemaItems = relatedLocalLinkGroups.flatMap((group) =>
+    group.links.map((link) => ({
+      name: `${link.courseTitle} i ${group.locationName}`,
+      url: link.href,
+    }))
+  );
+  const relatedCourseItemListSchema = relatedCourseSchemaItems.length > 0
+    ? generateRelatedCourseItemListSchema(
+        relatedCourseSchemaItems,
+        baseUrl,
+        `Relaterte ${categoryLabel.toLowerCase()}-kurs etter lokasjon`,
+        `Relaterte ${categoryLabel.toLowerCase()}-kurs med lokale landingssider`
+      )
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
-      <StructuredData data={[courseSchema, breadcrumbSchema, faqSchema]} />
+      <StructuredData
+        data={
+          relatedCourseItemListSchema
+            ? [courseSchema, breadcrumbSchema, faqSchema, relatedCourseItemListSchema]
+            : [courseSchema, breadcrumbSchema, faqSchema]
+        }
+      />
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
@@ -232,20 +260,47 @@ export default async function CourseDetailPage(props: PageProps) {
             </div>
 
             <div className="mb-8 rounded-xl border bg-muted/30 p-6">
-              <h2 className="text-2xl font-bold mb-4">{course.title} i {OSLO_LOCATION_NAME}</h2>
+              <h2 className="text-2xl font-bold mb-4">{course.title} etter lokasjon</h2>
               <p className="text-muted-foreground mb-4">
-                Vi leverer {course.title} i {OSLO_LOCATION_NAME} og {OSLO_REGION_NAME} for både bedrifter og privatpersoner.
-                Ønsker du bedriftsintern gjennomføring, kan instruktør komme til deres lokasjon.
+                Vi leverer {course.title} i hele Norge. Velg nærmeste storby for lokal informasjon og tilgjengelige datoer.
               </p>
-              <div className="flex flex-wrap gap-3">
-                <Link href={`/lokasjon/oslo/${course.slug}`}>
-                  <Button variant="outline">Se kurs i Oslo</Button>
-                </Link>
-                <Link href="/kontakt">
-                  <Button>Bestill kurs i Oslo</Button>
-                </Link>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {supportedLocationSlugs.map((locationSlug) => (
+                  <Link key={locationSlug} href={`/lokasjon/${locationSlug}/${course.slug}`}>
+                    <Button variant="outline" className="w-full">
+                      {course.title} i {locationConfig[locationSlug].name}
+                    </Button>
+                  </Link>
+                ))}
               </div>
             </div>
+
+            {relatedLocalLinkGroups.length > 0 && (
+              <div className="mb-8 rounded-xl border p-6">
+                <h2 className="text-2xl font-bold mb-4">
+                  Relaterte {categoryLabel.toLowerCase()}-kurs per by
+                </h2>
+                <p className="text-muted-foreground mb-4">
+                  Utforsk lignende kurs i samme kategori med lokal informasjon og tilgjengelige datoer.
+                </p>
+                <div className="space-y-4">
+                  {relatedLocalLinkGroups.map((group) => (
+                    <div key={group.locationSlug}>
+                      <h3 className="font-semibold mb-2">{group.locationName}</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {group.links.map((link) => (
+                          <Link key={`${group.locationSlug}-${link.courseSlug}`} href={link.href}>
+                            <Button variant="outline" size="sm">
+                              {link.courseTitle} i {group.locationName}
+                            </Button>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* FAQ-seksjon — øker AI-synlighet og rich snippets */}
             <div className="mb-8">
@@ -360,7 +415,7 @@ export default async function CourseDetailPage(props: PageProps) {
                       );
                     })}
                     <p className="text-xs text-muted-foreground">
-                      Trenger du {course.title} i {OSLO_LOCATION_NAME}? Ta kontakt, så setter vi opp kurs i {OSLO_REGION_NAME}.
+                      Trenger du {course.title} på din lokasjon? Ta kontakt, så setter vi opp kurs i din region.
                     </p>
                   </div>
                 )}
