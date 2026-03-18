@@ -17,6 +17,7 @@ import {
   generateBreadcrumbSchema,
 } from "@/lib/seo/schema";
 import { normalizeR2ImageUrl } from "@/lib/r2";
+import { getCourseCategoryLabel } from "@/lib/course-categories";
 
 interface PageProps {
   params: Promise<{ location: string }>;
@@ -304,7 +305,7 @@ export default async function LocationPage(props: PageProps) {
             {courses.map((course) => (
               <Card key={course.id} className="hover:shadow-lg transition-shadow">
                 {course.image && (
-                  <div className="h-48 overflow-hidden rounded-t-lg relative">
+                  <div className="overflow-hidden rounded-t-lg relative aspect-[4/3] sm:aspect-[16/10]">
                     <img
                       src={normalizeR2ImageUrl(course.image)}
                       alt={course.title}
@@ -315,7 +316,7 @@ export default async function LocationPage(props: PageProps) {
                 )}
                 <CardHeader>
                   <Badge variant="secondary" className="w-fit mb-2">
-                    {course.category}
+                    {getCourseCategoryLabel(course.category)}
                   </Badge>
                   <CardTitle className="text-lg">{course.title}</CardTitle>
                   <CardDescription className="line-clamp-2">
@@ -328,9 +329,16 @@ export default async function LocationPage(props: PageProps) {
                       {course.price === 0 ? "Gratis" : `${course.price.toLocaleString("nb-NO")} kr`}
                     </span>
                   </div>
-                  <Link href={`/kurs/${course.slug}`}>
+                  <Link
+                    href={
+                      params.location === "oslo"
+                        ? `/lokasjon/oslo/${course.slug}`
+                        : `/kurs/${course.slug}`
+                    }
+                    title={`${course.title} i ${location.name}`}
+                  >
                     <Button className="w-full mt-4">
-                      Les mer
+                      Les mer om {course.title} i {location.name}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>

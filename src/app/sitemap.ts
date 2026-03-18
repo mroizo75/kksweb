@@ -100,6 +100,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...locationPages, ...coursePages];
+  // Lokale kurssider for Oslo SEO
+  const osloCoursePages = courses.map((course) => ({
+    url: `${baseUrl}/lokasjon/oslo/${course.slug}`,
+    lastModified: course.updatedAt,
+    changeFrequency: "weekly" as const,
+    priority: 0.85,
+  }));
+
+  return [...staticPages, ...locationPages, ...coursePages, ...osloCoursePages];
 }
 

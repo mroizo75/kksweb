@@ -19,21 +19,26 @@ import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { generateCourseListSchema, generateBreadcrumbSchema, generateDefinedTermSchema } from "@/lib/seo/schema";
+import {
+  courseCategoryOptions,
+  getCourseCategoryLabel,
+  primaryCourseCategoryCourseTerms,
+  primaryCourseCategoryListText,
+} from "@/lib/course-categories";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+const seoCourseCategoryTerms = primaryCourseCategoryCourseTerms.map((term) =>
+  term.toLowerCase()
+);
+const seoCourseCategoryList = primaryCourseCategoryListText.toLowerCase();
 
 export const metadata: Metadata = {
-  title: "Alle kurs — Truck, Kran, Stillas, HMS og BHT | KKS AS",
+  title: `Alle kurs — ${primaryCourseCategoryListText} | KKS AS`,
   description:
-    "Komplett kursoversikt fra KKS AS. Finn og meld deg på kurs innen truck, kran, stillas, arbeid på vei, HMS og BHT-opplæring. Sertifiserte instruktører over hele Norge.",
+    `Komplett kursoversikt fra KKS AS. Finn og meld deg på kurs innen ${seoCourseCategoryList}. Sertifiserte instruktører over hele Norge.`,
   keywords: [
     "kursoversikt",
-    "truckkurs",
-    "krankurs",
-    "stillasmontørkurs",
-    "HMS kurs",
-    "BHT kurs",
-    "arbeid på vei kurs",
+    ...seoCourseCategoryTerms,
     "maskinførerkurs",
     "kurs Norge",
     "sertifisering",
@@ -44,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Alle kurs — KKS AS",
     description:
-      "Finn og meld deg på kurs innen truck, kran, stillas, HMS og mer. KKS AS — sertifiserte instruktører i hele Norge.",
+      `Finn og meld deg på kurs innen ${seoCourseCategoryList}. KKS AS — sertifiserte instruktører i hele Norge.`,
     url: `${BASE_URL}/kurs`,
     siteName: "KKS AS",
     locale: "nb_NO",
@@ -141,7 +146,15 @@ export default async function CoursesPage(props: PageProps) {
     console.error("Feil ved lasting av /kurs:", error);
   }
 
-  const uniqueCategories = categories.map((c) => c.category);
+  const categoriesFromCourses = new Set(categories.map((c) => c.category));
+  const categoryOrder = new Map<string, number>(
+    courseCategoryOptions.map((option, index) => [option.value, index])
+  );
+  const uniqueCategories = Array.from(categoriesFromCourses).sort((a, b) => {
+    const orderA = categoryOrder.get(a) ?? Number.MAX_SAFE_INTEGER;
+    const orderB = categoryOrder.get(b) ?? Number.MAX_SAFE_INTEGER;
+    return orderA - orderB;
+  });
 
   const courseListSchema = generateCourseListSchema(courses, baseUrl);
   const breadcrumbSchema = generateBreadcrumbSchema(
@@ -205,7 +218,7 @@ export default async function CoursesPage(props: PageProps) {
                 variant={category === cat ? "default" : "outline"}
                 size="sm"
               >
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                {getCourseCategoryLabel(cat)}
               </Button>
             </Link>
           ))}
@@ -230,7 +243,7 @@ export default async function CoursesPage(props: PageProps) {
                 <Card key={course.id} className="flex flex-col">
                   <CardHeader>
                     <div className="flex items-start justify-between mb-2">
-                      <Badge variant="secondary">{course.category}</Badge>
+                      <Badge variant="secondary">{getCourseCategoryLabel(course.category)}</Badge>
                       <span className="text-sm font-bold text-primary">
                         {course.price === 0
                           ? "Gratis"

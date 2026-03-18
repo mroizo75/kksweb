@@ -5,10 +5,14 @@
 
 import { Course, CourseSession } from "@prisma/client";
 import { normalizeR2ImageUrl } from "@/lib/r2";
+import {
+  primaryCourseCategoryListText,
+} from "@/lib/course-categories";
 
 const KKS_NAME = "KKS AS";
 const KKS_PHONE = "+47 91 54 08 24";
 const KKS_EMAIL = "post@kksas.no";
+const seoCourseCategoryList = primaryCourseCategoryListText.toLowerCase();
 
 export interface SchemaOrgCourse extends Course {
   sessions?: (CourseSession & { instructor?: { name: string | null } | null })[];
@@ -168,7 +172,7 @@ export function generateOrganizationSchema(baseUrl: string) {
       "height": 60,
     },
     "description":
-      "KKS AS (Kurs og Kompetansesystemer AS) er en ISO 9001- og ISO 27001-sertifisert norsk kursleverandør godkjent av Arbeidstilsynet. Vi tilbyr truck-, kran-, stillas-, arbeid på vei-, HMS- og BHT-opplæring i hele Norge med sertifiserte instruktører.",
+      `KKS AS (Kurs og Kompetansesystemer AS) er en ISO 9001- og ISO 27001-sertifisert norsk kursleverandør godkjent av Arbeidstilsynet. Vi tilbyr ${seoCourseCategoryList} i hele Norge med sertifiserte instruktører.`,
     "foundingDate": "2020",
     "address": {
       "@type": "PostalAddress",
@@ -365,7 +369,7 @@ export function generateLocalBusinessSchema(
     },
     "priceRange": "kr kr",
     "openingHours": "Mo-Fr 08:00-16:00",
-    "description": `KKS AS tilbyr profesjonell kursing i ${locationName} og ${region}. Truck, kran, stillas, HMS og BHT-kurs med sertifiserte instruktører.`,
+    "description": `KKS AS tilbyr profesjonell kursing i ${locationName} og ${region}. Kurs innen ${seoCourseCategoryList} med sertifiserte instruktører.`,
     "parentOrganization": {
       "@type": "EducationalOrganization",
       "name": KKS_NAME,
@@ -394,7 +398,7 @@ export function generateHowToSchema(baseUrl: string) {
         "@type": "HowToStep",
         "position": 1,
         "name": "Finn riktig kurs",
-        "text": "Gå til kursoversikten på kksas.no og velg kurstype (truck, kran, stillas, HMS, arbeid på vei eller BHT). Filtrer på kategori for å finne akkurat det kurset du trenger.",
+        "text": `Gå til kursoversikten på kksas.no og velg kurstype (${seoCourseCategoryList}). Filtrer på kategori for å finne akkurat det kurset du trenger.`,
         "url": `${baseUrl}/kurs`,
       },
       {
@@ -470,7 +474,7 @@ export function generateCourseListSchema(
     "@context": "https://schema.org",
     "@type": "ItemList",
     "name": "Kursoversikt — KKS AS",
-    "description": "Komplett oversikt over alle kurs fra KKS AS innen truck, kran, stillas, HMS og BHT.",
+    "description": `Komplett oversikt over alle kurs fra KKS AS innen ${seoCourseCategoryList}.`,
     "url": `${baseUrl}/kurs`,
     "numberOfItems": courses.length,
     "itemListElement": courses.map((course, index) => ({

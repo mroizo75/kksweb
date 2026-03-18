@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { CourseDialog } from "@/components/admin/CourseDialog";
+import { getCourseCategoryLabel } from "@/lib/course-categories";
 import { toast } from "sonner";
 import type { Course } from "@prisma/client";
 
@@ -102,7 +103,7 @@ export default function AdminCoursesPage() {
             <Card key={course.id}>
               <CardHeader>
                 <div className="flex items-start justify-between mb-2">
-                  <Badge variant="secondary">{course.category}</Badge>
+                  <Badge variant="secondary">{getCourseCategoryLabel(course.category)}</Badge>
                   <Badge variant={course.published ? "default" : "outline"}>
                     {course.published ? "Publisert" : "Utkast"}
                   </Badge>

@@ -23,6 +23,8 @@ import {
 } from "@/lib/seo/schema";
 import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
 import { normalizeR2ImageUrl } from "@/lib/r2";
+import { getCourseCategoryLabel } from "@/lib/course-categories";
+import { OSLO_LOCATION_NAME, OSLO_REGION_NAME } from "@/lib/local-seo";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -92,6 +94,7 @@ export default async function CourseDetailPage(props: PageProps) {
     ...addOn,
     image: normalizeR2ImageUrl(addOn.image),
   }));
+  const categoryLabel = getCourseCategoryLabel(course.category);
 
   const courseFaqs = [
     {
@@ -117,6 +120,10 @@ export default async function CourseDetailPage(props: PageProps) {
     {
       question: `Får jeg kursbevis etter ${course.title}?`,
       answer: `Ja. Etter bestått ${course.title} mottar du et offisielt kompetansebevis fra KKS AS som dokumenterer din sertifisering.`,
+    },
+    {
+      question: `Tilbyr dere ${course.title} i ${OSLO_LOCATION_NAME}?`,
+      answer: `Ja. KKS AS tilbyr ${course.title} i ${OSLO_LOCATION_NAME} og ${OSLO_REGION_NAME}. Vi kan gjennomføre kurset hos din bedrift eller i innleid kurslokale.`,
     },
   ];
 
@@ -150,7 +157,7 @@ export default async function CourseDetailPage(props: PageProps) {
           <div className="lg:col-span-2">
             {/* Course Image */}
             {courseImage && (
-              <div className="mb-6 rounded-xl overflow-hidden shadow-lg relative w-full h-[400px]">
+              <div className="mb-6 rounded-xl overflow-hidden shadow-lg relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9]">
                 <img
                   src={courseImage}
                   alt={course.title}
@@ -162,7 +169,7 @@ export default async function CourseDetailPage(props: PageProps) {
 
             <div className="mb-4">
               <Badge variant="secondary" className="mb-4">
-                {course.category}
+                {categoryLabel}
               </Badge>
               <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
               <p className="text-lg text-muted-foreground">
@@ -220,8 +227,24 @@ export default async function CourseDetailPage(props: PageProps) {
               <h2 className="text-2xl font-bold mb-4">Hvem bør ta kurset</h2>
               <p className="text-muted-foreground">
                 {course.targetAudience ||
-                  `${course.title} passer for deg som skal jobbe med, eller allerede jobber med, ${course.category.toLowerCase()}-relaterte oppgaver i din arbeidshverdag. Kurset er relevant for ansatte i bygg, industri, anlegg og logistikk.`}
+                  `${course.title} passer for deg som skal jobbe med, eller allerede jobber med, ${categoryLabel.toLowerCase()}-relaterte oppgaver i din arbeidshverdag. Kurset er relevant for ansatte i bygg, industri, anlegg og logistikk.`}
               </p>
+            </div>
+
+            <div className="mb-8 rounded-xl border bg-muted/30 p-6">
+              <h2 className="text-2xl font-bold mb-4">{course.title} i {OSLO_LOCATION_NAME}</h2>
+              <p className="text-muted-foreground mb-4">
+                Vi leverer {course.title} i {OSLO_LOCATION_NAME} og {OSLO_REGION_NAME} for både bedrifter og privatpersoner.
+                Ønsker du bedriftsintern gjennomføring, kan instruktør komme til deres lokasjon.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link href={`/lokasjon/oslo/${course.slug}`}>
+                  <Button variant="outline">Se kurs i Oslo</Button>
+                </Link>
+                <Link href="/kontakt">
+                  <Button>Bestill kurs i Oslo</Button>
+                </Link>
+              </div>
             </div>
 
             {/* FAQ-seksjon — øker AI-synlighet og rich snippets */}
@@ -336,6 +359,9 @@ export default async function CourseDetailPage(props: PageProps) {
                         </Card>
                       );
                     })}
+                    <p className="text-xs text-muted-foreground">
+                      Trenger du {course.title} i {OSLO_LOCATION_NAME}? Ta kontakt, så setter vi opp kurs i {OSLO_REGION_NAME}.
+                    </p>
                   </div>
                 )}
               </CardContent>

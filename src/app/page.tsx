@@ -14,6 +14,7 @@ import {
   Construction, 
   HardHat, 
   ShieldCheck,
+  Laptop,
   ArrowRight,
   CheckCircle,
   Calendar,
@@ -26,28 +27,35 @@ import {
   Zap,
   HelpCircle,
 } from "lucide-react";
+import { getCourseCategoryLabel } from "@/lib/course-categories";
 
 const categories = [
   {
-    title: "Truckfører",
+    title: getCourseCategoryLabel("digitale-kurs"),
+    icon: Laptop,
+    description: "Nettbasert opplæring du kan ta når det passer",
+    href: "/kurs?category=digitale-kurs",
+  },
+  {
+    title: getCourseCategoryLabel("truck"),
     icon: Truck,
     description: "Sertifisert opplæring i truckkjøring",
     href: "/kurs?category=truck",
   },
   {
-    title: "Kranfører",
+    title: getCourseCategoryLabel("kran"),
     icon: Construction,
     description: "Profesjonell kranføreropplæring",
     href: "/kurs?category=kran",
   },
   {
-    title: "Stillasbruker",
+    title: getCourseCategoryLabel("stillas"),
     icon: HardHat,
     description: "Sikker bruk av stillas",
     href: "/kurs?category=stillas",
   },
   {
-    title: "HMS & Sikkerhet",
+    title: getCourseCategoryLabel("hms"),
     icon: ShieldCheck,
     description: "Helse, miljø og sikkerhet",
     href: "/kurs?category=hms",
@@ -255,7 +263,7 @@ export default function HomePage() {
               Finn det kurset som passer for deg eller din bedrift
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {categories.map((category) => (
               <Link key={category.title} href={category.href}>
                 <Card className="h-full hover:shadow-xl hover:scale-105 transition-all cursor-pointer border-2 hover:border-primary">

@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { courseCategoryOptions } from "@/lib/course-categories";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -144,13 +145,11 @@ export function BedriftKontaktForm() {
             <SelectValue placeholder="Velg kurs" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="truck">Truckkurs</SelectItem>
-            <SelectItem value="kran">Krankurs</SelectItem>
-            <SelectItem value="stillas">Stillaskurs</SelectItem>
-            <SelectItem value="hms">HMS-kurs</SelectItem>
-            <SelectItem value="forstehjelp">Førstehjelp</SelectItem>
-            <SelectItem value="verneutstyr">Verne- og sikkerhetsutstyr</SelectItem>
-            <SelectItem value="annet">Annet / Flere kurs</SelectItem>
+            {courseCategoryOptions.map((categoryOption) => (
+              <SelectItem key={categoryOption.value} value={categoryOption.value}>
+                {categoryOption.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

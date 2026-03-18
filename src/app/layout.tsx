@@ -7,6 +7,10 @@ import {
   generateOrganizationSchema,
   generateWebSiteSchema,
 } from "@/lib/seo/schema";
+import {
+  primaryCourseCategoryCourseTerms,
+  primaryCourseCategoryListText,
+} from "@/lib/course-categories";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,6 +18,10 @@ const inter = Inter({
 });
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+const seoCourseCategoryTerms = primaryCourseCategoryCourseTerms.map((term) =>
+  term.toLowerCase()
+);
+const seoCourseCategoryList = primaryCourseCategoryListText.toLowerCase();
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -22,15 +30,10 @@ export const metadata: Metadata = {
     template: "%s | KKS AS",
   },
   description:
-    "KKS AS er en ledende norsk kurstilbyder innen truck, kran, stillas, arbeid på vei, HMS og BHT-opplæring. Sertifiserte instruktører i hele Norge.",
+    `KKS AS er en ledende norsk kurstilbyder innen ${seoCourseCategoryList}. Sertifiserte instruktører i hele Norge.`,
   keywords: [
     "kurs",
-    "truckkurs",
-    "krankurs",
-    "stillasmontørkurs",
-    "HMS kurs",
-    "BHT kurs",
-    "arbeid på vei",
+    ...seoCourseCategoryTerms,
     "maskinførerkurs",
     "sertifisering Norge",
     "KKS AS",
@@ -64,7 +67,7 @@ export const metadata: Metadata = {
     siteName: "KKS AS",
     title: "KKS AS — Profesjonell kursvirksomhet i Norge",
     description:
-      "KKS AS er en ledende norsk kurstilbyder innen truck, kran, stillas, arbeid på vei, HMS og BHT-opplæring. Sertifiserte instruktører i hele Norge.",
+      `KKS AS er en ledende norsk kurstilbyder innen ${seoCourseCategoryList}. Sertifiserte instruktører i hele Norge.`,
     images: [
       {
         url: "/og-default.png",
@@ -78,7 +81,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "KKS AS — Profesjonell kursvirksomhet i Norge",
     description:
-      "Truck, kran, stillas, arbeid på vei, HMS og BHT-kurs. Sertifiserte instruktører i hele Norge.",
+      `Kurs innen ${seoCourseCategoryList}. Sertifiserte instruktører i hele Norge.`,
     images: ["/og-default.png"],
   },
 };

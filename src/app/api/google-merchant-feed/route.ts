@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getCourseCategoryLabel } from "@/lib/course-categories";
 
 /**
  * Google Merchant Center Product Feed
@@ -61,7 +62,7 @@ export async function GET() {
         condition: "new",
         brand: "KKS AS",
         mpn: course.code || course.id, // Manufacturer Part Number (kurskode)
-        product_type: getCategoryName(course.category),
+        product_type: `${getCourseCategoryLabel(course.category)} Kurs`,
         google_product_category: "469", // Education > Training & Instruction
       };
     });
@@ -122,19 +123,4 @@ function escapeXml(unsafe: string): string {
     .replace(/'/g, "&apos;");
 }
 
-/**
- * Map category to readable product type
- */
-function getCategoryName(category: string): string {
-  const categoryMap: Record<string, string> = {
-    truck: "Truckfører Kurs",
-    kran: "Kranfører Kurs",
-    stillas: "Stillas Kurs",
-    hms: "HMS Kurs",
-    vei: "Arbeid på Vei Kurs",
-    graving: "Graving Kurs",
-    annet: "Annet Kurs",
-  };
-  return categoryMap[category] || "Profesjonelt Kurs";
-}
 

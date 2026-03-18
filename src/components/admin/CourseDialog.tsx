@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { courseSchema, type CourseInput } from "@/lib/validations/course";
 import { parseCourseBookingAddOns } from "@/lib/booking-add-ons";
+import { courseCategoryOptions } from "@/lib/course-categories";
 import { toast } from "sonner";
 import { Loader2, Plus, Upload, X } from "lucide-react";
 import type { Course } from "@prisma/client";
@@ -44,16 +45,6 @@ interface CourseDialogProps {
   onOpenChange: (open: boolean) => void;
   course?: Course | null;
 }
-
-const categories = [
-  { value: "truck", label: "Truck" },
-  { value: "kran", label: "Kran" },
-  { value: "stillas", label: "Stillas" },
-  { value: "hms", label: "HMS" },
-  { value: "vei", label: "Arbeid på vei" },
-  { value: "graving", label: "Graving" },
-  { value: "annet", label: "Annet" },
-];
 
 // Available course images from /public/courses/
 const availableImages = [
@@ -112,7 +103,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
       title: "",
       slug: "",
       code: "",
-      category: "truck",
+      category: "digitale-kurs",
       description: "",
       durationDays: 1,
       price: 0,
@@ -159,7 +150,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
           title: "",
           slug: "",
           code: "",
-          category: "truck",
+          category: "digitale-kurs",
           description: "",
           durationDays: 1,
           price: 0,
@@ -311,7 +302,7 @@ export function CourseDialog({ open, onOpenChange, course }: CourseDialogProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories.map((cat) => (
+                      {courseCategoryOptions.map((cat) => (
                         <SelectItem key={cat.value} value={cat.value}>
                           {cat.label}
                         </SelectItem>
