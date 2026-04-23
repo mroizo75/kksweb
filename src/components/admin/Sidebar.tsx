@@ -31,6 +31,7 @@ import {
   BarChart3,
   Contact,
   PieChart,
+  PenSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
@@ -106,6 +107,12 @@ const navigation = [
       { name: "Aktiviteter", href: "/admin/crm/activities", icon: CheckSquare },
       { name: "Fornyelser", href: "/admin/crm/renewals", icon: RefreshCw },
     ],
+  },
+  {
+    name: "Blogg",
+    href: "/admin/blogg",
+    icon: PenSquare,
+    roles: ["ADMIN"],
   },
   {
     name: "Kompetanse",

@@ -1,6 +1,6 @@
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { 
   FileText, 
   CheckCircle, 
@@ -12,9 +12,14 @@ import {
   BookOpen,
 } from "lucide-react";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
 export const metadata = {
   title: "Vilkår og betingelser - KKS AS",
-  description: "Les våre vilkår og betingelser for deltakelse på kurs hos KKS AS",
+  description: "Les våre vilkår og betingelser for deltakelse på kurs hos KKS AS.",
+  alternates: {
+    canonical: `${BASE_URL}/vilkar`,
+  },
 };
 
 export default function VilkarPage() {
@@ -44,10 +49,10 @@ export default function VilkarPage() {
             {/* Generelt */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <FileText className="h-6 w-6 text-primary" />
                   1. Generelle bestemmelser
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <p>
@@ -64,10 +69,10 @@ export default function VilkarPage() {
             {/* Påmelding */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <BookOpen className="h-6 w-6 text-primary" />
                   2. Påmelding og bekreftelse
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
@@ -97,10 +102,10 @@ export default function VilkarPage() {
             {/* Betaling */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <CreditCard className="h-6 w-6 text-primary" />
                   3. Pris og betaling
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
@@ -130,10 +135,10 @@ export default function VilkarPage() {
             {/* Avbestilling */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <XCircle className="h-6 w-6 text-primary" />
                   4. Avbestilling og avmelding
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
@@ -172,10 +177,10 @@ export default function VilkarPage() {
             {/* KKS sine rettigheter */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <RefreshCw className="h-6 w-6 text-primary" />
                   5. KKS sine rettigheter til endringer og avlysning
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
@@ -206,10 +211,10 @@ export default function VilkarPage() {
             {/* Gjennomføring */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <CheckCircle className="h-6 w-6 text-primary" />
                   6. Gjennomføring av kurs
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
@@ -246,10 +251,10 @@ export default function VilkarPage() {
             {/* Kompetansebevis */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <Shield className="h-6 w-6 text-primary" />
                   7. Kompetansebevis og sertifikater
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
@@ -284,10 +289,10 @@ export default function VilkarPage() {
             {/* Ansvar */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <AlertTriangle className="h-6 w-6 text-primary" />
                   8. Ansvar og ansvarsbegrensning
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
@@ -318,10 +323,10 @@ export default function VilkarPage() {
             {/* Personvern */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <h2 className="flex items-center gap-3 font-semibold leading-none tracking-tight">
                   <Shield className="h-6 w-6 text-primary" />
                   9. Personvern
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <p>
@@ -340,7 +345,7 @@ export default function VilkarPage() {
             {/* Opphavsrett */}
             <Card>
               <CardHeader>
-                <CardTitle>10. Opphavsrett og immaterielle rettigheter</CardTitle>
+                <h2 className="font-semibold leading-none tracking-tight">10. Opphavsrett og immaterielle rettigheter</h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <p>
@@ -354,7 +359,7 @@ export default function VilkarPage() {
             {/* Tvisteløsning */}
             <Card>
               <CardHeader>
-                <CardTitle>11. Tvisteløsning og lovvalg</CardTitle>
+                <h2 className="font-semibold leading-none tracking-tight">11. Tvisteløsning og lovvalg</h2>
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
@@ -377,7 +382,7 @@ export default function VilkarPage() {
             {/* Kontakt */}
             <Card className="border-2 border-primary">
               <CardHeader>
-                <CardTitle>12. Kontaktinformasjon</CardTitle>
+                <h2 className="font-semibold leading-none tracking-tight">12. Kontaktinformasjon</h2>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground">
@@ -386,7 +391,7 @@ export default function VilkarPage() {
                 <div className="space-y-2">
                   <p><strong>E-post:</strong> <a href="mailto:post@kksas.no" className="text-primary hover:underline">post@kksas.no</a></p>
                   <p><strong>Telefon:</strong> <a href="tel:+4799112916" className="text-primary hover:underline">+47 99 11 29 16</a></p>
-                  <p><strong>Organisasjonsnummer:</strong> [ORG-NR]</p>
+                  <p><strong>Organisasjonsnummer:</strong> 925 897 019</p>
                 </div>
               </CardContent>
             </Card>

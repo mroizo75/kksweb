@@ -53,13 +53,18 @@ export function Footer() {
           </div>
           <div>
             <h3 className="font-bold mb-4">Kontakt</h3>
-            <p className="text-sm text-muted-foreground">
-              Kurs: +47 91 54 08 24
-              <br />
-              Software: +47 99 11 29 16
-              <br />
-              E-post: post@kksas.no
-            </p>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p>Kurs og Kompetansesystemer AS</p>
+              <p>Org.nr: 925 897 019</p>
+              <p>Frøbergvegen 71, 2320 Furnes</p>
+              <p className="pt-2">
+                Kurs: <a href="tel:+4791540824" className="hover:text-foreground transition-colors">+47 91 54 08 24</a>
+                <br />
+                Software: <a href="tel:+4799112916" className="hover:text-foreground transition-colors">+47 99 11 29 16</a>
+                <br />
+                E-post: <a href="mailto:post@kksas.no" className="hover:text-foreground transition-colors">post@kksas.no</a>
+              </p>
+            </div>
           </div>
           <div>
             <h3 className="font-bold mb-4">Informasjon</h3>

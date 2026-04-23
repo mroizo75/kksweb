@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,18 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { getCourseCategoryLabel } from "@/lib/course-categories";
+import { FaqAccordion } from "@/components/public/FaqAccordion";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
+export const metadata: Metadata = {
+  title: "Truckkurs, Krankurs, HMS-kurs og Stillasmontørkurs i Norge | KKS AS",
+  description:
+    "KKS AS tilbyr godkjent og sertifisert opplæring innen truck, kran, stillas, HMS og BHT i hele Norge. Erfarne instruktører, ISO 9001-sertifisert. Meld deg på i dag.",
+  alternates: {
+    canonical: BASE_URL,
+  },
+};
 
 const categories = [
   {
@@ -144,8 +157,6 @@ const homepageFaqs = [
     answer: "Gå til kksas.no/kurs, velg ønsket kurs og kursdato, fyll ut påmeldingsskjemaet med navn og e-post, og bekreft påmeldingen. Du mottar en bekreftelse på e-post. Kontakt oss på post@kksas.no eller +47 91 54 08 24 ved spørsmål.",
   },
 ];
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
 
 export default function HomePage() {
   const faqSchema = generateFAQSchema(homepageFaqs);
@@ -382,17 +393,7 @@ export default function HomePage() {
                 Alt du trenger å vite om kurs og opplæring hos KKS AS
               </p>
             </div>
-            <div className="space-y-4">
-              {homepageFaqs.map((faq, idx) => (
-                <div
-                  key={idx}
-                  className="border rounded-xl p-6 hover:border-primary/30 transition-colors bg-gray-50 dark:bg-gray-900"
-                >
-                  <h3 className="font-semibold text-lg mb-2">{faq.question}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{faq.answer}</p>
-                </div>
-              ))}
-            </div>
+            <FaqAccordion items={homepageFaqs} />
           </div>
         </div>
       </section>

@@ -303,7 +303,7 @@ export default function ComplaintPage() {
         <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>Du kan også kontakte oss direkte:</p>
           <p className="mt-2">
-            <strong>E-post:</strong> post@kks.no | <strong>Telefon:</strong> +47 XXX XX XXX
+            <strong>E-post:</strong> post@kksas.no | <strong>Telefon:</strong> +47 91 54 08 24
           </p>
         </div>
       </div>

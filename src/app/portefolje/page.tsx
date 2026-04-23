@@ -17,9 +17,14 @@ import {
   Car,
 } from "lucide-react";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
 export const metadata = {
   title: "Våre Produkter - KKS AS",
-  description: "Utforsk vårt økosystem av innovative softwareløsninger for kurs, HMS, billettsalg, motorsport og mer",
+  description: "Utforsk vårt økosystem av innovative softwareløsninger for kurs, HMS, billettsalg, motorsport og mer.",
+  alternates: {
+    canonical: `${BASE_URL}/portefolje`,
+  },
 };
 
 const products = [

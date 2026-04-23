@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieConsent } from "@/components/public/CookieConsent";
+import { ChatWidget } from "@/components/public/ChatWidget";
 import { StructuredData } from "@/components/seo/StructuredData";
 import {
   generateOrganizationSchema,
@@ -99,6 +101,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <StructuredData data={[organizationSchema, webSiteSchema]} />
         {children}
+        <ChatWidget />
+        <CookieConsent />
         <Toaster />
       </body>
     </html>

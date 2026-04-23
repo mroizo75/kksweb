@@ -49,6 +49,7 @@ model User {
   twoFactorTokens TwoFactorToken[]
   auditLogs       AuditLog[]
   sentEmails      EmailLog[]
+  blogPosts       BlogPost[]
 
   @@index([email])
   @@map("users")
@@ -321,6 +322,7 @@ model Enrollment {
   addOnPrice   Int  @default(0) // Tilleggspris per deltaker
   totalPrice   Int  @default(0) // Totalpris per deltaker (base + tillegg)
   selectedAddOns Json? // Valgte tillegg for påmeldingen
+  reminderSentAt DateTime?
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
@@ -1315,4 +1317,38 @@ enum OptimizationPriority {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+// ========================================
+// BLOGG
+// ========================================
+
+model BlogPost {
+  id          String         @id @default(cuid())
+  title       String
+  slug        String         @unique
+  excerpt     String         @db.Text
+  content     String         @db.LongText
+  image       String?
+  category    String
+  status      BlogPostStatus @default(DRAFT)
+  authorId    String?
+  publishedAt DateTime?
+  metaTitle   String?
+  metaDesc    String?        @db.Text
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt])
+  @@index([slug])
+  @@index([category])
+  @@map("blog_posts")
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }

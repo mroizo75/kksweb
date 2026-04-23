@@ -1,16 +1,12 @@
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
+import { ContactForm } from "@/components/public/ContactForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Mail, 
   Phone, 
-  MapPin, 
   Clock,
-  Send,
   MessageSquare,
   Building2,
   Facebook,
@@ -18,10 +14,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
 export const metadata = {
   title: "Kontakt KKS AS — Spørsmål om truckkurs, HMS og bedriftsopplæring",
   description:
     "Ring oss på +47 91 54 08 24 eller send e-post til post@kksas.no. Vi hjelper deg med truckkurs, krankurs, HMS og bedriftsavtaler. Åpent Man–Fre 08:00–16:00.",
+  alternates: {
+    canonical: `${BASE_URL}/kontakt`,
+  },
 };
 
 const contactInfo = [
@@ -89,7 +90,7 @@ export default function KontaktPage() {
       </section>
 
       {/* Contact Info Cards */}
-      <section className="py-12 -mt-12pt-16">
+      <section className="py-12 -mt-12 pt-16">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {contactInfo.map((info) => (
@@ -131,53 +132,7 @@ export default function KontaktPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form className="space-y-4" action="/api/public/contact" method="POST">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">Fornavn *</Label>
-                        <Input id="firstName" name="firstName" required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Etternavn *</Label>
-                        <Input id="lastName" name="lastName" required />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email">E-post *</Label>
-                      <Input id="email" name="email" type="email" required />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefon</Label>
-                      <Input id="phone" name="phone" type="tel" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="company">Bedrift</Label>
-                      <Input id="company" name="company" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="subject">Emne *</Label>
-                      <Input id="subject" name="subject" required />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Melding *</Label>
-                      <Textarea 
-                        id="message" 
-                        name="message" 
-                        rows={6}
-                        required 
-                      />
-                    </div>
-                    
-                    <Button type="submit" size="lg" className="w-full">
-                      <Send className="mr-2 h-4 w-4" />
-                      Send melding
-                    </Button>
-                  </form>
+                  <ContactForm />
                 </CardContent>
               </Card>
             </div>

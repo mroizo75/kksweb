@@ -26,10 +26,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
 export const metadata = {
   title: "SaaS-løsninger - Leie Software istedenfor å Bygge | KKS AS",
   description: "Få ditt eget booking system, LMS, CRM eller annet skreddersydd software for kun 5000 kr/mnd. Ingen store utviklingskostnader. Følger ISO standarder. Full support.",
   keywords: "booking system, kurssystem, LMS, software leie, SaaS, software as a service, bestillingssystem, CRM system, HMS system",
+  alternates: {
+    canonical: `${BASE_URL}/saas`,
+  },
 };
 
 const painPoints = [

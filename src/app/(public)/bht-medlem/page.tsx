@@ -11,9 +11,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
 export const metadata: Metadata = {
   title: "Bli BHT-medlem | KKS AS",
   description: "Få tilgang til BHT-tjenester via Dr Dropin med 10% rabatt og HMS Nova for kun 499kr/mnd. Kvalitetssikret og profesjonelt.",
+  alternates: {
+    canonical: `${BASE_URL}/bht-medlem`,
+  },
 };
 
 export default function BhtMemberPage() {

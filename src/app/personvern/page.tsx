@@ -13,9 +13,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
 export const metadata = {
   title: "Personvernerklæring - KKS AS",
-  description: "Les om hvordan KKS AS behandler dine personopplysninger i henhold til GDPR",
+  description: "Les om hvordan KKS AS behandler dine personopplysninger i henhold til GDPR.",
+  alternates: {
+    canonical: `${BASE_URL}/personvern`,
+  },
 };
 
 export default function PersonvernPage() {
@@ -73,10 +78,10 @@ export default function PersonvernPage() {
               <CardContent className="space-y-4 text-muted-foreground">
                 <div>
                   <p className="font-semibold text-foreground mb-2">Kurs og Kompetansesystemer AS</p>
-                  <p>Organisasjonsnummer: [ORG-NR]</p>
-                  <p>Adresse: [Adresse]</p>
+                  <p>Organisasjonsnummer: 925 897 019</p>
+                  <p>Adresse: Frøbergvegen 71, 2320 Furnes</p>
                   <p>E-post: post@kksas.no</p>
-                  <p>Telefon: +47 99 11 29 16</p>
+                  <p>Telefon: +47 91 54 08 24</p>
                 </div>
               </CardContent>
             </Card>
@@ -343,9 +348,9 @@ export default function PersonvernPage() {
                 <div>
                   <p className="font-semibold mb-2">Post:</p>
                   <p className="text-muted-foreground">
-                    KKS Kurs & HMS AS<br />
-                    [Adresse]<br />
-                    [Postnr] [Poststed]
+                    Kurs og Kompetansesystemer AS<br />
+                    Frøbergvegen 71<br />
+                    2320 Furnes
                   </p>
                 </div>
               </CardContent>

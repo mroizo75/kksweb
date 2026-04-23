@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,17 @@ import {
   FileText,
   Headphones,
 } from "lucide-react";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
+export const metadata: Metadata = {
+  title: "Kursløsninger for bedrifter — Truckkurs, HMS og sertifisering",
+  description:
+    "Skreddersydde kursløsninger for bedrifter. Truck, kran, stillas, HMS og BHT-opplæring. Vi kommer til dere — fleksible tider, volumrabatt og digitale kursbevis.",
+  alternates: {
+    canonical: `${BASE_URL}/bedrift`,
+  },
+};
 
 const benefits = [
   {

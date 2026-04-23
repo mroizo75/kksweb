@@ -24,22 +24,23 @@ export function Header() {
           <Link href="/bht-medlem" className="text-sm hover:text-primary transition-colors">
             BHT-medlem
           </Link>
+          <Link href="/bedrift" className="text-sm hover:text-primary transition-colors">
+            For bedrifter
+          </Link>
           <Link href="/saas" className="text-sm hover:text-primary transition-colors font-semibold">
-            Leie Software 💡
+            Leie Software
           </Link>
           <Link href="/portefolje" className="text-sm hover:text-primary transition-colors">
             Våre Produkter
+          </Link>
+          <Link href="/blogg" className="text-sm hover:text-primary transition-colors">
+            Blogg
           </Link>
           <Link href="/om-oss" className="text-sm hover:text-primary transition-colors">
             Om oss
           </Link>
           <Link href="/kontakt" className="text-sm hover:text-primary transition-colors">
             Kontakt
-          </Link>
-          <Link href="/admin/login">
-            <Button variant="outline" size="sm">
-              Admin
-            </Button>
           </Link>
         </nav>
 
@@ -49,6 +50,8 @@ export function Header() {
           size="icon"
           className="md:hidden"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label={isMobileMenuOpen ? "Lukk meny" : "Åpne meny"}
+          aria-expanded={isMobileMenuOpen}
         >
           {isMobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -77,11 +80,18 @@ export function Header() {
               BHT-medlem
             </Link>
             <Link 
+              href="/bedrift" 
+              className="text-sm hover:text-primary transition-colors py-2 border-b"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              For bedrifter
+            </Link>
+            <Link 
               href="/saas" 
               className="text-sm hover:text-primary transition-colors py-2 border-b font-semibold"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Leie Software 💡
+              Leie Software
             </Link>
             <Link 
               href="/portefolje" 
@@ -89,6 +99,13 @@ export function Header() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Våre Produkter
+            </Link>
+            <Link 
+              href="/blogg" 
+              className="text-sm hover:text-primary transition-colors py-2 border-b"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Blogg
             </Link>
             <Link 
               href="/om-oss" 
@@ -104,13 +121,6 @@ export function Header() {
             >
               Kontakt
             </Link>
-            <div className="pt-3">
-              <Link href="/admin/login" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="outline" size="sm" className="w-full">
-                  Admin / Logg inn
-                </Button>
-              </Link>
-            </div>
           </nav>
         </div>
       )}

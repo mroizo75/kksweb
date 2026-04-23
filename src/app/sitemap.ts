@@ -91,6 +91,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "yearly" as const,
       priority: 0.3,
     },
+    {
+      url: `${baseUrl}/klage`,
+      lastModified: new Date(),
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+    },
   ];
 
   // Kurssider
@@ -152,6 +158,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   );
 
-  return [...staticPages, ...locationPages, ...coursePages, ...localCoursePages];
+  const blogPosts = await db.blogPost.findMany({
+    where: { status: "PUBLISHED" },
+    select: { slug: true, updatedAt: true },
+  });
+
+  const blogPages = [
+    {
+      url: `${baseUrl}/blogg`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    },
+    ...blogPosts.map((post) => ({
+      url: `${baseUrl}/blogg/${post.slug}`,
+      lastModified: post.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
+  ];
+
+  return [...staticPages, ...locationPages, ...coursePages, ...localCoursePages, ...blogPages];
 }
 

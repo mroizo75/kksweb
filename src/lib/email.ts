@@ -36,8 +36,119 @@ export async function sendEnrollmentConfirmation(data: EnrollmentEmailData) {
 }
 
 export async function sendEnrollmentReminder(data: EnrollmentEmailData) {
-  // TODO: Implementeres i Fase 2
-  console.log("Påminnelse vil bli sendt til:", data.email);
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+      replyTo: process.env.RESEND_REPLY_TO || "post@kksas.no",
+      to: [data.email],
+      subject: `Påminnelse: ${data.courseName} starter snart!`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+          <!-- Header -->
+          <div style="background-color: #0e4fa8; padding: 32px 40px; text-align: center;">
+            <img src="${BASE_URL}/logo-white-kks.png" width="160" alt="KKS AS" style="margin: 0 auto;" />
+          </div>
+
+          <!-- Reminder banner -->
+          <div style="background-color: #fef3c7; border-bottom: 1px solid #fde68a; padding: 16px 40px; text-align: center;">
+            <p style="color: #92400e; font-size: 16px; font-weight: 600; margin: 0;">Kurset ditt starter om 3 dager!</p>
+          </div>
+
+          <!-- Content -->
+          <div style="padding: 32px 40px;">
+            <p style="color: #111827; font-size: 20px; font-weight: 600; margin: 0 0 16px 0;">Hei ${data.personName},</p>
+
+            <p style="color: #4b5563; font-size: 15px; line-height: 26px; margin: 0 0 24px 0;">
+              Dette er en vennlig påminnelse om at kurset ditt starter snart. Sørg for at du er klar!
+            </p>
+
+            <!-- Course details -->
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; margin: 0 0 24px 0;">
+              <p style="color: #0e4fa8; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 16px 0;">Kursdetaljer</p>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="color: #6b7280; font-size: 14px; padding: 8px 0; width: 110px; vertical-align: top;">Kurs</td>
+                  <td style="color: #111827; font-size: 15px; font-weight: 600; padding: 8px 0;">${data.courseName}</td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #e5e7eb;"></td></tr>
+                <tr>
+                  <td style="color: #6b7280; font-size: 14px; padding: 8px 0; vertical-align: top;">Dato</td>
+                  <td style="color: #111827; font-size: 15px; font-weight: 600; padding: 8px 0;">${data.courseDate}</td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #e5e7eb;"></td></tr>
+                <tr>
+                  <td style="color: #6b7280; font-size: 14px; padding: 8px 0; vertical-align: top;">Tidspunkt</td>
+                  <td style="color: #111827; font-size: 15px; font-weight: 600; padding: 8px 0;">${data.courseTime}</td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #e5e7eb;"></td></tr>
+                <tr>
+                  <td style="color: #6b7280; font-size: 14px; padding: 8px 0; vertical-align: top;">Sted</td>
+                  <td style="color: #111827; font-size: 15px; font-weight: 600; padding: 8px 0;">${data.location}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Checklist -->
+            <p style="color: #111827; font-size: 18px; font-weight: 700; margin: 0 0 12px 0;">Husk å ta med</p>
+            <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 20px 24px; margin: 0 0 24px 0;">
+              <table style="width: 100%;">
+                <tr>
+                  <td style="color: #0e4fa8; font-size: 18px; width: 28px; vertical-align: top; padding: 6px 0;">&#9745;</td>
+                  <td style="color: #374151; font-size: 14px; line-height: 22px; padding: 6px 0;"><strong>Gyldig legitimasjon</strong><br/><span style="color: #6b7280; font-size: 13px;">Førerkort, pass eller bankkort med bilde</span></td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #fde68a; padding: 4px 0;"></td></tr>
+                <tr>
+                  <td style="color: #0e4fa8; font-size: 18px; width: 28px; vertical-align: top; padding: 6px 0;">&#9745;</td>
+                  <td style="color: #374151; font-size: 14px; line-height: 22px; padding: 6px 0;"><strong>Behagelige arbeidsklær</strong><br/><span style="color: #6b7280; font-size: 13px;">Lange bukser og lukkede sko (vernesko anbefales)</span></td>
+                </tr>
+                <tr><td colspan="2" style="border-bottom: 1px solid #fde68a; padding: 4px 0;"></td></tr>
+                <tr>
+                  <td style="color: #0e4fa8; font-size: 18px; width: 28px; vertical-align: top; padding: 6px 0;">&#9745;</td>
+                  <td style="color: #374151; font-size: 14px; line-height: 22px; padding: 6px 0;"><strong>Mat og drikke</strong><br/><span style="color: #6b7280; font-size: 13px;">Ta med lunsj og drikke. Det finnes kjøpemuligheter i nærheten.</span></td>
+                </tr>
+              </table>
+            </div>
+
+            <p style="color: #4b5563; font-size: 15px; line-height: 26px; margin: 0 0 24px 0;">
+              Har du spørsmål? Ta kontakt med oss — vi hjelper deg gjerne!
+            </p>
+
+            <table style="width: 100%; text-align: center; margin: 0 0 8px 0;">
+              <tr>
+                <td style="padding: 0 12px;"><a href="tel:+4791540824" style="color: #0e4fa8; font-size: 15px; font-weight: 600; text-decoration: none;">+47 91 54 08 24</a></td>
+                <td style="padding: 0 12px;"><a href="mailto:post@kksas.no" style="color: #0e4fa8; font-size: 15px; font-weight: 600; text-decoration: none;">post@kksas.no</a></td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 28px 40px; text-align: center;">
+            <img src="${BASE_URL}/logo-black-kks.png" width="100" alt="KKS AS" style="margin: 0 auto 12px auto; opacity: 0.7;" />
+            <p style="color: #9ca3af; font-size: 12px; line-height: 20px; margin: 0 0 12px 0;">
+              Kurs og Kompetansesystemer AS<br/>Org.nr: 925 897 019<br/>Frøbergvegen 71, 2320 Furnes
+            </p>
+            <p style="margin: 0; font-size: 12px;">
+              <a href="${BASE_URL}" style="color: #0a3d82; text-decoration: underline;">kksas.no</a>
+              &middot;
+              <a href="${BASE_URL}/personvern" style="color: #0a3d82; text-decoration: underline;">Personvern</a>
+              &middot;
+              <a href="${BASE_URL}/vilkar" style="color: #0a3d82; text-decoration: underline;">Vilkår</a>
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return emailData;
+  } catch (error) {
+    throw error;
+  }
 }
 
 // Admin notifikasjon for ny påmelding
