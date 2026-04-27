@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { ArrowRight, Calendar, BookOpen, ChevronRight } from "lucide-react";
+import { normalizeR2ImageUrl } from "@/lib/r2";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
 
@@ -102,7 +103,7 @@ export default async function BloggPage() {
                     {post.image ? (
                       <div className={`relative overflow-hidden ${idx === 0 ? "aspect-[2/1]" : "aspect-video"}`}>
                         <Image
-                          src={post.image}
+                          src={normalizeR2ImageUrl(post.image)}
                           alt={post.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"

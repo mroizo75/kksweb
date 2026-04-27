@@ -10,6 +10,7 @@ import { Footer } from "@/components/public/Footer";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, User, Clock } from "lucide-react";
+import { normalizeR2ImageUrl } from "@/lib/r2";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
 
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: post.publishedAt?.toISOString(),
       modifiedTime: post.updatedAt.toISOString(),
-      ...(post.image && { images: [{ url: post.image, width: 1200, height: 630 }] }),
+      ...(post.image && { images: [{ url: normalizeR2ImageUrl(post.image), width: 1200, height: 630 }] }),
     },
   };
 }
@@ -114,7 +115,7 @@ export default async function BloggArtikkelPage({ params }: Props) {
     ...(post.image && {
       "image": {
         "@type": "ImageObject",
-        "url": post.image,
+        "url": normalizeR2ImageUrl(post.image),
         "width": 1200,
         "height": 630,
       },
@@ -181,7 +182,7 @@ export default async function BloggArtikkelPage({ params }: Props) {
           <section className="container mx-auto px-4 max-w-4xl -mt-6 mb-8 relative z-10">
             <div className="relative aspect-[2/1] rounded-2xl overflow-hidden shadow-xl">
               <Image
-                src={post.image}
+                src={normalizeR2ImageUrl(post.image)}
                 alt={post.title}
                 fill
                 className="object-cover"
@@ -216,7 +217,7 @@ export default async function BloggArtikkelPage({ params }: Props) {
                     {related.image ? (
                       <div className="relative aspect-video overflow-hidden">
                         <Image
-                          src={related.image}
+                          src={normalizeR2ImageUrl(related.image)}
                           alt={related.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
