@@ -436,7 +436,7 @@ export default function HomePage() {
                 { icon: Clock, label: "35 timer", sub: "Obligatorisk" },
                 { icon: BadgeCheck, label: "Statens vegvesen", sub: "Godkjent" },
                 { icon: Utensils, label: "Lunsj inkludert", sub: "I prisen" },
-                { icon: MapPin, label: "Hele Norge", sub: "Vi kommer til deg" },
+                { icon: MapPin, label: "Lierbyen & Hamar", sub: "Faste lokasjoner" },
               ].map(({ icon: Icon, label, sub }) => (
                 <div
                   key={label}
@@ -719,12 +719,16 @@ export default function HomePage() {
             {/* Seksjonshode med Norsk Sertifisering-logo */}
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-14 pb-8 border-b border-slate-100">
               <div>
+                <div className="inline-flex items-center gap-2 bg-slate-950 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-full mb-4 uppercase tracking-widest">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Hele Norge — Vi kommer til deg
+                </div>
                 <h2 className="text-4xl font-black text-slate-900 mb-3">
                   Alle kurs vi tilbyr
                 </h2>
                 <p className="text-lg text-slate-600 max-w-xl">
                   Godkjent og sertifisert opplæring innen truck, kran, maskin,
-                  stillas, HMS og mer — for enkeltpersoner og bedrifter.
+                  stillas, HMS og mer — gjennomført hos deg eller ved en av våre lokasjoner.
                 </p>
               </div>
               <div className="flex flex-col items-start md:items-end gap-2 flex-shrink-0">
