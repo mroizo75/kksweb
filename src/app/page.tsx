@@ -36,6 +36,7 @@ import {
   Cog,
   ArrowUp,
   HeartPulse,
+  Briefcase,
 } from "lucide-react";
 import { FaqAccordion } from "@/components/public/FaqAccordion";
 
@@ -393,6 +394,21 @@ export default function HomePage() {
         {/* Rutenett-tekstur */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:52px_52px]" />
 
+        {/* Ledige stillinger — flytende kort øverst til høyre på desktop */}
+        <Link
+          href="/bli-instruktor"
+          className="absolute top-6 right-6 z-10 hidden lg:flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-amber-400/60 text-white rounded-2xl px-5 py-3.5 transition-all group shadow-lg"
+        >
+          <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-400 transition-colors">
+            <Briefcase className="h-4 w-4 text-slate-950" />
+          </div>
+          <div>
+            <div className="text-xs text-slate-400 font-medium leading-none mb-0.5">Vi søker</div>
+            <div className="text-sm font-bold leading-none">Ledige stillinger</div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all ml-1" />
+        </Link>
+
         <div className="relative container mx-auto px-4 py-24 md:py-32 w-full">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 px-4 py-2 rounded-full text-sm font-semibold mb-8 tracking-widest uppercase">
@@ -410,7 +426,7 @@ export default function HomePage() {
               YSK-beviset ditt med erfarne instruktører — i hele Norge.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 mb-14">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <Link href="/kurs">
                 <Button
                   size="lg"
@@ -430,6 +446,21 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
+
+            {/* Ledige stillinger — mobilversjon */}
+            <Link
+              href="/bli-instruktor"
+              className="lg:hidden flex items-center gap-3 w-fit bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 hover:border-amber-400/60 text-white rounded-xl px-4 py-3 mb-8 transition-all group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="h-4 w-4 text-slate-950" />
+              </div>
+              <div>
+                <div className="text-xs text-slate-400 leading-none mb-0.5">Vi søker</div>
+                <div className="text-sm font-bold leading-none">Ledige stillinger</div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-amber-400 ml-1 transition-colors" />
+            </Link>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
