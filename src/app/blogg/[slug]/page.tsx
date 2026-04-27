@@ -195,7 +195,15 @@ export default async function BloggArtikkelPage({ params }: Props) {
         {/* Content */}
         <article className="container mx-auto px-4 max-w-4xl py-8 md:py-12">
           <div
-            className="prose prose-lg max-w-none dark:prose-invert prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl"
+            className={[
+              "prose max-w-none dark:prose-invert",
+              "prose-headings:font-bold prose-headings:mt-8 prose-headings:mb-3",
+              "prose-p:my-3 prose-p:leading-relaxed",
+              "prose-ul:my-3 prose-ol:my-3 prose-li:my-1",
+              "prose-a:text-primary",
+              "prose-img:rounded-xl",
+              "[&_p:empty]:hidden",
+            ].join(" ")}
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </article>
