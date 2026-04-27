@@ -1,27 +1,25 @@
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ProductLogo } from "@/components/portefolje/ProductLogo";
-import { 
+import {
   ExternalLink,
-  Code,
   Zap,
   ShieldCheck,
-  Users,
   Calendar,
-  CheckSquare,
   Globe,
-  Sparkles,
   Car,
+  Sparkles,
+  ChevronRight,
+  ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
 
 export const metadata = {
-  title: "Våre Produkter - KKS AS",
-  description: "Utforsk vårt økosystem av innovative softwareløsninger for kurs, HMS, billettsalg, motorsport og mer.",
+  title: "Våre produkter — KKS AS",
+  description:
+    "KKS AS og tilknyttede softwareproduktene våre: HMS Nova, Bransjekurs.no, Arrango.no, Svampen.no og Scrut-Man. Innovative løsninger for norske bedrifter.",
   alternates: {
     canonical: `${BASE_URL}/portefolje`,
   },
@@ -30,347 +28,282 @@ export const metadata = {
 const products = [
   {
     name: "KKS AS",
-    description: "Kurs og Kompetansesystemer AS - Komplett plattform for kursstyring, HMS og kompetansesystemer. ISO 9001 og ISO 27001 sertifisert.",
+    tagline: "Kurs og Kompetansesystemer",
+    description:
+      "Komplett plattform for kursstyring, HMS og kompetansedokumentasjon. Sertifisert opplæringsvirksomhet godkjent av Norsk Sertifisering.",
     url: "https://www.kksas.no",
-    iconName: "ShieldCheck",
-    logo: "/logos/kks-logo.png",
+    icon: ShieldCheck,
     status: "Live",
-    statusColor: "bg-green-500",
     features: [
       "Kursstyring og påmelding",
-      "ISO 9001 kvalitetssystem",
-      "ISO 27001 informasjonssikkerhet",
-      "2FA og GDPR compliance",
-      "CRM og automatisering",
       "Digitale kompetansebevis",
+      "CRM og automatisering",
+      "2FA og GDPR compliance",
     ],
-    tech: ["Next.js 15", "Prisma", "MySQL", "TypeScript", "Tailwind CSS"],
   },
   {
     name: "Bransjekurs.no",
-    description: "Norges ledende plattform for bransjekurs og fagopplæring. Sømløs integrasjon med KKS.",
+    tagline: "Kurskatalog for Norge",
+    description:
+      "Plattform for bransjekurs og fagopplæring med sømløs integrasjon mot KKS. Forenkler kursadministrasjon for arrangører og deltakere.",
     url: "https://bransjekurs.no",
-    iconName: "Calendar",
-    logo: "/logos/bransjekurs-logo.png",
+    icon: Calendar,
     status: "Under utvikling",
-    statusColor: "bg-orange-500",
     features: [
-      "Omfattende kurskatalog",
+      "Bred kurskatalog",
       "Webhook-integrasjon",
       "Automatisk synkronisering",
-      "Sanntids oppdateringer",
       "Bedriftsløsninger",
-      "Rapportering og analyse",
     ],
-    tech: ["Next.js", "API Integration", "Real-time Sync"],
   },
   {
     name: "HMS Nova",
-    description: "Avansert HMS-system for moderne bedrifter. Håndter avvik, risiko, dokumenter og KPI på ett sted.",
+    tagline: "Digitalt HMS-system",
+    description:
+      "Avansert HMS-system for moderne bedrifter. Håndter avvik, risiko, dokumenter og KPI på ett sted — fra 300 kr/mnd.",
     url: "https://hmsnova.com",
-    iconName: "CheckSquare",
-    logo: "/logos/hmsnova-logo.png",
+    icon: ShieldCheck,
     status: "Live",
-    statusColor: "bg-green-500",
     features: [
       "Avvikshåndtering",
       "Risikovurdering",
       "Dokumenthåndtering",
       "KPI og målstyring",
-      "Automatiske varslinger",
-      "Mobile løsninger",
     ],
-    tech: ["React", "Node.js", "Cloud Infrastructure"],
   },
   {
     name: "Arrango.no",
-    description: "Ticket marketplace for det norske markedet. Plattform for moderne arrangører - oppdag arrangementer, kjøp billetter og administrer events.",
+    tagline: "Billett- og arrangementplatform",
+    description:
+      "Ticket marketplace for det norske markedet. Sømløs billetthandel og eventadministrasjon for arrangører i alle størrelser.",
     url: "https://www.arrango.no",
-    iconName: "Globe",
-    logo: "/logos/arrango-logo.png",
+    icon: Globe,
     status: "Live",
-    statusColor: "bg-green-500",
     features: [
       "Billettsalg og booking",
       "Event management",
-      "Kundehåndtering",
+      "Stripe og Klarna",
       "Salgsrapportering",
-      "Marketing tools",
-      "Sikre betalingsmetoder",
     ],
-    tech: ["Next.js", "Stripe", "Klarna", "TypeScript"],
-  },
-  {
-    name: "TaskGuild.com",
-    description: "Plattform for servicebedrifter som vil tilby medlemskap og booke tjenester. Fleksibel løsning som passer mange forskjellige bedrifter.",
-    url: "https://taskguild.com",
-    iconName: "Users",
-    logo: "/logos/taskguild-logo.png",
-    status: "Live",
-    statusColor: "bg-green-500",
-    features: [
-      "Medlemskapsstyring",
-      "Booking av tjenester",
-      "Kalenderintegrasjon",
-      "Kundeadministrasjon",
-      "Betalingsløsninger",
-      "Rapporter og insights",
-    ],
-    tech: ["React", "Node.js", "PostgreSQL"],
   },
   {
     name: "Svampen.no",
-    description: "Profesjonell bil- og båtpleie med over 10 års erfaring. Komplett bookingsystem for vaskerier og bilpleie - fra enkel vask til eksklusiv polering.",
+    tagline: "Bil- og båtpleie",
+    description:
+      "Profesjonell bil- og båtpleie med over 10 års erfaring. Komplett bookingsystem for vaskerier og bilpleie.",
     url: "https://www.svampen.no",
-    iconName: "Car",
-    logo: "/logos/svampen-logo.png",
+    icon: Car,
     status: "Live",
-    statusColor: "bg-green-500",
     features: [
       "Online booking 24/7",
-      "Pakke-administrasjon",
-      "Kalenderintegrasjon",
+      "Pakkeadministrasjon",
       "Kundeadministrasjon",
-      "Prisstyring og rabatter",
       "SMS og e-post varsling",
     ],
-    tech: ["Next.js", "Prisma", "TypeScript", "Tailwind CSS"],
   },
   {
     name: "Scrut-Man.com",
-    description: "Komplett påmeldingssystem for motorsporten. Håndterer alt fra innsjekk og teknisk kontroll til startlister. Federation-løsning for organisasjoner og utøvere med full kontroll over egen data.",
+    tagline: "Motorsport-administrasjon",
+    description:
+      "Komplett påmeldingssystem for motorsporten. Håndterer alt fra innsjekk og teknisk kontroll til startlister.",
     url: "https://scrut-man.com",
-    iconName: "Zap",
-    logo: "/logos/scrutman-logo.png",
+    icon: Zap,
     status: "Under utvikling",
-    statusColor: "bg-orange-500",
     features: [
       "Digital innsjekk",
       "Teknisk kontroll",
       "Startliste-generering",
       "Federation management",
-      "Utøver-administrasjon",
-      "Digital databehandling",
     ],
-    tech: ["Vue.js", "Firebase", "Real-time Updates"],
   },
   {
     name: "Kommende prosjekter",
-    description: "Vi jobber kontinuerlig med nye innovative løsninger. Hold øye med denne siden for oppdateringer!",
-    url: "#",
-    iconName: "Sparkles",
+    tagline: "Alltid i utvikling",
+    description:
+      "Vi jobber kontinuerlig med nye innovative løsninger. Hold øye med denne siden for oppdateringer.",
+    url: null,
+    icon: Sparkles,
     status: "Kommer snart",
-    statusColor: "bg-yellow-500",
     features: [
       "AI-drevne løsninger",
       "Automatisering",
       "Integrasjonsplattform",
       "Og mye mer...",
     ],
-    tech: ["Next.js", "AI/ML", "Cloud"],
   },
 ];
 
-const stats = [
-  { value: "8", label: "Produkter" },
-  { value: "5000+", label: "Aktive brukere" },
-  { value: "99.9%", label: "Oppetid" },
-  { value: "24/7", label: "Support" },
-];
+const statusStyle: Record<string, string> = {
+  Live: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  "Under utvikling": "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  "Kommer snart": "bg-slate-500/15 text-slate-400 border-slate-500/30",
+};
 
 export default function PortefoliePage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-purple-600 via-blue-700 to-primary text-white py-24 md:py-32">
-        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:32px_32px]" />
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <Code className="h-20 w-20 mx-auto mb-6" />
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Vårt Software Økosystem
+      {/* Hero */}
+      <section className="bg-slate-950 pt-24 pb-20">
+        <div className="container mx-auto px-4">
+          <nav className="mb-6 text-sm text-slate-500 flex items-center gap-2" aria-label="Brødsmulesti">
+            <Link href="/" className="hover:text-amber-400 transition-colors">Hjem</Link>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span className="text-slate-300">Våre produkter</span>
+          </nav>
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-5 bg-amber-400/20 rounded-full text-amber-400 text-xs font-semibold uppercase tracking-widest">
+              <Globe className="h-3.5 w-3.5" />
+              Programvareøkosystem
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-5 leading-tight">
+              Våre produkter
             </h1>
-            <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
-              Innovative løsninger for kurs, HMS, prosjektstyring og mer. 
-              Bygget med moderne teknologi for maksimal effektivitet.
+            <p className="text-lg text-slate-300 max-w-2xl">
+              KKS AS utvikler og drifter et økosystem av softwareløsninger for norske bedrifter —
+              fra kursstyring og HMS til billettsalg og motorsport.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-12 bg-white dark:bg-gray-900 border-b">
+      {/* Produktgrid */}
+      <section className="py-20 bg-slate-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">{stat.value}</div>
-                <div className="text-sm md:text-base text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Products Grid */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Våre Produkter</h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Et økosystem av integrerte løsninger designet for å effektivisere 
-              din bedrifts arbeidsprosesser
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-            {products.map((product) => (
-              <Card key={product.name} className="border-2 hover:shadow-xl transition-all">
-                <CardHeader>
-                  <div className="flex flex-col gap-4 mb-4">
-                    <div className="flex items-start justify-between">
-                      <ProductLogo 
-                        logo={product.logo} 
-                        name={product.name} 
-                        iconName={product.iconName} 
-                      />
-                      <Badge 
-                        className={`${product.statusColor} text-white`}
+          <div className="max-w-6xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((product) => {
+              const Icon = product.icon;
+              return (
+                <div
+                  key={product.name}
+                  className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col hover:shadow-md hover:border-slate-300 transition-all"
+                >
+                  {/* Korthodet */}
+                  <div className="px-6 pt-6 pb-4 border-b border-slate-100">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-11 h-11 rounded-xl bg-slate-950 flex items-center justify-center flex-shrink-0">
+                        <Icon className="h-5 w-5 text-amber-400" />
+                      </div>
+                      <span
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${statusStyle[product.status]}`}
                       >
                         {product.status}
-                      </Badge>
+                      </span>
                     </div>
-                    <div>
-                      <CardTitle className="text-2xl mb-2">{product.name}</CardTitle>
-                      <CardDescription className="text-base">
-                        {product.description}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Features */}
-                  <div>
-                    <h4 className="font-semibold mb-3">Hovedfunksjoner:</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {product.features.map((feature) => (
-                        <div key={feature} className="flex items-center gap-2 text-sm">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <h2 className="font-bold text-slate-900 text-lg leading-tight">
+                      {product.name}
+                    </h2>
+                    <p className="text-xs text-amber-600 font-semibold uppercase tracking-wide mt-0.5">
+                      {product.tagline}
+                    </p>
                   </div>
 
-                  {/* Tech Stack */}
-                  <div>
-                    <h4 className="font-semibold mb-3">Teknologi:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {product.tech.map((tech) => (
-                        <Badge key={tech} variant="outline" className="text-xs">
-                          {tech}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Kortinnhold */}
+                  <div className="px-6 py-5 flex-1 flex flex-col gap-5">
+                    <p className="text-sm text-slate-500 leading-relaxed">
+                      {product.description}
+                    </p>
 
-                  {/* CTA Button */}
-                  {product.url !== "#" && (
-                    <Button 
-                      asChild 
-                      className="w-full"
-                      size="lg"
-                    >
-                      <a 
-                        href={product.url} 
-                        target="_blank" 
+                    <ul className="space-y-2">
+                      {product.features.map((f) => (
+                        <li key={f} className="flex items-center gap-2.5 text-sm text-slate-600">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {product.url ? (
+                      <a
+                        href={product.url}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2"
+                        className="mt-auto inline-flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-amber-600 transition-colors"
                       >
-                        <Globe className="h-4 w-4" />
                         Besøk {product.name}
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink className="h-3.5 w-3.5" />
                       </a>
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    ) : (
+                      <span className="mt-auto text-sm text-slate-400 italic">
+                        Kommer snart
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Integration Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+      {/* Integrasjon-seksjon */}
+      <section className="py-20 bg-white border-t border-slate-100">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <Zap className="h-16 w-16 mx-auto text-primary mb-6" />
-            <h2 className="text-4xl font-bold mb-6">Sømløs integrasjon</h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Alle våre produkter er designet for å fungere sammen. Webhook-integrasjoner, 
-              API-er og automatiske synkroniseringer sørger for at data flyter fritt mellom 
-              systemene.
-            </p>
-            <div className="grid md:grid-cols-3 gap-6 mt-12">
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Code className="h-6 w-6 text-primary" />
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-4 bg-amber-400/20 rounded-full text-amber-700 text-xs font-semibold">
+                <Zap className="h-3.5 w-3.5" />
+                Sømløs integrasjon
+              </div>
+              <h2 className="text-3xl font-bold text-slate-900 mb-3">
+                Produktene jobber sammen
+              </h2>
+              <p className="text-slate-500 max-w-xl mx-auto">
+                Alle løsningene er designet for å dele data via API-er og webhooks —
+                slik at du slipper dobbeltarbeid og manuelle overføringer.
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-5">
+              {[
+                { icon: Globe, title: "REST API", desc: "Moderne og dokumenterte API-er for alle produkter" },
+                { icon: Zap, title: "Webhooks", desc: "Sanntids oppdateringer mellom systemer" },
+                { icon: ShieldCheck, title: "Sikkerhet", desc: "OAuth 2.0, kryptering og GDPR-compliance" },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.title}
+                    className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-slate-950 flex items-center justify-center mx-auto mb-4">
+                      <Icon className="h-5 w-5 text-amber-400" />
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-2">{item.title}</h3>
+                    <p className="text-sm text-slate-500">{item.desc}</p>
                   </div>
-                  <h3 className="font-bold mb-2">REST API</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Moderne og dokumenterte API-er
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Zap className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-bold mb-2">Webhooks</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Sanntids oppdateringer
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <ShieldCheck className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-bold mb-2">Sikkerhet</h3>
-                  <p className="text-sm text-muted-foreground">
-                    OAuth 2.0 og kryptering
-                  </p>
-                </CardContent>
-              </Card>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <Card className="max-w-3xl mx-auto border-2 border-primary">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl mb-3">Interessert i våre løsninger?</CardTitle>
-              <CardDescription className="text-lg">
-                Ta kontakt for å lære mer om hvordan våre produkter kan hjelpe din bedrift
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <a href="/kontakt">Kontakt oss</a>
+      {/* CTA */}
+      <section className="py-16 bg-slate-950">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-white mb-3">
+            Interessert i våre løsninger?
+          </h2>
+          <p className="text-slate-400 mb-8 max-w-md mx-auto">
+            Ta kontakt for å lære mer om hvordan produktene kan hjelpe din bedrift.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/kontakt">
+              <Button className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-8 h-12">
+                Kontakt oss
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a href="/bedrift">Bedriftsløsninger</a>
+            </Link>
+            <Link href="/bedrift">
+              <Button
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:border-amber-400 hover:text-amber-400 px-8 h-12"
+              >
+                Bedriftsløsninger
               </Button>
-            </CardContent>
-          </Card>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -378,4 +311,3 @@ export default function PortefoliePage() {
     </div>
   );
 }
-

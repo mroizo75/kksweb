@@ -11,7 +11,7 @@ const navLinks = [
   { label: "For bedrifter", href: "/bedrift" },
   { label: "BHT-medlem", href: "/bht-medlem" },
   { label: "Våre produkter", href: "/portefolje" },
-  { label: "Blogg", href: "/blogg" },
+  { label: "Nyheter", href: "/blogg" },
   { label: "Om oss", href: "/om-oss" },
 ];
 
