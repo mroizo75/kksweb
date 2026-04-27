@@ -18,7 +18,6 @@ import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { createBlogPost, updateBlogPost } from "@/app/actions/admin/blog";
 import { toast } from "sonner";
 import { Loader2, Upload, X, Image as ImageIcon, ArrowLeft, Save, Send } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 const CATEGORIES = [
@@ -325,11 +324,11 @@ export function BlogEditor({ post }: BlogEditorProps) {
           <CardContent className="space-y-3">
             {image ? (
               <div className="relative aspect-video rounded-lg overflow-hidden border">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={image}
                   alt="Hovedbilde"
-                  fill
-                  className="object-cover"
+                  className="object-cover w-full h-full"
                 />
                 <Button
                   variant="destructive"
