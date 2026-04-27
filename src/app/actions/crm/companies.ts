@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getCrmSession, assertOwnership } from "@/lib/crm-guard";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -16,17 +16,13 @@ const companySchema = z.object({
   description: z.string().optional(),
 });
 
-type CompanyInput = z.infer<typeof companySchema>;
-
 type ActionResult =
   | { success: true; id: string; message: string }
   | { success: false; error: string };
 
 export async function createCompany(formData: unknown): Promise<ActionResult> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) return { success: false, error: "Ikke autentisert" };
-
+    const session = await getCrmSession();
     const data = companySchema.parse(formData);
 
     const company = await db.company.create({
@@ -39,6 +35,7 @@ export async function createCompany(formData: unknown): Promise<ActionResult> {
         industry: data.industry || null,
         website: data.website || null,
         description: data.description || null,
+        ownerId: session.userId,
       },
     });
 
@@ -53,10 +50,14 @@ export async function createCompany(formData: unknown): Promise<ActionResult> {
 
 export async function updateCompany(id: string, formData: unknown): Promise<ActionResult> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) return { success: false, error: "Ikke autentisert" };
-
+    const session = await getCrmSession();
     const data = companySchema.parse(formData);
+
+    const existing = await db.company.findUnique({ where: { id }, select: { ownerId: true } });
+    if (!existing) return { success: false, error: "Bedrift ikke funnet" };
+    if (!assertOwnership(session, existing.ownerId)) {
+      return { success: false, error: "Du har ikke tilgang til å redigere denne bedriften" };
+    }
 
     await db.company.update({
       where: { id },
@@ -84,8 +85,13 @@ export async function updateCompany(id: string, formData: unknown): Promise<Acti
 
 export async function deleteCompany(id: string): Promise<ActionResult> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) return { success: false, error: "Ikke autentisert" };
+    const session = await getCrmSession();
+
+    const existing = await db.company.findUnique({ where: { id }, select: { ownerId: true } });
+    if (!existing) return { success: false, error: "Bedrift ikke funnet" };
+    if (!assertOwnership(session, existing.ownerId)) {
+      return { success: false, error: "Du har ikke tilgang til å slette denne bedriften" };
+    }
 
     await db.company.delete({ where: { id } });
 

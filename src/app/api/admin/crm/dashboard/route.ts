@@ -1,18 +1,27 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getCrmSession } from "@/lib/crm-guard";
 import { startOfDay, subDays } from "date-fns";
 
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const session = await getCrmSession().catch(() => null);
+    if (!session) {
       return NextResponse.json({ error: "Ikke autentisert" }, { status: 401 });
     }
 
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
     const todayStart = startOfDay(now);
+
+    // Scope-filter for instruktør
+    const dealScope = session.isAdmin ? {} : { assignedToId: session.userId };
+    const leadScope = session.isAdmin ? {} : { assignedToId: session.userId };
+    const activityScope = session.isAdmin
+      ? {}
+      : { OR: [{ assignedToId: session.userId }, { createdById: session.userId }] };
+    const companyScope = session.isAdmin ? {} : { ownerId: session.userId };
+    const personScope = session.isAdmin ? {} : { ownerId: session.userId };
 
     const [
       dealsPerStage,
@@ -31,28 +40,29 @@ export async function GET() {
         by: ["stage"],
         _count: { id: true },
         _sum: { value: true },
-        where: { stage: { notIn: ["WON", "LOST"] } },
+        where: { ...dealScope, stage: { notIn: ["WON", "LOST"] } },
       }),
       db.deal.count({
-        where: { stage: "WON", closedAt: { gte: thirtyDaysAgo } },
+        where: { ...dealScope, stage: "WON", closedAt: { gte: thirtyDaysAgo } },
       }),
       db.deal.count({
-        where: { stage: "LOST", closedAt: { gte: thirtyDaysAgo } },
+        where: { ...dealScope, stage: "LOST", closedAt: { gte: thirtyDaysAgo } },
       }),
-      db.activity.count(),
+      db.activity.count({ where: activityScope }),
       db.activity.count({
-        where: { createdAt: { gte: todayStart } },
+        where: { ...activityScope, createdAt: { gte: todayStart } },
       }),
       db.activity.count({
-        where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
+        where: { ...activityScope, status: { in: ["PENDING", "IN_PROGRESS"] } },
       }),
       db.lead.count({
-        where: { createdAt: { gte: thirtyDaysAgo } },
+        where: { ...leadScope, createdAt: { gte: thirtyDaysAgo } },
       }),
-      db.lead.count(),
-      db.company.count(),
-      db.person.count(),
+      db.lead.count({ where: leadScope }),
+      db.company.count({ where: companyScope }),
+      db.person.count({ where: personScope }),
       db.activity.findMany({
+        where: activityScope,
         take: 8,
         orderBy: { createdAt: "desc" },
         include: {

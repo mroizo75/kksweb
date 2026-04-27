@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getCrmSession, assertOwnership } from "@/lib/crm-guard";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const session = await getCrmSession().catch(() => null);
+    if (!session) {
       return NextResponse.json({ error: "Ikke autentisert" }, { status: 401 });
     }
 
@@ -64,6 +64,10 @@ export async function GET(
 
     if (!person) {
       return NextResponse.json({ error: "Person ikke funnet" }, { status: 404 });
+    }
+
+    if (!assertOwnership(session, person.ownerId)) {
+      return NextResponse.json({ error: "Ingen tilgang" }, { status: 403 });
     }
 
     return NextResponse.json({ person });

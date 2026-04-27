@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getCrmSession, assertOwnership } from "@/lib/crm-guard";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -24,9 +24,7 @@ type ActionResult =
 
 export async function createPerson(formData: unknown): Promise<ActionResult> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) return { success: false, error: "Ikke autentisert" };
-
+    const session = await getCrmSession();
     const data = personSchema.parse(formData);
 
     const person = await db.person.create({
@@ -41,6 +39,7 @@ export async function createPerson(formData: unknown): Promise<ActionResult> {
         postalCode: data.postalCode || null,
         city: data.city || null,
         companyId: data.companyId || null,
+        ownerId: session.userId,
       },
     });
 
@@ -55,10 +54,14 @@ export async function createPerson(formData: unknown): Promise<ActionResult> {
 
 export async function updatePerson(id: string, formData: unknown): Promise<ActionResult> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) return { success: false, error: "Ikke autentisert" };
-
+    const session = await getCrmSession();
     const data = personSchema.parse(formData);
+
+    const existing = await db.person.findUnique({ where: { id }, select: { ownerId: true } });
+    if (!existing) return { success: false, error: "Person ikke funnet" };
+    if (!assertOwnership(session, existing.ownerId)) {
+      return { success: false, error: "Du har ikke tilgang til å redigere denne personen" };
+    }
 
     await db.person.update({
       where: { id },
@@ -88,8 +91,13 @@ export async function updatePerson(id: string, formData: unknown): Promise<Actio
 
 export async function deletePerson(id: string): Promise<ActionResult> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) return { success: false, error: "Ikke autentisert" };
+    const session = await getCrmSession();
+
+    const existing = await db.person.findUnique({ where: { id }, select: { ownerId: true } });
+    if (!existing) return { success: false, error: "Person ikke funnet" };
+    if (!assertOwnership(session, existing.ownerId)) {
+      return { success: false, error: "Du har ikke tilgang til å slette denne personen" };
+    }
 
     await db.person.delete({ where: { id } });
 

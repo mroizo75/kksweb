@@ -44,6 +44,8 @@ model User {
   createdActivities  Activity[]    @relation("CreatedActivities")
   notes              Note[]
   renewalTasks       RenewalTask[]
+  ownedCompanies     Company[]     @relation("CompanyOwner")
+  ownedPersons       Person[]      @relation("PersonOwner")
 
   // ISO 27001 - 2FA og audit (beholdes for auth-systemet)
   twoFactorTokens TwoFactorToken[]
@@ -113,6 +115,7 @@ model Person {
   phone     String?
   birthDate DateTime?
   companyId String?
+  ownerId   String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -127,6 +130,7 @@ model Person {
   linkedinUrl String?
 
   company     Company?     @relation(fields: [companyId], references: [id])
+  owner       User?        @relation("PersonOwner", fields: [ownerId], references: [id])
   enrollments Enrollment[]
   credentials Credential[]
   assessments Assessment[]
@@ -142,6 +146,7 @@ model Person {
 
   @@index([email])
   @@index([companyId])
+  @@index([ownerId])
   @@map("people")
 }
 
@@ -152,6 +157,7 @@ model Company {
   email     String?
   phone     String?
   address   String?
+  ownerId   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -182,10 +188,12 @@ model Company {
   notes      Note[]
   emailLogs  EmailLog[]
   tags       CompanyTag[]
+  owner      User?        @relation("CompanyOwner", fields: [ownerId], references: [id])
 
   @@index([orgNo])
   @@index([licenseStatus])
   @@index([licenseEndDate])
+  @@index([ownerId])
   @@map("companies")
 }
 

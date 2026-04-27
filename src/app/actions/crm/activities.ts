@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
-import { activitySchema, type ActivityInput } from "@/lib/validations/crm";
+import { getCrmSession, assertOwnership } from "@/lib/crm-guard";
+import { activitySchema } from "@/lib/validations/crm";
 import { sendActivityEmail } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 
@@ -14,14 +14,14 @@ export async function createActivity(
   formData: unknown & { sendNow?: boolean }
 ): Promise<ActivityActionResult> {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return { success: false, error: "Ikke autentisert" };
-    }
-
+    const session = await getCrmSession();
     const { sendNow, ...activityData } = formData as any;
     const validatedData = activitySchema.parse(activityData);
+
+    // Instruktør kan bare tildele aktiviteter til seg selv
+    const assignedToId = session.isAdmin
+      ? (validatedData.assignedToId || null)
+      : session.userId;
 
     const activity = await db.activity.create({
       data: {
@@ -34,48 +34,39 @@ export async function createActivity(
         dealId: validatedData.dealId || null,
         companyId: validatedData.companyId || null,
         personId: validatedData.personId || null,
-        assignedToId: validatedData.assignedToId || null,
-        createdById: session.user.id,
+        assignedToId,
+        createdById: session.userId,
         emailTo: validatedData.emailTo || null,
         emailFrom: validatedData.emailFrom || null,
       },
     });
 
-    // Send e-post hvis type er EMAIL og sendNow er true
     if (validatedData.type === "EMAIL" && sendNow && validatedData.emailTo) {
       try {
         await sendActivityEmail({
           to: validatedData.emailTo,
           subject: validatedData.subject,
           content: validatedData.description || "",
-          fromName: session.user.name || undefined,
+          fromName: undefined,
         });
 
-        // Oppdater activity med emailSentAt
         await db.activity.update({
           where: { id: activity.id },
           data: { emailSentAt: new Date() },
         });
-      } catch (emailError) {
-        console.error("Feil ved sending av e-post:", emailError);
+      } catch {
         // Fortsett selv om e-post feiler
       }
     }
 
     revalidatePath("/admin/crm/activities");
-
     return {
       success: true,
       activityId: activity.id,
       message: sendNow && validatedData.type === "EMAIL" ? "E-post sendt" : "Aktivitet opprettet",
     };
   } catch (error) {
-    console.error("Feil ved opprett aktivitet:", error);
-
-    if (error instanceof Error) {
-      return { success: false, error: error.message };
-    }
-
+    if (error instanceof Error) return { success: false, error: error.message };
     return { success: false, error: "En uventet feil oppstod" };
   }
 }
@@ -85,13 +76,28 @@ export async function updateActivity(
   formData: unknown
 ): Promise<ActivityActionResult> {
   try {
-    const session = await auth();
+    const session = await getCrmSession();
 
-    if (!session?.user?.id) {
-      return { success: false, error: "Ikke autentisert" };
+    const existing = await db.activity.findUnique({
+      where: { id },
+      select: { assignedToId: true, createdById: true },
+    });
+    if (!existing) return { success: false, error: "Aktivitet ikke funnet" };
+
+    // Instruktør kan redigere aktiviteter de er tildelt eller har opprettet
+    const hasAccess =
+      session.isAdmin ||
+      existing.assignedToId === session.userId ||
+      existing.createdById === session.userId;
+    if (!hasAccess) {
+      return { success: false, error: "Du har ikke tilgang til å redigere denne aktiviteten" };
     }
 
     const validatedData = activitySchema.parse(formData);
+
+    const assignedToId = session.isAdmin
+      ? (validatedData.assignedToId || null)
+      : session.userId;
 
     const activity = await db.activity.update({
       where: { id },
@@ -105,86 +111,75 @@ export async function updateActivity(
         dealId: validatedData.dealId || null,
         companyId: validatedData.companyId || null,
         personId: validatedData.personId || null,
-        assignedToId: validatedData.assignedToId || null,
+        assignedToId,
         emailTo: validatedData.emailTo || null,
         emailFrom: validatedData.emailFrom || null,
       },
     });
 
     revalidatePath("/admin/crm/activities");
-
-    return {
-      success: true,
-      activityId: activity.id,
-      message: "Aktivitet oppdatert",
-    };
+    return { success: true, activityId: activity.id, message: "Aktivitet oppdatert" };
   } catch (error) {
-    console.error("Feil ved oppdater aktivitet:", error);
-
-    if (error instanceof Error) {
-      return { success: false, error: error.message };
-    }
-
+    if (error instanceof Error) return { success: false, error: error.message };
     return { success: false, error: "En uventet feil oppstod" };
   }
 }
 
 export async function deleteActivity(id: string): Promise<ActivityActionResult> {
   try {
-    const session = await auth();
+    const session = await getCrmSession();
 
-    if (!session?.user?.id) {
-      return { success: false, error: "Ikke autentisert" };
+    const existing = await db.activity.findUnique({
+      where: { id },
+      select: { assignedToId: true, createdById: true },
+    });
+    if (!existing) return { success: false, error: "Aktivitet ikke funnet" };
+
+    const hasAccess =
+      session.isAdmin ||
+      existing.assignedToId === session.userId ||
+      existing.createdById === session.userId;
+    if (!hasAccess) {
+      return { success: false, error: "Du har ikke tilgang til å slette denne aktiviteten" };
     }
 
-    await db.activity.delete({
-      where: { id },
-    });
+    await db.activity.delete({ where: { id } });
 
     revalidatePath("/admin/crm/activities");
-
-    return {
-      success: true,
-      activityId: id,
-      message: "Aktivitet slettet",
-    };
+    return { success: true, activityId: id, message: "Aktivitet slettet" };
   } catch (error) {
-    console.error("Feil ved slett aktivitet:", error);
-
-    if (error instanceof Error) {
-      return { success: false, error: error.message };
-    }
-
+    if (error instanceof Error) return { success: false, error: error.message };
     return { success: false, error: "En uventet feil oppstod" };
   }
 }
 
 export async function completeActivity(id: string): Promise<ActivityActionResult> {
   try {
-    const session = await auth();
+    const session = await getCrmSession();
 
-    if (!session?.user?.id) {
-      return { success: false, error: "Ikke autentisert" };
+    const existing = await db.activity.findUnique({
+      where: { id },
+      select: { assignedToId: true, createdById: true },
+    });
+    if (!existing) return { success: false, error: "Aktivitet ikke funnet" };
+
+    const hasAccess =
+      session.isAdmin ||
+      existing.assignedToId === session.userId ||
+      existing.createdById === session.userId;
+    if (!hasAccess) {
+      return { success: false, error: "Du har ikke tilgang til å fullføre denne aktiviteten" };
     }
 
     const activity = await db.activity.update({
       where: { id },
-      data: {
-        status: "COMPLETED",
-        completedAt: new Date(),
-      },
+      data: { status: "COMPLETED", completedAt: new Date() },
     });
 
     revalidatePath("/admin/crm/activities");
-
-    return {
-      success: true,
-      activityId: activity.id,
-      message: "Aktivitet fullført",
-    };
+    return { success: true, activityId: activity.id, message: "Aktivitet fullført" };
   } catch (error) {
-    console.error("Feil ved fullfør aktivitet:", error);
+    if (error instanceof Error) return { success: false, error: error.message };
     return { success: false, error: "Kunne ikke fullføre aktivitet" };
   }
 }
-

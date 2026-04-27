@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getCrmSession } from "@/lib/crm-guard";
 
 export async function GET(request: Request) {
   try {
-    const session = await auth();
-
+    const session = await getCrmSession().catch(() => null);
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Ikke autentisert" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -15,7 +14,7 @@ export async function GET(request: Request) {
     const status = searchParams.get("status");
     const assignedToId = searchParams.get("assignedToId");
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (type) {
       where.type = type;
@@ -25,7 +24,13 @@ export async function GET(request: Request) {
       where.status = status;
     }
 
-    if (assignedToId) {
+    // Instruktør ser kun aktiviteter de er tildelt eller har opprettet
+    if (!session.isAdmin) {
+      where.OR = [
+        { assignedToId: session.userId },
+        { createdById: session.userId },
+      ];
+    } else if (assignedToId) {
       where.assignedToId = assignedToId;
     }
 
@@ -64,4 +69,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

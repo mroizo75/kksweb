@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getCrmSession } from "@/lib/crm-guard";
 import { differenceInDays } from "date-fns";
 
 export async function GET(request: Request) {
   try {
-    const session = await auth();
-
+    const session = await getCrmSession().catch(() => null);
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Ikke autentisert" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -21,7 +20,6 @@ export async function GET(request: Request) {
     if (status) {
       where.status = status;
     } else {
-      // Standard: vis ikke fullførte eller skippede
       where.status = { in: ["OPEN", "CONTACTED"] };
     }
 
@@ -34,6 +32,11 @@ export async function GET(request: Request) {
 
     if (courseId) {
       where.courseId = courseId;
+    }
+
+    // Instruktør ser kun fornyelser tildelt dem
+    if (!session.isAdmin) {
+      where.assignedToId = session.userId;
     }
 
     const renewals = await db.renewalTask.findMany({
@@ -63,7 +66,6 @@ export async function GET(request: Request) {
       take: 500,
     });
 
-    // Berik med dager til utløp
     const enriched = renewals.map((r) => {
       const expiryDate = r.credential?.validTo
         ? new Date(r.credential.validTo)
@@ -84,10 +86,11 @@ export async function GET(request: Request) {
       };
     });
 
-    // Hent alle kurs som har fornyelsesoppgaver (for filter)
     const courses = await db.course.findMany({
       where: {
-        renewalTasks: { some: {} },
+        renewalTasks: {
+          some: session.isAdmin ? {} : { assignedToId: session.userId },
+        },
       },
       select: { id: true, title: true },
       orderBy: { title: "asc" },

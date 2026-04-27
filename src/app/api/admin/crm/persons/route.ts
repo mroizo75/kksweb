@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getCrmSession, withOwnerScope } from "@/lib/crm-guard";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const session = await getCrmSession().catch(() => null);
+    if (!session) {
       return NextResponse.json({ error: "Ikke autentisert" }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
     const companyId = searchParams.get("company");
 
+    const baseWhere = companyId ? { companyId } : {};
+    const where = withOwnerScope(baseWhere, session, "ownerId");
+
     const persons = await db.person.findMany({
-      where: companyId ? { companyId } : undefined,
+      where,
       include: {
         company: { select: { id: true, name: true } },
         _count: { select: { deals: true, credentials: true, enrollments: true } },
