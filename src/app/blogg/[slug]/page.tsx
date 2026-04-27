@@ -179,12 +179,12 @@ export default async function BloggArtikkelPage({ params }: Props) {
         {/* Featured image */}
         {post.image && (
           <section className="container mx-auto px-4 max-w-4xl -mt-6 mb-8 relative z-10">
-            <div className="relative aspect-[2/1] rounded-2xl overflow-hidden shadow-xl">
+            <div className="rounded-2xl overflow-hidden shadow-xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={normalizeR2ImageUrl(post.image)}
                 alt={post.title}
-                className="object-cover w-full h-full"
+                className="w-full h-auto"
               />
             </div>
           </section>

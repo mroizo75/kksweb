@@ -114,12 +114,12 @@ export default async function BloggPage() {
                       </div>
                     )}
                     <div className="p-5 flex flex-col flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                           {post.category}
                         </span>
                         {post.publishedAt && (
-                          <span className="text-xs text-slate-400 flex items-center gap-1">
+                          <span className="shrink-0 text-xs text-slate-400 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {format(post.publishedAt, "d. MMMM yyyy", { locale: nb })}
                           </span>
