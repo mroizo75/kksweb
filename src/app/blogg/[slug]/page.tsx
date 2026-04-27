@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
@@ -181,12 +180,11 @@ export default async function BloggArtikkelPage({ params }: Props) {
         {post.image && (
           <section className="container mx-auto px-4 max-w-4xl -mt-6 mb-8 relative z-10">
             <div className="relative aspect-[2/1] rounded-2xl overflow-hidden shadow-xl">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={normalizeR2ImageUrl(post.image)}
                 alt={post.title}
-                fill
-                className="object-cover"
-                priority
+                className="object-cover w-full h-full"
               />
             </div>
           </section>
@@ -224,11 +222,11 @@ export default async function BloggArtikkelPage({ params }: Props) {
                   >
                     {related.image ? (
                       <div className="relative aspect-video overflow-hidden">
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                           src={normalizeR2ImageUrl(related.image)}
                           alt={related.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
                     ) : (

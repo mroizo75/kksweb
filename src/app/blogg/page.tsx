@@ -2,7 +2,6 @@ import { db } from "@/lib/db";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
@@ -102,11 +101,11 @@ export default async function BloggPage() {
                   <article className="h-full bg-white rounded-2xl border border-slate-200 overflow-hidden hover:border-amber-300 hover:shadow-xl transition-all duration-200 flex flex-col">
                     {post.image ? (
                       <div className={`relative overflow-hidden ${idx === 0 ? "aspect-[2/1]" : "aspect-video"}`}>
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                           src={normalizeR2ImageUrl(post.image)}
                           alt={post.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
                     ) : (
