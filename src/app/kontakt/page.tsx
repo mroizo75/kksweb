@@ -1,16 +1,17 @@
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { ContactForm } from "@/components/public/ContactForm";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Mail, 
-  Phone, 
+import {
+  Mail,
+  Phone,
   Clock,
   MessageSquare,
   Building2,
   Facebook,
   Linkedin,
+  ChevronRight,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -25,7 +26,7 @@ export const metadata = {
   },
 };
 
-const contactInfo = [
+const contactCards = [
   {
     icon: Mail,
     title: "E-post",
@@ -34,20 +35,20 @@ const contactInfo = [
   },
   {
     icon: Phone,
-    title: "Telefon Kurs",
+    title: "Telefon kurs",
     value: "+47 91 54 08 24",
     href: "tel:+4791540824",
   },
   {
     icon: Phone,
-    title: "Telefon Software",
+    title: "Telefon software",
     value: "+47 99 11 29 16",
     href: "tel:+4799112916",
   },
   {
     icon: Clock,
     title: "Åpningstider",
-    value: "Man-Fre: 08:00-16:00",
+    value: "Man–Fre: 08:00–16:00",
     href: null,
   },
 ];
@@ -72,148 +73,127 @@ const topics = [
 
 export default function KontaktPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary via-blue-700 to-purple-700 text-white py-20">
+      {/* Hero */}
+      <section className="bg-slate-950 pt-24 pb-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          <nav className="mb-6 text-sm text-slate-500 flex items-center gap-2">
+            <Link href="/" className="hover:text-amber-400 transition-colors">Hjem</Link>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span className="text-slate-300">Kontakt</span>
+          </nav>
+          <div className="max-w-2xl">
+            <span className="inline-block px-3 py-1 rounded-full bg-amber-400/20 text-amber-400 text-xs font-semibold uppercase tracking-widest mb-5">
               Kontakt oss
+            </span>
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">
+              Vi er her for deg
             </h1>
-            <p className="text-xl md:text-2xl text-blue-100">
-              Vi er her for å hjelpe deg! Ta kontakt for spørsmål om kurs eller samarbeid
+            <p className="text-lg text-slate-300">
+              Ta kontakt for spørsmål om kurs, bedriftsavtaler eller samarbeid.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Contact Info Cards */}
-      <section className="py-12 -mt-12 pt-16">
+      {/* Contact info cards */}
+      <section className="py-12 bg-slate-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {contactInfo.map((info) => (
-              <Card key={info.title} className="border-2 hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6 text-center">
-                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <info.icon className="h-7 w-7 text-primary" />
-                  </div>
-                  <h3 className="font-semibold mb-2">{info.title}</h3>
-                  {info.href ? (
-                    <a 
-                      href={info.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      {info.value}
-                    </a>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{info.value}</p>
-                  )}
-                </CardContent>
-              </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            {contactCards.map((info) => (
+              <div key={info.title} className="bg-white rounded-2xl border border-slate-200 p-5 text-center hover:border-amber-300 hover:shadow-md transition-all">
+                <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-3">
+                  <info.icon className="h-5 w-5 text-amber-600" />
+                </div>
+                <p className="font-semibold text-slate-900 text-sm mb-1">{info.title}</p>
+                {info.href ? (
+                  <a
+                    href={info.href}
+                    className="text-sm text-slate-500 hover:text-amber-600 transition-colors"
+                  >
+                    {info.value}
+                  </a>
+                ) : (
+                  <p className="text-sm text-slate-500">{info.value}</p>
+                )}
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Contact Form & Topics */}
-      <section className="py-20">
+      {/* Form + topics */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-            {/* Contact Form */}
+          <div className="grid lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            {/* Contact form */}
             <div>
-              <h2 className="text-3xl font-bold mb-6">Send oss en melding</h2>
-              <Card className="border-2">
-                <CardHeader>
-                  <CardTitle>Kontaktskjema</CardTitle>
-                  <CardDescription>
-                    Fyll ut skjemaet så tar vi kontakt så snart som mulig
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ContactForm />
-                </CardContent>
-              </Card>
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Send oss en melding</h2>
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <ContactForm />
+              </div>
             </div>
 
-            {/* Topics & Quick Links */}
-            <div className="space-y-8">
+            {/* Topics + links + social */}
+            <div className="space-y-6">
               <div>
-                <h2 className="text-3xl font-bold mb-6">Hva kan vi hjelpe med?</h2>
-                <div className="space-y-4">
+                <h2 className="text-2xl font-bold text-slate-900 mb-5">Hva kan vi hjelpe med?</h2>
+                <div className="space-y-3">
                   {topics.map((topic) => (
-                    <Card key={topic.title} className="border-2">
-                      <CardHeader>
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <topic.icon className="h-6 w-6 text-primary" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg">{topic.title}</CardTitle>
-                            <CardDescription>{topic.description}</CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                    </Card>
+                    <div key={topic.title} className="flex items-start gap-4 bg-slate-50 rounded-xl p-4 border border-slate-200">
+                      <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+                        <topic.icon className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900 text-sm">{topic.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{topic.description}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {/* Quick Links */}
-              <Card className="border-2 bg-muted/50">
-                <CardHeader>
-                  <CardTitle>Nyttige lenker</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Link href="/kurs">
-                    <Button variant="outline" className="w-full justify-start">
-                      Se alle kurs
-                    </Button>
-                  </Link>
-                  <Link href="/bedrift">
-                    <Button variant="outline" className="w-full justify-start">
-                      Kurs for bedrifter
-                    </Button>
-                  </Link>
-                  <Link href="/bht-medlem">
-                    <Button variant="outline" className="w-full justify-start">
-                      BHT-medlemskap
-                    </Button>
-                  </Link>
-                  <Link href="/om-oss">
-                    <Button variant="outline" className="w-full justify-start">
-                      Om oss
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
+              {/* Quick links */}
+              <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5">
+                <h3 className="font-bold text-slate-900 mb-3">Nyttige lenker</h3>
+                <div className="space-y-2">
+                  {[
+                    { href: "/kurs", label: "Se alle kurs" },
+                    { href: "/bedrift", label: "Kurs for bedrifter" },
+                    { href: "/bht-medlem", label: "BHT-medlemskap" },
+                    { href: "/om-oss", label: "Om oss" },
+                  ].map((link) => (
+                    <Link key={link.href} href={link.href}>
+                      <div className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-white border border-transparent hover:border-amber-200 transition-all text-sm text-slate-600 hover:text-amber-700">
+                        <span>{link.label}</span>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
 
-              {/* Social Media / Contact Options */}
-              <Card className="border-2 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
-                <CardHeader>
-                  <CardTitle>Følg oss på sosiale medier</CardTitle>
-                  <CardDescription>
-                    Hold deg oppdatert med siste nytt fra KKS AS
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-3">
-                    <Button variant="outline" size="lg" className="flex-1" asChild>
-                      <a href="https://www.facebook.com/kursogkompetansesystemer" target="_blank" rel="noopener noreferrer">
-                        <Facebook className="mr-2 h-5 w-5" />
-                        Facebook
-                      </a>
-                    </Button>
-                    <Button variant="outline" size="lg" className="flex-1" asChild>
-                      <a href="https://www.linkedin.com/company/kurs-og-kompetansesystemer-as/" target="_blank" rel="noopener noreferrer">
-                        <Linkedin className="mr-2 h-5 w-5" />
-                        LinkedIn
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Social */}
+              <div className="bg-slate-950 rounded-2xl p-5">
+                <h3 className="font-bold text-white mb-1">Følg oss på sosiale medier</h3>
+                <p className="text-slate-400 text-xs mb-4">Hold deg oppdatert med siste nytt fra KKS AS</p>
+                <div className="flex gap-3">
+                  <Button variant="outline" size="sm" className="flex-1 border-slate-700 text-slate-300 hover:border-amber-400 hover:text-amber-400" asChild>
+                    <a href="https://www.facebook.com/kursogkompetansesystemer" target="_blank" rel="noopener noreferrer">
+                      <Facebook className="mr-2 h-4 w-4" />
+                      Facebook
+                    </a>
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 border-slate-700 text-slate-300 hover:border-amber-400 hover:text-amber-400" asChild>
+                    <a href="https://www.linkedin.com/company/kurs-og-kompetansesystemer-as/" target="_blank" rel="noopener noreferrer">
+                      <Linkedin className="mr-2 h-4 w-4" />
+                      LinkedIn
+                    </a>
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -223,4 +203,3 @@ export default function KontaktPage() {
     </div>
   );
 }
-

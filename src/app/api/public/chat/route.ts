@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { buildSystemPrompt } from "@/lib/chatbot-system-prompt";
 import { getCourseCategoryLabel } from "@/lib/course-categories";
+import { checkFormRateLimit, getApiRouteIp } from "@/lib/rate-limit";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -141,6 +142,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Chat er midlertidig utilgjengelig" },
         { status: 503 }
+      );
+    }
+
+    const ip = getApiRouteIp(req);
+    const limit = checkFormRateLimit(ip, "contact"); // deler grense med contact (5/t)
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: limit.message },
+        { status: 429 }
       );
     }
 

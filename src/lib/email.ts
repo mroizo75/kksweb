@@ -719,3 +719,53 @@ export async function sendLicenseResumed(data: LicenseResumedData) {
   }
 }
 
+export interface CourseRequestData {
+  courseName: string;
+  courseSlug: string;
+  name: string;
+  email: string;
+  phone: string;
+  preferredDate: string;
+  participants: string;
+  message?: string;
+}
+
+export async function sendCourseRequest(data: CourseRequestData) {
+  const adminEmail = process.env.ADMIN_EMAIL || "post@kksas.no";
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+
+  const { error } = await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL || "KKS Kurs <kurs@innut.no>",
+    replyTo: data.email,
+    to: [adminEmail],
+    subject: `📅 Kursforespørsel: ${data.courseName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #0f172a; color: white; padding: 24px; border-radius: 8px 8px 0 0;">
+          <h2 style="margin: 0; color: white;">📅 Ny kursforespørsel</h2>
+          <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 14px;">${data.courseName}</p>
+        </div>
+        <div style="background-color: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600; width: 40%;">Navn:</td><td style="color: #0f172a;">${data.name}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">E-post:</td><td><a href="mailto:${data.email}" style="color: #3b82f6;">${data.email}</a></td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">Telefon:</td><td><a href="tel:${data.phone}" style="color: #3b82f6;">${data.phone}</a></td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">Ønsket dato:</td><td style="color: #0f172a;">${data.preferredDate}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b; font-weight: 600;">Antall deltakere:</td><td style="color: #0f172a;">${data.participants}</td></tr>
+            ${data.message ? `<tr><td style="padding: 8px 0; color: #64748b; font-weight: 600; vertical-align: top;">Melding:</td><td style="color: #0f172a;">${data.message}</td></tr>` : ""}
+          </table>
+          <div style="margin-top: 20px; padding: 16px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
+            <p style="margin: 0; color: #92400e; font-size: 13px;">
+              Svar ved å svare på denne e-posten, eller ring <strong>${data.phone}</strong>.
+            </p>
+          </div>
+          <p style="margin-top: 16px; font-size: 12px; color: #94a3b8;">
+            Kursside: <a href="${BASE_URL}/kurs/${data.courseSlug}" style="color: #3b82f6;">${BASE_URL}/kurs/${data.courseSlug}</a>
+          </p>
+        </div>
+      </div>
+    `,
+  });
+
+  if (error) throw new Error("Kunne ikke sende forespørsel");
+}

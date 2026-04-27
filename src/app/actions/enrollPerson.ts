@@ -12,9 +12,16 @@ import {
   parseCourseBookingAddOns,
 } from "@/lib/booking-add-ons";
 import { isMissingColumnError } from "@/lib/prisma-compat";
+import { checkFormRateLimit, getServerActionIp } from "@/lib/rate-limit";
 
 export async function enrollPerson(formData: unknown) {
   try {
+    const ip = await getServerActionIp();
+    const limit = checkFormRateLimit(ip, "enrollment");
+    if (!limit.allowed) {
+      return { success: false, error: limit.message };
+    }
+
     // Valider input
     const validatedData = personEnrollmentSchema.parse(formData);
 
@@ -33,6 +40,7 @@ export async function enrollPerson(formData: unknown) {
             slug: true,
             durationDays: true,
             price: true,
+            bookingAddOns: true,
           },
         },
         enrollments: {
@@ -47,7 +55,7 @@ export async function enrollPerson(formData: unknown) {
       return { success: false, error: "Kurset finnes ikke" };
     }
 
-    const availableAddOns = parseCourseBookingAddOns(undefined);
+    const availableAddOns = parseCourseBookingAddOns(session.course.bookingAddOns);
     const availableAddOnIds = new Set(availableAddOns.map((addOn) => addOn.id));
     const selectedAddOnIds = validatedData.selectedAddOnIds ?? [];
 

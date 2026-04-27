@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { sendBedriftKontaktConfirmation, sendBedriftKontaktNotification } from "@/lib/email";
+import { checkFormRateLimit, getApiRouteIp } from "@/lib/rate-limit";
 
 const bedriftKontaktSchema = z.object({
   companyName: z.string().min(1, "Bedriftsnavn er påkrevd"),
@@ -19,6 +20,15 @@ const bedriftKontaktSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const ip = getApiRouteIp(req);
+    const limit = checkFormRateLimit(ip, "bedrift-kontakt");
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { success: false, error: limit.message },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const validated = bedriftKontaktSchema.parse(body);
 

@@ -82,25 +82,58 @@ export default async function BloggArtikkelPage({ params }: Props) {
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: post.title,
-    description: post.excerpt,
-    url: `${BASE_URL}/blogg/${post.slug}`,
-    datePublished: post.publishedAt?.toISOString(),
-    dateModified: post.updatedAt.toISOString(),
-    author: {
+    "@id": `${BASE_URL}/blogg/${post.slug}#article`,
+    "headline": post.title,
+    "description": post.excerpt,
+    "url": `${BASE_URL}/blogg/${post.slug}`,
+    "datePublished": post.publishedAt?.toISOString(),
+    "dateModified": post.updatedAt.toISOString(),
+    "inLanguage": "nb",
+    "author": {
       "@type": "Person",
-      name: post.author?.name ?? "KKS AS",
+      "name": post.author?.name ?? "KKS AS",
+      "url": `${BASE_URL}/om-oss`,
+      "worksFor": {
+        "@type": "Organization",
+        "name": "KKS AS",
+        "url": BASE_URL,
+      },
     },
-    publisher: {
+    "publisher": {
       "@type": "Organization",
-      name: "KKS AS",
-      logo: { "@type": "ImageObject", url: `${BASE_URL}/logo-black-kks.png` },
+      "@id": `${BASE_URL}/#organization`,
+      "name": "KKS AS",
+      "url": BASE_URL,
+      "logo": {
+        "@type": "ImageObject",
+        "url": `${BASE_URL}/logo-black-kks.png`,
+        "width": 200,
+        "height": 80,
+      },
     },
-    ...(post.image && { image: post.image }),
-    mainEntityOfPage: {
+    ...(post.image && {
+      "image": {
+        "@type": "ImageObject",
+        "url": post.image,
+        "width": 1200,
+        "height": 630,
+      },
+    }),
+    "mainEntityOfPage": {
       "@type": "WebPage",
       "@id": `${BASE_URL}/blogg/${post.slug}`,
     },
+    "isPartOf": {
+      "@type": "Blog",
+      "name": "KKS AS Blogg",
+      "url": `${BASE_URL}/blogg`,
+    },
+    "about": [
+      { "@type": "Thing", "name": "HMS-opplæring" },
+      { "@type": "Thing", "name": "Sertifisering og kurs" },
+      { "@type": "Thing", "name": "Arbeidsmiljø Norge" },
+    ],
+    "wordCount": Math.ceil(post.content.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length),
   };
 
   return (

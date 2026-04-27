@@ -1,94 +1,163 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Phone, Mail, MapPin } from "lucide-react";
+
+const tjenester = [
+  { label: "Alle kurs", href: "/kurs" },
+  { label: "For bedrifter", href: "/bedrift" },
+  { label: "Arbeid i høyden", href: "/arbeid-i-hoyden" },
+  { label: "BHT-medlemskap", href: "/bht-medlem" },
+  { label: "Våre produkter", href: "/portefolje" },
+  { label: "Blogg", href: "/blogg" },
+];
+
+const lokasjoner = [
+  { label: "Kurs i Oslo", href: "/lokasjon/oslo" },
+  { label: "Kurs i Bergen", href: "/lokasjon/bergen" },
+  { label: "Kurs i Trondheim", href: "/lokasjon/trondheim" },
+  { label: "Kurs i Stavanger", href: "/lokasjon/stavanger" },
+  { label: "Kurs i Kristiansand", href: "/lokasjon/kristiansand" },
+  { label: "Kurs i Tromsø", href: "/lokasjon/tromso" },
+];
+
+const informasjon = [
+  { label: "Om oss", href: "/om-oss" },
+  { label: "Bli instruktør", href: "/bli-instruktor" },
+  { label: "Personvern", href: "/personvern" },
+  { label: "Vilkår", href: "/vilkar" },
+  { label: "Klage / tilbakemelding", href: "/klage" },
+];
+
 export function Footer() {
   return (
-    <footer className="border-t py-12 bg-muted/50">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-          <div>
-            <Image src="/logo-black-kks.png" alt="KKS AS" width={150} height={150} />
-            <p className="text-sm text-muted-foreground">
-              Kurs og Kompetansesystemer AS - Profesjonell kursvirksomhet med fokus på kvalitet og sikkerhet.
+    <footer className="bg-white border-t border-slate-200">
+      <div className="container mx-auto px-4 pt-14 pb-8">
+
+        {/* Hoveddel */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 mb-12">
+
+          {/* Kolonne 1: Logo + info */}
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Link href="/" className="inline-block mb-5 hover:opacity-75 transition-opacity">
+              <Image
+                src="/logo-black-kks.png"
+                alt="KKS AS"
+                width={300}
+                height={150}
+                className="h-24 w-auto"
+              />
+            </Link>
+            <p className="text-slate-500 text-sm leading-relaxed mb-6 max-w-xs">
+              Kurs og Kompetansesystemer AS — profesjonell kursvirksomhet med
+              fokus på kvalitet og sikkerhet i hele Norge.
             </p>
-          </div>
-          <div>
-            <h3 className="font-bold mb-4">Tjenester</h3>
-            <div className="flex flex-col gap-2 text-sm">
-              <Link href="/kurs" className="text-muted-foreground hover:text-foreground transition-colors">
-                Kurs
-              </Link>
-              <Link href="/bedrift" className="text-muted-foreground hover:text-foreground transition-colors">
-                For bedrifter
-              </Link>
-              <Link href="/bht-medlem" className="text-muted-foreground hover:text-foreground transition-colors">
-                BHT-medlemskap
-              </Link>
-              <Link href="/portefolje" className="text-muted-foreground hover:text-foreground transition-colors">
-                Våre produkter
-              </Link>
+            <div className="space-y-2.5">
+              <div className="flex items-start gap-2.5 text-sm text-slate-500">
+                <MapPin className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <span>
+                  Frøbergvegen 71, 2320 Furnes
+                  <br />
+                  Org.nr: 925 897 019
+                </span>
+              </div>
+              <a
+                href="tel:+4791540824"
+                className="flex items-center gap-2.5 text-sm text-slate-500 hover:text-amber-600 transition-colors"
+              >
+                <Phone className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                <span>+47 91 54 08 24</span>
+              </a>
+              <a
+                href="mailto:post@kksas.no"
+                className="flex items-center gap-2.5 text-sm text-slate-500 hover:text-amber-600 transition-colors"
+              >
+                <Mail className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                <span>post@kksas.no</span>
+              </a>
             </div>
           </div>
+
+          {/* Kolonne 2: Tjenester */}
           <div>
-            <h3 className="font-bold mb-4">Lokasjoner</h3>
-            <div className="flex flex-col gap-2 text-sm">
-              <Link href="/lokasjon/oslo" className="text-muted-foreground hover:text-foreground transition-colors">
-                Kurs i Oslo
-              </Link>
-              <Link href="/lokasjon/bergen" className="text-muted-foreground hover:text-foreground transition-colors">
-                Kurs i Bergen
-              </Link>
-              <Link href="/lokasjon/trondheim" className="text-muted-foreground hover:text-foreground transition-colors">
-                Kurs i Trondheim
-              </Link>
-              <Link href="/lokasjon/stavanger" className="text-muted-foreground hover:text-foreground transition-colors">
-                Kurs i Stavanger
-              </Link>
-              <Link href="/lokasjon/kristiansand" className="text-muted-foreground hover:text-foreground transition-colors">
-                Kurs i Kristiansand
-              </Link>
-              <Link href="/lokasjon/tromso" className="text-muted-foreground hover:text-foreground transition-colors">
-                Kurs i Tromsø
-              </Link>
-            </div>
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">
+              Tjenester
+            </h3>
+            <ul className="space-y-2.5">
+              {tjenester.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-sm text-slate-500 hover:text-amber-600 transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
+
+          {/* Kolonne 3: Lokasjoner */}
           <div>
-            <h3 className="font-bold mb-4">Kontakt</h3>
-            <div className="text-sm text-muted-foreground space-y-2">
-              <p>Kurs og Kompetansesystemer AS</p>
-              <p>Org.nr: 925 897 019</p>
-              <p>Frøbergvegen 71, 2320 Furnes</p>
-              <p className="pt-2">
-                Kurs: <a href="tel:+4791540824" className="hover:text-foreground transition-colors">+47 91 54 08 24</a>
-                <br />
-                Software: <a href="tel:+4799112916" className="hover:text-foreground transition-colors">+47 99 11 29 16</a>
-                <br />
-                E-post: <a href="mailto:post@kksas.no" className="hover:text-foreground transition-colors">post@kksas.no</a>
-              </p>
-            </div>
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">
+              Lokasjoner
+            </h3>
+            <ul className="space-y-2.5">
+              {lokasjoner.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-sm text-slate-500 hover:text-amber-600 transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
+
+          {/* Kolonne 4: Informasjon */}
           <div>
-            <h3 className="font-bold mb-4">Informasjon</h3>
-            <div className="flex flex-col gap-2 text-sm">
-              <Link href="/om-oss" className="text-muted-foreground hover:text-foreground transition-colors">
-                Om oss
-              </Link>
-              <Link href="/personvern" className="text-muted-foreground hover:text-foreground transition-colors">
-                Personvern
-              </Link>
-              <Link href="/vilkar" className="text-muted-foreground hover:text-foreground transition-colors">
-                Vilkår
-              </Link>
-              <Link href="/klage" className="text-muted-foreground hover:text-foreground transition-colors">
-                Klage/tilbakemelding
-              </Link>
-            </div>
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-4">
+              Informasjon
+            </h3>
+            <ul className="space-y-2.5">
+              {informasjon.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-sm text-slate-500 hover:text-amber-600 transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-        <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} KKS AS. Alle rettigheter reservert.
+
+        {/* Bunndel */}
+        <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-slate-500 order-2 sm:order-1">
+            © {new Date().getFullYear()} KKS AS — Kurs og Kompetansesystemer AS.
+            Alle rettigheter reservert.
+          </p>
+          <div className="flex items-center gap-4 order-1 sm:order-2">
+            <Link
+              href="/personvern"
+              className="text-xs text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              Personvern
+            </Link>
+            <span className="text-slate-300">·</span>
+            <Link
+              href="/vilkar"
+              className="text-xs text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              Vilkår
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
   );
 }
-

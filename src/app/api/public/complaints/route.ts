@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Resend } from "resend";
+import { checkFormRateLimit, getApiRouteIp } from "@/lib/rate-limit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -17,6 +18,15 @@ const customerComplaintSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getApiRouteIp(request);
+    const limit = checkFormRateLimit(ip, "contact"); // 5/t
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { success: false, error: limit.message },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const validated = customerComplaintSchema.parse(body);
 

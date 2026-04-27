@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { checkFormRateLimit, getApiRouteIp } from "@/lib/rate-limit";
 
 const bhtMembershipSchema = z.object({
   companyName: z.string().min(2),
@@ -15,6 +16,15 @@ const bhtMembershipSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const ip = getApiRouteIp(req);
+    const limit = checkFormRateLimit(ip, "bht-membership");
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { success: false, error: limit.message },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
 
     // Valider input

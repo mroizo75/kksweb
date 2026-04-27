@@ -177,3 +177,72 @@ if (typeof setInterval !== "undefined") {
   setInterval(cleanupExpiredRecords, 10 * 60 * 1000);
 }
 
+// ── Generisk skjema-rate-limiting ──────────────────────────────────────────
+
+const FORM_LIMITS: Record<string, { max: number; windowMs: number }> = {
+  "course-request":  { max: 5,  windowMs: 60 * 60 * 1000 },  // 5/t
+  "enrollment":      { max: 10, windowMs: 60 * 60 * 1000 },  // 10/t (bedrift kan melde på mange)
+  "bht-membership":  { max: 3,  windowMs: 60 * 60 * 1000 },  // 3/t
+  "bedrift-kontakt": { max: 5,  windowMs: 60 * 60 * 1000 },  // 5/t
+  "contact":         { max: 5,  windowMs: 60 * 60 * 1000 },  // 5/t
+};
+
+const formStore = new Map<string, { count: number; resetAt: number }>();
+
+/**
+ * Sjekk og registrer ett skjema-innsending for en IP.
+ * Returnerer { allowed: true } eller { allowed: false, message }.
+ */
+export function checkFormRateLimit(
+  ip: string,
+  formType: keyof typeof FORM_LIMITS
+): { allowed: boolean; message?: string } {
+  const cfg = FORM_LIMITS[formType] ?? { max: 5, windowMs: 60 * 60 * 1000 };
+  const key = `form:${formType}:${ip}`;
+  const now = Date.now();
+
+  let record = formStore.get(key);
+
+  if (!record || now > record.resetAt) {
+    formStore.set(key, { count: 1, resetAt: now + cfg.windowMs });
+    return { allowed: true };
+  }
+
+  if (record.count >= cfg.max) {
+    const minutesLeft = Math.ceil((record.resetAt - now) / 60_000);
+    return {
+      allowed: false,
+      message: `For mange innsendinger. Prøv igjen om ${minutesLeft} minutt${minutesLeft === 1 ? "" : "ter"}.`,
+    };
+  }
+
+  record.count += 1;
+  formStore.set(key, record);
+  return { allowed: true };
+}
+
+/**
+ * Hent klient-IP i server actions via next/headers.
+ * Importer og kall denne funksjonen øverst i server actions.
+ */
+export async function getServerActionIp(): Promise<string> {
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  return (
+    h.get("x-forwarded-for")?.split(",")[0].trim() ||
+    h.get("x-real-ip") ||
+    h.get("cf-connecting-ip") ||
+    "unknown"
+  );
+}
+
+/**
+ * Hent klient-IP fra NextRequest/Request i API routes.
+ */
+export function getApiRouteIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  const realIp = req.headers.get("x-real-ip");
+  const cf = req.headers.get("cf-connecting-ip");
+  return forwarded?.split(",")[0].trim() || realIp || cf || "unknown";
+}
+

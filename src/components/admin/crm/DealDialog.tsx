@@ -39,9 +39,10 @@ interface DealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   deal?: Deal | null;
+  defaultStage?: string;
 }
 
-export function DealDialog({ open, onOpenChange, deal }: DealDialogProps) {
+export function DealDialog({ open, onOpenChange, deal, defaultStage }: DealDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [companies, setCompanies] = useState<any[]>([]);
@@ -80,7 +81,7 @@ export function DealDialog({ open, onOpenChange, deal }: DealDialogProps) {
           companyId: "",
           personId: "",
           value: 0,
-          stage: "LEAD",
+          stage: (defaultStage as any) ?? "LEAD",
           probability: 50,
           expectedCloseDate: "",
           assignedToId: "",
@@ -103,8 +104,20 @@ export function DealDialog({ open, onOpenChange, deal }: DealDialogProps) {
         assignedToId: deal.assignedToId || "",
         notes: deal.notes || "",
       });
+    } else if (open) {
+      form.reset({
+        title: "",
+        companyId: "",
+        personId: "",
+        value: 0,
+        stage: (defaultStage as any) ?? "LEAD",
+        probability: 50,
+        expectedCloseDate: "",
+        assignedToId: "",
+        notes: "",
+      });
     }
-  }, [deal, form]);
+  }, [deal, defaultStage, open, form]);
 
   const onSubmit = async (data: DealInput) => {
     setIsSubmitting(true);

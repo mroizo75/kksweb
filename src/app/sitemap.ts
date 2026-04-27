@@ -44,6 +44,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/arbeid-i-hoyden`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.85,
+    },
+    {
       url: `${baseUrl}/saas`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
@@ -168,13 +174,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/blogg`,
       lastModified: new Date(),
       changeFrequency: "daily" as const,
-      priority: 0.8,
+      priority: 0.85,
     },
     ...blogPosts.map((post) => ({
       url: `${baseUrl}/blogg/${post.slug}`,
       lastModified: post.updatedAt,
       changeFrequency: "weekly" as const,
-      priority: 0.7,
+      priority: 0.75,
     })),
   ];
 

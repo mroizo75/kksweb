@@ -3,20 +3,13 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { stripHtml } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Clock, ArrowRight, BookOpen, Search, Phone, Mail, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
+import { CourseRequestForm } from "@/components/public/CourseRequestForm";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { generateCourseListSchema, generateBreadcrumbSchema, generateDefinedTermSchema } from "@/lib/seo/schema";
 import {
@@ -191,130 +184,278 @@ export default async function CoursesPage(props: PageProps) {
     },
   ]);
 
+  const activeCategory = category ?? null;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <StructuredData data={[courseListSchema, breadcrumbSchema, ...definedTermSchemas]} />
       <Header />
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Alle kurs</h1>
-          <p className="text-lg text-muted-foreground">
-            Finn og meld deg på kurs som passer for deg
-          </p>
-        </div>
-
-        {/* Filters */}
-        <div className="mb-8 flex flex-wrap gap-2">
-          <Link href="/kurs">
-            <Button variant={!category ? "default" : "outline"} size="sm">
-              Alle
-            </Button>
-          </Link>
-          {uniqueCategories.map((cat) => (
-            <Link key={cat} href={`/kurs?category=${cat}`}>
-              <Button
-                variant={category === cat ? "default" : "outline"}
-                size="sm"
-              >
-                {getCourseCategoryLabel(cat)}
-              </Button>
-            </Link>
-          ))}
-        </div>
-
-        {/* Courses Grid */}
-        {courses.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">
-              Ingen kurs funnet. Prøv en annen kategori.
+      {/* Dark hero */}
+      <section className="bg-slate-950 pt-24 pb-16">
+        <div className="container mx-auto px-4">
+          <nav className="mb-6 text-sm text-slate-500 flex items-center gap-2">
+            <Link href="/" className="hover:text-amber-400 transition-colors">Hjem</Link>
+            <span>/</span>
+            <span className="text-slate-300">Kurs</span>
+          </nav>
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-3 mb-4">
+              <BookOpen className="h-6 w-6 text-amber-400" />
+              <span className="text-amber-400 font-semibold uppercase tracking-widest text-sm">Kursoversikt</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">
+              Alle kurs
+            </h1>
+            <p className="text-lg text-slate-300 mb-8">
+              Finn og meld deg på kurs som passer for deg — sertifiserte instruktører i hele Norge.
             </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => {
-              const nextSession = course.sessions[0];
-              const availableSpots = nextSession
-                ? nextSession.capacity - nextSession._count.enrollments
-                : 0;
 
-              return (
-                <Card key={course.id} className="flex flex-col">
-                  <CardHeader>
-                    <div className="flex items-start justify-between mb-2">
-                      <Badge variant="secondary">{getCourseCategoryLabel(course.category)}</Badge>
-                      <span className="text-sm font-bold text-primary">
-                        {course.price === 0
-                          ? "Gratis"
-                          : `${course.price.toLocaleString("nb-NO")} kr`}
-                      </span>
-                    </div>
-                    <CardTitle className="text-xl">{course.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {course.description ? stripHtml(course.description) : "Ingen beskrivelse"}
-                    </CardDescription>
-                  </CardHeader>
+          {/* Category filter pills */}
+          <div className="flex flex-wrap gap-2">
+            <Link href="/kurs">
+              <button
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                  !activeCategory
+                    ? "bg-amber-400 text-slate-950 border-amber-400"
+                    : "bg-transparent text-slate-300 border-slate-700 hover:border-amber-400 hover:text-amber-400"
+                }`}
+              >
+                Alle
+              </button>
+            </Link>
+            {uniqueCategories.map((cat) => (
+              <Link key={cat} href={`/kurs?category=${cat}`}>
+                <button
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                    activeCategory === cat
+                      ? "bg-amber-400 text-slate-950 border-amber-400"
+                      : "bg-transparent text-slate-300 border-slate-700 hover:border-amber-400 hover:text-amber-400"
+                  }`}
+                >
+                  {getCourseCategoryLabel(cat)}
+                </button>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
-                  <CardContent className="flex-1">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          {course.durationDays}{" "}
-                          {course.durationDays === 1 ? "dag" : "dager"}
+      {/* Course grid */}
+      <section className="py-16 bg-slate-50">
+        <div className="container mx-auto px-4">
+          {courses.length === 0 ? (
+            <div className="max-w-2xl mx-auto py-8">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                  <Search className="h-7 w-7 text-amber-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                  Ingen kurs lagt inn enda
+                  {activeCategory && (
+                    <span className="block text-lg text-slate-500 font-normal mt-1">
+                      i kategorien «{getCourseCategoryLabel(activeCategory)}»
+                    </span>
+                  )}
+                </h2>
+                <p className="text-slate-500 leading-relaxed">
+                  Vi setter opp kurs etter behov. Send en forespørsel eller ring oss direkte —
+                  så finner vi en dato som passer.
+                </p>
+              </div>
+
+              {/* Quick contact */}
+              <div className="grid grid-cols-2 gap-3 mb-8">
+                <a
+                  href="tel:+4791540824"
+                  className="flex items-center gap-3 p-4 bg-slate-950 hover:bg-slate-800 rounded-xl text-white transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+                    <Phone className="h-4 w-4 text-slate-950" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Ring oss</p>
+                    <p className="font-bold text-sm">91 54 08 24</p>
+                  </div>
+                </a>
+                <a
+                  href="mailto:post@kksas.no"
+                  className="flex items-center gap-3 p-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-900 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-slate-300 flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-4 w-4 text-slate-700" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">E-post</p>
+                    <p className="font-bold text-sm">post@kksas.no</p>
+                  </div>
+                </a>
+              </div>
+
+              {/* Request form */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <MessageSquare className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <h3 className="font-bold text-slate-900">
+                    Send forespørsel om{" "}
+                    {activeCategory
+                      ? getCourseCategoryLabel(activeCategory).toLowerCase() + "-kurs"
+                      : "kurs"}
+                  </h3>
+                </div>
+                <CourseRequestForm
+                  courseName={
+                    activeCategory
+                      ? `${getCourseCategoryLabel(activeCategory)}-kurs (forespørsel)`
+                      : "Kurs (forespørsel fra /kurs)"
+                  }
+                  courseSlug={activeCategory ?? "kurs"}
+                />
+              </div>
+
+              {/* Back link */}
+              <div className="text-center mt-6">
+                <Link href="/kurs" className="text-sm text-slate-500 hover:text-amber-600 transition-colors">
+                  ← Vis alle kurs
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500 mb-8">
+                {courses.length} {courses.length === 1 ? "kurs" : "kurs"} funnet
+                {activeCategory ? ` i kategorien "${getCourseCategoryLabel(activeCategory)}"` : ""}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {courses.map((course) => {
+                  const nextSession = course.sessions[0];
+                  const availableSpots = nextSession
+                    ? nextSession.capacity - nextSession._count.enrollments
+                    : 0;
+                  const isSoldOut = nextSession && availableSpots <= 0;
+                  const isAlmostFull = nextSession && availableSpots > 0 && availableSpots <= 5;
+
+                  return (
+                    <Link
+                      key={course.id}
+                      href={`/kurs/${course.slug}`}
+                      className="group bg-white rounded-2xl border border-slate-200 hover:border-amber-400 hover:shadow-xl transition-all duration-200 flex flex-col overflow-hidden"
+                    >
+                      {/* Category + price header */}
+                      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                        <span className="text-xs font-semibold uppercase tracking-widest text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
+                          {getCourseCategoryLabel(course.category)}
+                        </span>
+                        <span className="text-base font-bold text-slate-900">
+                          {course.price === 0
+                            ? "Gratis"
+                            : `${course.price.toLocaleString("nb-NO")} kr`}
                         </span>
                       </div>
 
-                      {nextSession && (
-                        <>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
+                      <div className="px-5 pb-4 flex-1 flex flex-col">
+                        <h2 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-amber-700 transition-colors leading-snug">
+                          {course.title}
+                        </h2>
+                        {course.description && (
+                          <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">
+                            {stripHtml(course.description)}
+                          </p>
+                        )}
+
+                        <div className="space-y-1.5 text-sm text-slate-500 mb-4">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
                             <span>
-                              Neste: {format(nextSession.startsAt, "d. MMM yyyy", { locale: nb })}
+                              {course.durationDays}{" "}
+                              {course.durationDays === 1 ? "dag" : "dager"}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>{nextSession.location}</span>
-                          </div>
-                          <div className="mt-4">
-                            <Badge
-                              variant={availableSpots > 5 ? "default" : "destructive"}
-                            >
-                              {availableSpots > 0
-                                ? `${availableSpots} ${availableSpots === 1 ? "plass" : "plasser"} ledig`
-                                : "Fullt booket"}
-                            </Badge>
-                          </div>
-                        </>
-                      )}
 
-                      {!nextSession && (
-                        <p className="text-muted-foreground italic">
-                          Ingen kommende kurs planlagt
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
+                          {nextSession && (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                                <span>
+                                  Neste: {format(nextSession.startsAt, "d. MMM yyyy", { locale: nb })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
+                                <span className="truncate">{nextSession.location}</span>
+                              </div>
+                            </>
+                          )}
 
-                  <CardFooter>
-                    <Link href={`/kurs/${course.slug}`} className="w-full">
-                      <Button className="w-full">
-                        Se detaljer og meld på
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
+                          {!nextSession && (
+                            <p className="italic text-slate-400">Ingen kommende kurs planlagt</p>
+                          )}
+                        </div>
+
+                        {nextSession && (
+                          <div className="mb-4">
+                            {isSoldOut ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                                Fullt booket
+                              </span>
+                            ) : isAlmostFull ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
+                                Kun {availableSpots} {availableSpots === 1 ? "plass" : "plasser"} igjen
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                {availableSpots} plasser ledig
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="px-5 pb-5">
+                        <div className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-950 text-white text-sm font-semibold group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
+                          Se detaljer og meld på
+                          <ArrowRight className="h-4 w-4" />
+                        </div>
+                      </div>
                     </Link>
-                  </CardFooter>
-                </Card>
-              );
-            })}
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* CTA bottom */}
+      <section className="bg-slate-950 py-16">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            Trenger du kurs tilpasset din bedrift?
+          </h2>
+          <p className="text-slate-400 mb-8 max-w-xl mx-auto">
+            Vi stiller opp med instruktører hos dere — fleksible datoer, volumrabatt og sertifiserte kurs.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/bedrift">
+              <Button className="bg-amber-500 text-slate-950 hover:bg-amber-400 font-semibold px-8">
+                Bedriftsavtale
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/kontakt">
+              <Button variant="outline" className="border-slate-600 text-slate-300 hover:border-amber-400 hover:text-amber-400 px-8">
+                Kontakt oss
+              </Button>
+            </Link>
           </div>
-        )}
-      </div>
-      
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
 }
-
