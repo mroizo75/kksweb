@@ -41,6 +41,9 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns,
+    // Next.js-serveren når ikke R2 for server-side optimering.
+    // Browseren henter bildene direkte fra R2 CDN i stedet.
+    unoptimized: true,
   },
 
   webpack(config) {
