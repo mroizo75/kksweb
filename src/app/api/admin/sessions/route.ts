@@ -41,11 +41,12 @@ export async function GET(req: NextRequest) {
 
     const [total, sessions] = await Promise.all([
       db.courseSession.count({ where }),
-      db.courseSession.findMany({
+        db.courseSession.findMany({
         where,
         include: {
           course: true,
           instructor: { select: { name: true } },
+          sessionDates: { orderBy: { startsAt: "asc" } },
           _count: {
             select: {
               enrollments: {

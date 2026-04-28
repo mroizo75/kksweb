@@ -19,9 +19,17 @@ import { deleteSession } from "@/app/actions/createSession";
 import { toast } from "sonner";
 import type { CourseSession, Course, User } from "@prisma/client";
 
+interface SessionDate {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  label: string | null;
+}
+
 type SessionWithRelations = CourseSession & {
   course: Course;
   instructor: Pick<User, "name"> | null;
+  sessionDates: SessionDate[];
   _count: { enrollments: number };
 };
 
@@ -201,11 +209,29 @@ export default function AdminSessionsPage() {
                         <Badge variant={STATUS_COLORS[session.status]}>
                           {STATUS_TEXT[session.status]}
                         </Badge>
+                        {session.sessionDates.length > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            {session.sessionDates.length} perioder
+                          </Badge>
+                        )}
                       </div>
                       <div className="ml-7 space-y-1 text-sm text-muted-foreground">
-                        <p>
-                          {format(new Date(session.startsAt), "EEEE d. MMMM yyyy 'kl.' HH:mm", { locale: nb })}
-                        </p>
+                        {session.sessionDates.length > 0 ? (
+                          session.sessionDates.map((d, i) => (
+                            <p key={d.id}>
+                              <span className="font-medium text-foreground/80 mr-1.5">
+                                {d.label ?? `Periode ${i + 1}:`}
+                              </span>
+                              {format(new Date(d.startsAt), "d. MMM", { locale: nb })}
+                              {" – "}
+                              {format(new Date(d.endsAt), "d. MMM yyyy", { locale: nb })}
+                            </p>
+                          ))
+                        ) : (
+                          <p>
+                            {format(new Date(session.startsAt), "EEEE d. MMMM yyyy 'kl.' HH:mm", { locale: nb })}
+                          </p>
+                        )}
                         {session.location && <p>{session.location}</p>}
                         {session.instructor && <p>Instruktør: {session.instructor.name}</p>}
                       </div>
