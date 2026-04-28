@@ -34,7 +34,7 @@ type UserActionResult =
 
 export async function getUsers() {
   await requireAdmin();
-  return db.user.findMany({
+  const users = await db.user.findMany({
     select: {
       id: true,
       name: true,
@@ -45,6 +45,7 @@ export async function getUsers() {
     },
     orderBy: { createdAt: "desc" },
   });
+  return users.map((u) => ({ ...u, createdAt: u.createdAt.toISOString() }));
 }
 
 export async function createUser(formData: unknown): Promise<UserActionResult> {
