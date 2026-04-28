@@ -691,7 +691,7 @@ export default function HomePage() {
                       "Vi planlegger fornyelsesdatoer for deg",
                       "Faktura direkte til bedriften",
                       "Dedikert kontaktperson",
-                      "Fleksible kursdatoer i hele Norge",
+                      "Finnes både i Innlandet og Buskerud",
                     ].map((item) => (
                       <li
                         key={item}
