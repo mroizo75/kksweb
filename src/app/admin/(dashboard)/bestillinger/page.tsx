@@ -62,7 +62,7 @@ export default function BestillingerPage() {
   useEffect(() => { load(); }, [load]);
 
   const filtered = orders.filter((o) => {
-    const customerName = o.company?.name ?? `${o.person?.firstName} ${o.person?.lastName}` ?? "";
+    const customerName = o.company?.name ?? (o.person ? `${o.person.firstName} ${o.person.lastName}` : "");
     const matchesSearch = customerName.toLowerCase().includes(search.toLowerCase()) ||
       o.courses.some((c) => c.course.title.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus = statusFilter === "all" || o.status === statusFilter;
