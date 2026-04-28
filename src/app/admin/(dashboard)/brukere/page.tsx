@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Users, ShieldCheck, User } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
+import { getUsers, createUser, updateUser, deleteUser } from "@/app/actions/admin/users";
 
 interface UserRow {
   id: string;
@@ -54,15 +55,17 @@ export default function BrukerePage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/users");
-    const data = await res.json();
-    setUsers(data.users ?? []);
-    setLoading(false);
-  }
+    try {
+      const data = await getUsers();
+      setUsers(data as UserRow[]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   function openCreate() {
     setEditing(null);
@@ -79,23 +82,16 @@ export default function BrukerePage() {
   async function handleSave() {
     setSaving(true);
     try {
-      const url = "/api/admin/users";
-      const method = editing ? "PUT" : "POST";
-      const body = editing ? { id: editing.id, ...form } : form;
+      const result = editing
+        ? await updateUser({ id: editing.id, ...form })
+        : await createUser(form);
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.error ?? "Noe gikk galt");
+      if (!result.success) {
+        toast.error(result.error);
         return;
       }
 
-      toast.success(editing ? "Bruker oppdatert" : "Bruker opprettet");
+      toast.success(result.message);
       setDialogOpen(false);
       load();
     } finally {
@@ -105,16 +101,11 @@ export default function BrukerePage() {
 
   async function handleDelete() {
     if (!deleteId) return;
-    const res = await fetch("/api/admin/users", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: deleteId }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      toast.error(data.error ?? "Kunne ikke slette");
+    const result = await deleteUser(deleteId);
+    if (!result.success) {
+      toast.error(result.error);
     } else {
-      toast.success("Bruker slettet");
+      toast.success(result.message);
       load();
     }
     setDeleteId(null);
