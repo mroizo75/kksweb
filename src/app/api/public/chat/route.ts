@@ -54,7 +54,6 @@ async function buildCourseContext(): Promise<string> {
           endsAt: true,
           location: true,
           capacity: true,
-          sessionDates: { orderBy: { startsAt: "asc" } },
           _count: {
             select: {
               enrollments: {
@@ -93,19 +92,6 @@ async function buildCourseContext(): Promise<string> {
       const sessionLines = course.sessions.map((s) => {
         const available = s.capacity - s._count.enrollments;
         const statusNote = s.status === "DRAFT" ? " (planlagt, åpner snart)" : "";
-
-        // Kurs over flere helger (f.eks. YSK)
-        if (s.sessionDates.length > 0) {
-          const periodLines = s.sessionDates.map((d) => {
-            const start = d.startsAt.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
-            const end = d.endsAt.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
-            const label = d.label ? `${d.label}: ` : "";
-            return `    ${label}${start === end ? start : `${start} – ${end}`}`;
-          });
-          return `  - ${s.location}${statusNote} (${available} ledige plasser) [sessionId: ${s.id}]\n${periodLines.join("\n")}`;
-        }
-
-        // Enkelt-dato sesjon
         const startDate = s.startsAt.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
         const endDate = s.endsAt.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
         const dateRange = startDate === endDate ? startDate : `${startDate} – ${endDate}`;
