@@ -44,15 +44,17 @@ async function buildCourseContext(): Promise<string> {
       validityYears: true,
       sessions: {
         where: {
-          status: "OPEN",
+          status: { in: ["OPEN", "DRAFT"] },
           startsAt: { gte: new Date() },
         },
         select: {
           id: true,
+          status: true,
           startsAt: true,
           endsAt: true,
           location: true,
           capacity: true,
+          sessionDates: { orderBy: { startsAt: "asc" } },
           _count: {
             select: {
               enrollments: {
@@ -62,7 +64,7 @@ async function buildCourseContext(): Promise<string> {
           },
         },
         orderBy: { startsAt: "asc" },
-        take: 5,
+        take: 6,
       },
     },
     orderBy: { title: "asc" },
@@ -85,23 +87,29 @@ async function buildCourseContext(): Promise<string> {
       ? `Inkluderer: ${course.priceIncludes}.`
       : "";
 
-    let sessionStr = "Ingen planlagte datoer — henvis til ring-meg.";
+    let sessionStr = "Ingen planlagte datoer ennå — send forespørsel via ring-meg.";
+
     if (course.sessions.length > 0) {
       const sessionLines = course.sessions.map((s) => {
         const available = s.capacity - s._count.enrollments;
-        const startDate = s.startsAt.toLocaleDateString("nb-NO", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
-        const endDate = s.endsAt.toLocaleDateString("nb-NO", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
-        const dateRange =
-          startDate === endDate ? startDate : `${startDate} – ${endDate}`;
-        return `  - ${dateRange} i ${s.location} (${available} ledige plasser) [sessionId: ${s.id}]`;
+        const statusNote = s.status === "DRAFT" ? " (planlagt, åpner snart)" : "";
+
+        // Kurs over flere helger (f.eks. YSK)
+        if (s.sessionDates.length > 0) {
+          const periodLines = s.sessionDates.map((d) => {
+            const start = d.startsAt.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
+            const end = d.endsAt.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
+            const label = d.label ? `${d.label}: ` : "";
+            return `    ${label}${start === end ? start : `${start} – ${end}`}`;
+          });
+          return `  - ${s.location}${statusNote} (${available} ledige plasser) [sessionId: ${s.id}]\n${periodLines.join("\n")}`;
+        }
+
+        // Enkelt-dato sesjon
+        const startDate = s.startsAt.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
+        const endDate = s.endsAt.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
+        const dateRange = startDate === endDate ? startDate : `${startDate} – ${endDate}`;
+        return `  - ${dateRange} i ${s.location}${statusNote} (${available} ledige plasser) [sessionId: ${s.id}]`;
       });
       sessionStr = `Kommende datoer:\n${sessionLines.join("\n")}`;
     }
@@ -164,7 +172,7 @@ export async function POST(req: Request) {
       model: "gpt-4o-mini",
       messages: [{ role: "system", content: systemPrompt }, ...messages],
       temperature: 0.4,
-      max_tokens: 1000,
+      max_tokens: 1200,
     });
 
     const raw = completion.choices[0]?.message?.content;
