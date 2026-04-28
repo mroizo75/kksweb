@@ -34,6 +34,8 @@ import {
   PenSquare,
   ChevronDown,
   ChevronRight,
+  FileText,
+  ShieldCheck,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -128,6 +130,17 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Bestillinger",
+    items: [
+      {
+        name: "Bestillinger",
+        href: "/admin/bestillinger",
+        icon: FileText,
+        roles: ["ADMIN", "INSTRUCTOR"],
+      },
+    ],
+  },
+  {
     label: "CRM",
     items: [
       {
@@ -149,6 +162,12 @@ const navGroups: NavGroup[] = [
   {
     label: "System",
     items: [
+      {
+        name: "Brukeradmin",
+        href: "/admin/brukere",
+        icon: ShieldCheck,
+        roles: ["ADMIN"],
+      },
       {
         name: "Blogg",
         href: "/admin/blogg",

@@ -1,138 +1,137 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { hash } from "bcryptjs";
-import { isMissingColumnError } from "@/lib/prisma-compat";
+import { auth } from "@/lib/auth";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
 
-function getDbSyncErrorMessage(error: unknown): string | null {
-  if (isMissingColumnError(error, ["twoFactor", "backupCodes", "users"])) {
-    return "Database er ikke synkronisert med kodebasen. Kjør: npx prisma db push";
-  }
-
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2021"
-  ) {
-    return "Mangler tabell i databasen. Kjør: npx prisma db push";
-  }
-
-  return null;
+async function requireAdmin() {
+  const session = await auth();
+  const role = (session?.user as any)?.role;
+  if (!session?.user || role !== "ADMIN") return null;
+  return session;
 }
 
-/**
- * POST /api/admin/users - Opprett admin bruker (kun for initial setup)
- * 
- * Body:
- * {
- *   "email": "admin@kks.no",
- *   "password": "hemmelig123",
- *   "name": "Admin Bruker",
- *   "role": "ADMIN"
- * }
- */
-export async function POST(request: NextRequest) {
+const createSchema = z.object({
+  name: z.string().min(1, "Navn er påkrevd"),
+  email: z.string().email("Ugyldig e-post"),
+  password: z.string().min(8, "Passord må være minst 8 tegn"),
+  role: z.enum(["ADMIN", "INSTRUCTOR"]),
+});
+
+const updateSchema = z.object({
+  name: z.string().min(1, "Navn er påkrevd"),
+  email: z.string().email("Ugyldig e-post"),
+  role: z.enum(["ADMIN", "INSTRUCTOR"]),
+  password: z.string().min(8).optional().or(z.literal("")),
+});
+
+export async function GET() {
   try {
-    const body = await request.json();
-    const { email, password, name, role } = body;
-    const normalizedEmail =
-      typeof email === "string" ? email.trim().toLowerCase() : "";
+    const session = await requireAdmin();
+    if (!session) return NextResponse.json({ error: "Ingen tilgang" }, { status: 403 });
 
-    // Validering
-    if (!normalizedEmail || !password) {
-      return NextResponse.json(
-        { error: "E-post og passord er påkrevd" },
-        { status: 400 }
-      );
-    }
-
-    // Sjekk om bruker allerede eksisterer
-    const existingUser = await db.user.findUnique({
-      where: { email: normalizedEmail },
-      select: { id: true },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "Bruker med denne e-posten eksisterer allerede" },
-        { status: 400 }
-      );
-    }
-
-    // Hash passord
-    const hashedPassword = await hash(password, 12);
-
-    // Opprett bruker
-    const user = await db.user.create({
-      data: {
-        email: normalizedEmail,
-        name:
-          (typeof name === "string" && name.trim().length > 0
-            ? name.trim()
-            : normalizedEmail.split("@")[0]),
-        hashedPassword,
-        role: role === "ADMIN" ? "ADMIN" : "INSTRUCTOR",
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Bruker opprettet",
-      user,
-    });
-  } catch (error) {
-    console.error("Error creating user:", error);
-
-    const syncMessage = getDbSyncErrorMessage(error);
-    if (syncMessage) {
-      return NextResponse.json({ error: syncMessage }, { status: 503 });
-    }
-
-    return NextResponse.json(
-      { error: "Kunne ikke opprette bruker" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * GET /api/admin/users - Hent alle brukere (for administrasjon)
- */
-export async function GET(request: NextRequest) {
-  try {
     const users = await db.user.findMany({
       select: {
         id: true,
-        email: true,
         name: true,
+        email: true,
         role: true,
         createdAt: true,
-        updatedAt: true,
+        _count: { select: { courseOrders: true, leads: true } },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-
-    const syncMessage = getDbSyncErrorMessage(error);
-    if (syncMessage) {
-      return NextResponse.json({ error: syncMessage }, { status: 503 });
-    }
-
-    return NextResponse.json(
-      { error: "Kunne ikke hente brukere" },
-      { status: 500 }
-    );
+    return NextResponse.json({ users });
+  } catch {
+    return NextResponse.json({ error: "Serverfeil" }, { status: 500 });
   }
 }
 
+export async function POST(req: NextRequest) {
+  try {
+    const session = await requireAdmin();
+    if (!session) return NextResponse.json({ error: "Ingen tilgang" }, { status: 403 });
+
+    const body = await req.json();
+    const data = createSchema.parse(body);
+
+    const existing = await db.user.findUnique({ where: { email: data.email } });
+    if (existing) return NextResponse.json({ error: "E-posten er allerede i bruk" }, { status: 400 });
+
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
+    const user = await db.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        hashedPassword,
+        role: data.role,
+      },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
+
+    return NextResponse.json({ user }, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Serverfeil" }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await requireAdmin();
+    if (!session) return NextResponse.json({ error: "Ingen tilgang" }, { status: 403 });
+
+    const { id, ...body } = await req.json();
+    if (!id) return NextResponse.json({ error: "ID mangler" }, { status: 400 });
+
+    const data = updateSchema.parse(body);
+
+    const updateData: Record<string, unknown> = {
+      name: data.name,
+      email: data.email,
+      role: data.role,
+    };
+
+    if (data.password) {
+      updateData.hashedPassword = await bcrypt.hash(data.password, 12);
+    }
+
+    const user = await db.user.update({
+      where: { id },
+      data: updateData,
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
+
+    return NextResponse.json({ user });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Serverfeil" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await requireAdmin();
+    if (!session) return NextResponse.json({ error: "Ingen tilgang" }, { status: 403 });
+
+    const { id } = await req.json();
+    if (!id) return NextResponse.json({ error: "ID mangler" }, { status: 400 });
+
+    const currentUserId = (session.user as any).id;
+    if (id === currentUserId) {
+      return NextResponse.json({ error: "Du kan ikke slette din egen bruker" }, { status: 400 });
+    }
+
+    await db.user.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Serverfeil" }, { status: 500 });
+  }
+}
