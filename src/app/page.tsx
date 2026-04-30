@@ -423,7 +423,7 @@ export default function HomePage() {
 
             <p className="speakable-summary text-lg md:text-xl text-slate-400 mb-10 max-w-xl leading-relaxed">
               35 timer obligatorisk etterutdanning for yrkessjåfører. Forny
-              YSK-beviset ditt med erfarne instruktører — i hele Norge.
+              YSK-beviset ditt med erfarne instruktører — i Buskerud eller Innlandet.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
