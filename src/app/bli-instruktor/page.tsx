@@ -102,11 +102,14 @@ const jobPostingSchema = {
   skills: "Truck T1 T2 T4, maskinføreropplæring, kran, HMS, sertifisert opplæring, Arbeidstilsynet",
   industry: "Opplæring og sertifisering",
   baseSalary: {
-    "@type": "MonetaryAmountDistribution",
-    name: "Gode inntjeningsmuligheter — ta kontakt for detaljer",
+    "@type": "MonetaryAmount",
     currency: "NOK",
-    duration: "P1Y",
-    median: 0,
+    value: {
+      "@type": "QuantitativeValue",
+      minValue: 400000,
+      maxValue: 900000,
+      unitText: "YEAR",
+    },
   },
 };
 
