@@ -85,8 +85,8 @@ export const metadata: Metadata = {
 const yskLocations = [
   {
     name: "Lierbyen",
-    address: "Lierbyen",
-    region: "Viken",
+    address: "Lier rett ved E18",
+    region: "Buskerud",
   },
   {
     name: "Hamar",
