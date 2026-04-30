@@ -5,7 +5,7 @@ import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { BedriftKontaktForm } from "./form";
 import { StructuredData } from "@/components/seo/StructuredData";
-import { generateFAQSchema, generateAggregateRatingSchema } from "@/lib/seo/schema";
+import { generateFAQSchema } from "@/lib/seo/schema";
 import { FaqAccordion } from "@/components/public/FaqAccordion";
 import {
   Users,
@@ -168,14 +168,13 @@ export default function BedriftPage() {
     "description":
       "Skreddersydde HMS-kurs og sertifiseringsprogram for norske bedrifter. Truck, kran, stillas, arbeid i høyden og HMS-opplæring. Vi gjennomfører kurs hos din bedrift i hele Norge.",
     "provider": {
-      "@type": "EducationalOrganization",
+      "@type": "Organization",
       "@id": `${BASE_URL}/#organization`,
       "name": "KKS AS",
       "url": BASE_URL,
     },
     "serviceType": "Bedriftskurs og HMS-opplæring",
     "areaServed": { "@type": "Country", "name": "Norway" },
-    "aggregateRating": generateAggregateRatingSchema(),
     "url": `${BASE_URL}/bedrift`,
   };
 
