@@ -185,6 +185,7 @@ const FORM_LIMITS: Record<string, { max: number; windowMs: number }> = {
   "bht-membership":  { max: 3,  windowMs: 60 * 60 * 1000 },  // 3/t
   "bedrift-kontakt": { max: 5,  windowMs: 60 * 60 * 1000 },  // 5/t
   "contact":         { max: 5,  windowMs: 60 * 60 * 1000 },  // 5/t
+  "chat":            { max: 40, windowMs: 60 * 60 * 1000 },  // 40/t per IP
 };
 
 const formStore = new Map<string, { count: number; resetAt: number }>();
