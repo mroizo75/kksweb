@@ -369,13 +369,23 @@ export function generateLocalBusinessSchema(
   baseUrl: string,
   locationSlug: string,
   locationName: string,
-  region: string
+  region: string,
+  options?: {
+    serviceArea?: string[];
+    geo?: { lat: number; lng: number };
+  }
 ) {
+  const { serviceArea, geo } = options ?? {};
+
   return {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": `${KKS_NAME} - Kurs i ${locationName}`,
-    "image": `${baseUrl}/logo-black-kks.png`,
+    "@type": ["LocalBusiness", "EducationalOrganization"],
+    "@id": `${baseUrl}/lokasjon/${locationSlug}#localbusiness`,
+    "name": `KKS AS — Kurs i ${locationName}`,
+    "image": [
+      `${baseUrl}/logo-black-kks.png`,
+      `${baseUrl}/og-default.png`,
+    ],
     "aggregateRating": generateAggregateRatingSchema(),
     "url": `${baseUrl}/lokasjon/${locationSlug}`,
     "telephone": KKS_PHONE,
@@ -386,18 +396,52 @@ export function generateLocalBusinessSchema(
       "addressRegion": region,
       "addressCountry": "NO",
     },
-    "areaServed": {
-      "@type": "AdministrativeArea",
-      "name": region,
-    },
+    ...(geo && {
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": geo.lat,
+        "longitude": geo.lng,
+      },
+    }),
+    "areaServed": [
+      {
+        "@type": "AdministrativeArea",
+        "name": region,
+      },
+      ...(serviceArea ?? []).map((area) => ({
+        "@type": "AdministrativeArea",
+        "name": area,
+      })),
+    ],
     "priceRange": "kr kr",
-    "openingHours": "Mo-Fr 08:00-16:00",
-    "description": `KKS AS tilbyr profesjonell kursing i ${locationName} og ${region}. Kurs innen ${seoCourseCategoryList} med sertifiserte instruktører.`,
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "08:00",
+      "closes": "16:00",
+    },
+    "description": `KKS AS tilbyr profesjonell kursing i ${locationName} og ${region}. Kurs innen ${seoCourseCategoryList} med sertifiserte instruktører godkjent av Arbeidstilsynet.`,
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": `Kurskatalog i ${locationName}`,
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": `Truckfører kurs i ${locationName}` } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": `Kranfører kurs i ${locationName}` } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": `HMS grunnkurs i ${locationName}` } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": `Stillasopplæring i ${locationName}` } },
+        { "@type": "Offer", "itemOffered": { "@type": "Course", "name": `Maskinførerkurs i ${locationName}` } },
+      ],
+    },
     "parentOrganization": {
       "@type": "EducationalOrganization",
+      "@id": `${baseUrl}/#organization`,
       "name": KKS_NAME,
       "url": baseUrl,
     },
+    "sameAs": [
+      "https://www.facebook.com/kursogkompetansesystemer",
+      "https://www.linkedin.com/company/kurs-og-kompetansesystemer-as/",
+    ],
   };
 }
 

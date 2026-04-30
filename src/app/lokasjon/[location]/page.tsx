@@ -24,7 +24,7 @@ import {
   generateBreadcrumbSchema,
 } from "@/lib/seo/schema";
 import { normalizeR2ImageUrl } from "@/lib/r2";
-import { getCourseCategoryLabel, primaryCourseCategoryListText } from "@/lib/course-categories";
+import { getCourseCategoryLabel } from "@/lib/course-categories";
 import { buildSessionLocationOrFilter } from "@/lib/location-matching";
 import { locationConfig, supportedLocationSlugs, type LocationSlug } from "@/lib/locations";
 
@@ -40,24 +40,24 @@ export async function generateMetadata(props: PageProps) {
     return { title: "Lokasjon ikke funnet" };
   }
 
-  const locationSessionOrFilter = buildSessionLocationOrFilter(params.location);
-  const openLocalSessionsCount = await db.courseSession.count({
-    where: {
-      startsAt: { gte: new Date() },
-      status: "OPEN",
-      ...(locationSessionOrFilter.length > 0 && { OR: locationSessionOrFilter }),
-    },
-  });
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
+  const canonicalUrl = `${baseUrl}/lokasjon/${params.location}`;
+  const description = `${location.about.substring(0, 155)}`;
 
   return {
-    title: `Kurs i ${location.name} - ${primaryCourseCategoryListText} | KKS AS`,
-    description: `${location.about.substring(0, 155)}`,
+    title: `Kurs i ${location.name} — Truck, Kran, HMS og mer | KKS AS`,
+    description,
     keywords: location.keywords,
-    robots: openLocalSessionsCount > 0 ? undefined : { index: false, follow: true },
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
-      title: `Kurs i ${location.name} - KKS AS`,
-      description: location.description,
-      url: `https://www.kksas.no/lokasjon/${params.location}`,
+      title: `Kurs i ${location.name} — KKS AS`,
+      description,
+      url: canonicalUrl,
+      type: "website",
+      locale: "nb_NO",
+      siteName: "KKS AS",
     },
   };
 }
@@ -100,7 +100,11 @@ export default async function LocationPage(props: PageProps) {
     baseUrl,
     params.location,
     location.name,
-    location.region
+    location.region,
+    {
+      serviceArea: [...location.serviceArea],
+      geo: location.geo,
+    }
   );
   const faqSchema = generateFAQSchema(locationFaqs);
   const breadcrumbSchema = generateBreadcrumbSchema(

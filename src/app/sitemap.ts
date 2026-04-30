@@ -21,12 +21,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   });
 
-  // Lokasjonssider for lokal SEO
+  // Lokasjonssider for lokal SEO — alle byer og kommuner
+  const highPriorityLocations = new Set([
+    "oslo", "bergen", "trondheim", "stavanger", "kristiansand", "tromso",
+    "hamar", "drammen", "lierbyen",
+  ]);
   const locationPages = supportedLocationSlugs.map((location) => ({
     url: `${baseUrl}/lokasjon/${location}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
-    priority: 0.85,
+    priority: highPriorityLocations.has(location) ? 0.88 : 0.80,
   }));
 
   // Statiske sider
