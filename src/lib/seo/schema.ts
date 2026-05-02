@@ -192,7 +192,6 @@ export function generateOrganizationSchema(baseUrl: string) {
       "width": 200,
       "height": 80,
     },
-    "aggregateRating": generateAggregateRatingSchema(),
     "description":
       `KKS AS (Kurs og Kompetansesystemer AS) er en ISO 9001- og ISO 27001-sertifisert norsk kursleverandør godkjent av Arbeidstilsynet. Vi tilbyr ${seoCourseCategoryList} i hele Norge med sertifiserte instruktører.`,
     "foundingDate": "2020",
@@ -379,7 +378,7 @@ export function generateLocalBusinessSchema(
 
   return {
     "@context": "https://schema.org",
-    "@type": ["LocalBusiness", "EducationalOrganization"],
+    "@type": "LocalBusiness",
     "@id": `${baseUrl}/lokasjon/${locationSlug}#localbusiness`,
     "name": `KKS AS — Kurs i ${locationName}`,
     "image": [
