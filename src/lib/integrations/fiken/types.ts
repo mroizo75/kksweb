@@ -1,6 +1,6 @@
 /** Typer mot Fiken API v2. Beløp fra API-et er heltall i øre. */
 
-export const VAT_TYPES = ["HIGH", "MEDIUM", "LOW", "EXEMPT"] as const;
+export const VAT_TYPES = ["HIGH", "MEDIUM", "LOW", "EXEMPT", "OUTSIDE"] as const;
 
 export type VatType = (typeof VAT_TYPES)[number];
 

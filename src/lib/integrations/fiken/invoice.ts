@@ -1,4 +1,4 @@
-import { InvoiceInputError, lineAmounts } from "./money";
+import { InvoiceInputError, lineAmounts, vatTypeForAccount } from "./money";
 import type { FikenInvoiceRequest, InvoiceLineInput } from "./types";
 
 export type { InvoiceLineInput } from "./types";
@@ -80,7 +80,7 @@ function toLine(line: InvoiceLineInput): FikenInvoiceRequest["lines"][number] {
     description: description.slice(0, 200),
     quantity: line.quantity,
     unitPrice: line.unitPriceOre,
-    vatType: line.vatType,
+    vatType: vatTypeForAccount(line.vatType, line.incomeAccount),
     incomeAccount: line.incomeAccount,
     ...(discount > 0 ? { discount } : {}),
     ...(line.productId ? { productId: line.productId } : {}),

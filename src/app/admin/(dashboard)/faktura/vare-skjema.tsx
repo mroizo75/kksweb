@@ -92,7 +92,11 @@ export function VareSkjema({ onCreated }: VareSkjemaProps) {
           id="vare-konto"
           value={incomeAccount}
           required
-          onChange={(event) => setIncomeAccount(event.target.value)}
+          onChange={(event) => {
+            const account = event.target.value;
+            setIncomeAccount(account);
+            if (account === "3200" || account === "3220") setVatType("OUTSIDE");
+          }}
         />
       </div>
       {error && (

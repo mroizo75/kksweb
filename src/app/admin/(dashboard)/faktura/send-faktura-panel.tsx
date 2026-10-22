@@ -32,8 +32,9 @@ import {
   lineAmounts,
   nokToOre,
   oreToNokInput,
-  parseQuantity,
   parseDiscountPercent,
+  parseQuantity,
+  vatTypeForAccount,
   VAT_LABEL,
 } from "@/lib/integrations/fiken/money";
 import {
@@ -149,7 +150,7 @@ export function SendFakturaPanel({
       productId,
       description: product.name,
       unitPriceNok: product.unitPriceOre > 0 ? oreToNokInput(product.unitPriceOre) : "",
-      vatType: product.vatType,
+      vatType: vatTypeForAccount(product.vatType, product.incomeAccount),
       incomeAccount: product.incomeAccount,
     });
   }

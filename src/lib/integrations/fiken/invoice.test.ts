@@ -5,7 +5,7 @@ import { buildFikenInvoiceRequest } from "./invoice";
 import { fikenPageForNewestView, newestFirstInvoices } from "./invoice-order";
 import { decryptSecret, encryptSecret } from "./secrets";
 import { fikenMessage, idFromLocation, toContactSummary } from "./map";
-import { InvoiceInputError, lineAmounts, nokToOre, parseQuantity } from "./money";
+import { InvoiceInputError, lineAmounts, nokToOre, parseQuantity, vatTypeForAccount } from "./money";
 import { buildSendInvoiceRequest } from "./send";
 
 test("nokToOre leser norske beløp som heltall i øre", () => {
@@ -188,6 +188,28 @@ test("parseTokenResponse og kryptering beholder token", () => {
   });
   assert.equal(decryptSecret(encryptSecret(token.refreshToken)), "refresh");
   assert.throws(() => parseTokenResponse({ error_description: "Ugyldig kode" }));
+});
+
+test("konto 3220 sender unntatt mva", () => {
+  assert.equal(vatTypeForAccount("EXEMPT", "3220"), "OUTSIDE");
+  assert.equal(vatTypeForAccount("HIGH", "3000"), "HIGH");
+  const request = buildFikenInvoiceRequest({
+    customerId: 10,
+    issueDate: "2026-10-22",
+    dueDate: "2026-11-05",
+    bankAccountCode: "1920:10001",
+    ourReference: "Test",
+    lines: [
+      {
+        description: "Kurs",
+        quantity: 1,
+        unitPriceOre: 100_000,
+        vatType: "EXEMPT",
+        incomeAccount: "3220",
+      },
+    ],
+  });
+  assert.equal(request.lines[0]?.vatType, "OUTSIDE");
 });
 
 test("nyeste faktura kommer først", () => {

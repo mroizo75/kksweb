@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildFikenInvoiceRequest } from "./invoice";
-import { isVatType, nokToOre, parseDiscountPercent, parseQuantity } from "./money";
+import { isVatType, nokToOre, parseDiscountPercent, parseQuantity, vatTypeForAccount } from "./money";
 import { INVOICE_DELIVERIES, deliveryUsesEhf, deliveryUsesEmail } from "./send";
 import type { FikenContactWrite, FikenInvoiceRequest, FikenProductWrite, VatType } from "./types";
 
@@ -127,7 +127,7 @@ export function toProductWrite(input: z.infer<typeof createProductSchema>): Fike
     name: input.name,
     unitPrice: nokToOre(input.unitPriceNok),
     incomeAccount: input.incomeAccount,
-    vatType: input.vatType as VatType,
+    vatType: vatTypeForAccount(input.vatType as VatType, input.incomeAccount),
     active: true,
   };
 }
@@ -146,7 +146,7 @@ export function toInvoiceDraft(input: CreateInvoiceInput, ourReference: string):
       description: line.description,
       quantity: parseQuantity(line.quantity),
       unitPriceOre: nokToOre(line.unitPriceNok, { allowNegative: true }),
-      vatType: line.vatType as VatType,
+      vatType: vatTypeForAccount(line.vatType as VatType, line.incomeAccount),
       incomeAccount: line.incomeAccount,
       discountPercent: parseDiscountPercent(line.discountPercent ?? ""),
       ...(line.productId ? { productId: line.productId } : {}),

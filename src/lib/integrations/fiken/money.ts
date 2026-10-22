@@ -6,14 +6,26 @@ export const VAT_RATE_BPS: Record<VatType, number> = {
   MEDIUM: 1500,
   LOW: 1200,
   EXEMPT: 0,
+  OUTSIDE: 0,
 };
 
 export const VAT_LABEL: Record<VatType, string> = {
   HIGH: "25 %",
   MEDIUM: "15 %",
   LOW: "12 %",
-  EXEMPT: "Ingen MVA",
+  EXEMPT: "Fritatt MVA",
+  OUTSIDE: "Unntatt MVA",
 };
+
+const OUTSIDE_VAT_ACCOUNTS = new Set(["3200", "3220"]);
+
+/** Konto 3200 og 3220 godtar bare unntatt MVA, ikke fritatt. */
+export function vatTypeForAccount(vatType: VatType, incomeAccount: string): VatType {
+  if (OUTSIDE_VAT_ACCOUNTS.has(incomeAccount) && (vatType === "EXEMPT" || vatType === "OUTSIDE")) {
+    return "OUTSIDE";
+  }
+  return vatType;
+}
 
 export class InvoiceInputError extends Error {
   readonly code = "validation_error";
