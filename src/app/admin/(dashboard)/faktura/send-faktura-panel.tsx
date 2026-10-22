@@ -474,17 +474,35 @@ function LineEditor({
   onProduct: (productId: string) => void;
   onRemove: () => void;
 }) {
+  const [productQuery, setProductQuery] = useState("");
+  const needle = productQuery.trim().toLowerCase();
+  const visibleProducts = products.filter((product) => {
+    if (String(product.productId) === line.productId) return true;
+    if (!needle) return true;
+    return (
+      product.name.toLowerCase().includes(needle) ||
+      product.incomeAccount.includes(needle)
+    );
+  });
+
   return (
     <div className="grid gap-3 rounded-lg border p-3 md:grid-cols-6">
       <div className="space-y-1.5 md:col-span-2">
-        <Label>Vare eller tjeneste</Label>
+        <Label htmlFor={`vare-sok-${line.key}`}>Vare eller tjeneste</Label>
+        <Input
+          id={`vare-sok-${line.key}`}
+          value={productQuery}
+          placeholder="Søk etter vare"
+          aria-label={`Søk etter vare på linje ${index + 1}`}
+          onChange={(event) => setProductQuery(event.target.value)}
+        />
         <Select value={line.productId || "none"} onValueChange={(value) => onProduct(value === "none" ? "" : value)}>
           <SelectTrigger aria-label={`Vare på linje ${index + 1}`}>
             <SelectValue placeholder="Fritekst" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Fritekst</SelectItem>
-            {products.map((product) => (
+            {visibleProducts.map((product) => (
               <SelectItem key={product.productId} value={String(product.productId)}>
                 {product.name}
               </SelectItem>
@@ -534,16 +552,25 @@ function LineEditor({
           </SelectContent>
         </Select>
       </div>
+      <div className="space-y-1.5">
+        <Label htmlFor={`rabatt-${line.key}`}>Rabatt %</Label>
+        <Input
+          id={`rabatt-${line.key}`}
+          inputMode="decimal"
+          value={line.discountPercent}
+          placeholder="0"
+          onChange={(event) => onChange({ discountPercent: event.target.value })}
+        />
+      </div>
       <div className="flex items-end justify-between gap-3 md:col-span-5">
         <div className="space-y-1.5">
-          <Label htmlFor={`rabatt-${line.key}`}>Rabatt %</Label>
+          <Label htmlFor={`konto-${line.key}`}>Inntektskonto</Label>
           <Input
-            id={`rabatt-${line.key}`}
-            className="w-24"
-            inputMode="decimal"
-            value={line.discountPercent}
-            placeholder="0"
-            onChange={(event) => onChange({ discountPercent: event.target.value })}
+            id={`konto-${line.key}`}
+            className="w-28"
+            inputMode="numeric"
+            value={line.incomeAccount}
+            onChange={(event) => onChange({ incomeAccount: event.target.value })}
           />
         </div>
         {canRemove && (
