@@ -33,6 +33,7 @@ import {
   nokToOre,
   oreToNokInput,
   parseQuantity,
+  parseDiscountPercent,
   VAT_LABEL,
 } from "@/lib/integrations/fiken/money";
 import {
@@ -51,6 +52,7 @@ type DraftLine = {
   quantity: string;
   unitPriceNok: string;
   vatType: VatType;
+  discountPercent: string;
   incomeAccount: string;
 };
 
@@ -176,6 +178,7 @@ export function SendFakturaPanel({
             quantity: line.quantity,
             unitPriceNok: line.unitPriceNok,
             vatType: line.vatType,
+            discountPercent: line.discountPercent,
             incomeAccount: line.incomeAccount,
             ...(line.productId ? { productId: Number(line.productId) } : {}),
           })),
@@ -297,7 +300,7 @@ export function SendFakturaPanel({
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Rabatt legges inn som en egen linje med minus foran beløpet, for eksempel -500.
+            Rabatt i prosent på linjen, som i Fiken. Du kan også legge rabatt som egen linje med minus foran beløpet.
           </p>
         </CardContent>
       </Card>
@@ -532,12 +535,14 @@ function LineEditor({
       </div>
       <div className="flex items-end justify-between gap-3 md:col-span-5">
         <div className="space-y-1.5">
-          <Label htmlFor={`konto-${line.key}`}>Inntektskonto</Label>
+          <Label htmlFor={`rabatt-${line.key}`}>Rabatt %</Label>
           <Input
-            id={`konto-${line.key}`}
-            className="w-28"
-            value={line.incomeAccount}
-            onChange={(event) => onChange({ incomeAccount: event.target.value })}
+            id={`rabatt-${line.key}`}
+            className="w-24"
+            inputMode="decimal"
+            value={line.discountPercent}
+            placeholder="0"
+            onChange={(event) => onChange({ discountPercent: event.target.value })}
           />
         </div>
         {canRemove && (
@@ -565,6 +570,7 @@ function emptyLine(): DraftLine {
     quantity: "1",
     unitPriceNok: "",
     vatType: "HIGH",
+    discountPercent: "0",
     incomeAccount: "3000",
   };
 }
@@ -593,7 +599,12 @@ function sumLines(lines: DraftLine[]) {
 
 function previewLine(line: DraftLine) {
   try {
-    return lineAmounts(nokToOre(line.unitPriceNok), parseQuantity(line.quantity), line.vatType);
+    return lineAmounts(
+      nokToOre(line.unitPriceNok, { allowNegative: true }),
+      parseQuantity(line.quantity),
+      line.vatType,
+      parseDiscountPercent(line.discountPercent)
+    );
   } catch (error) {
     if (error instanceof InvoiceInputError) return null;
     throw error;

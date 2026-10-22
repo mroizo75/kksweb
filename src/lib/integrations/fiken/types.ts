@@ -63,6 +63,7 @@ export type InvoiceLineInput = {
   unitPriceOre: number;
   vatType: VatType;
   incomeAccount: string;
+  discountPercent?: number;
   productId?: number;
 };
 
@@ -72,6 +73,7 @@ export type FikenInvoiceLineRequest = {
   unitPrice: number;
   vatType: VatType;
   incomeAccount: string;
+  discount?: number;
   productId?: number;
 };
 

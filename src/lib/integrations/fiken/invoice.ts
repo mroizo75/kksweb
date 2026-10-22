@@ -1,4 +1,4 @@
-import { InvoiceInputError } from "./money";
+import { InvoiceInputError, lineAmounts } from "./money";
 import type { FikenInvoiceRequest, InvoiceLineInput } from "./types";
 
 export type { InvoiceLineInput } from "./types";
@@ -37,7 +37,8 @@ export function buildFikenInvoiceRequest(draft: InvoiceDraft): FikenInvoiceReque
     throw new InvoiceInputError("Fakturaen må ha minst én linje");
   }
   const netOre = draft.lines.reduce(
-    (sum, line) => sum + Math.round(line.unitPriceOre * line.quantity),
+    (sum, line) =>
+      sum + lineAmounts(line.unitPriceOre, line.quantity, line.vatType, line.discountPercent ?? 0).netOre,
     0
   );
   if (netOre <= 0) {
@@ -70,12 +71,18 @@ function toLine(line: InvoiceLineInput): FikenInvoiceRequest["lines"][number] {
     throw new InvoiceInputError("Ugyldig linjebeløp");
   }
 
+  const discount = line.discountPercent ?? 0;
+  if (discount < 0 || discount > 100) {
+    throw new InvoiceInputError("Rabatt kan ikke være over 100 %");
+  }
+
   return {
     description: description.slice(0, 200),
     quantity: line.quantity,
     unitPrice: line.unitPriceOre,
     vatType: line.vatType,
     incomeAccount: line.incomeAccount,
+    ...(discount > 0 ? { discount } : {}),
     ...(line.productId ? { productId: line.productId } : {}),
   };
 }

@@ -25,6 +25,11 @@ test("nokToOre godtar rabatt som negativt beløp", () => {
   assert.deepEqual(discount, { netOre: -20_000, vatOre: -5_000, grossOre: -25_000 });
 });
 
+test("lineAmounts trekker fra rabatt i prosent", () => {
+  const amounts = lineAmounts(100_000, 1, "HIGH", 10);
+  assert.deepEqual(amounts, { netOre: 90_000, vatOre: 22_500, grossOre: 112_500 });
+});
+
 test("lineAmounts regner 25 prosent mva av netto", () => {
   const amounts = lineAmounts(10_000, 2, "HIGH");
   assert.deepEqual(amounts, { netOre: 20_000, vatOre: 5_000, grossOre: 25_000 });

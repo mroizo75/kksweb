@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildFikenInvoiceRequest } from "./invoice";
-import { isVatType, nokToOre, parseQuantity } from "./money";
+import { isVatType, nokToOre, parseDiscountPercent, parseQuantity } from "./money";
 import { INVOICE_DELIVERIES, deliveryUsesEhf, deliveryUsesEmail } from "./send";
 import type { FikenContactWrite, FikenInvoiceRequest, FikenProductWrite, VatType } from "./types";
 
@@ -46,6 +46,7 @@ const lineSchema = z.object({
   unitPriceNok: z.string().trim().min(1, "Pris er påkrevd"),
   vatType: z.string().refine(isVatType, "Ugyldig MVA-sats"),
   incomeAccount: z.string().trim().regex(/^\d{4}$/, "Inntektskonto må være fire siffer"),
+  discountPercent: z.string().trim().max(10).optional(),
   productId: z.number().int().positive().optional(),
 });
 
@@ -147,6 +148,7 @@ export function toInvoiceDraft(input: CreateInvoiceInput, ourReference: string):
       unitPriceOre: nokToOre(line.unitPriceNok, { allowNegative: true }),
       vatType: line.vatType as VatType,
       incomeAccount: line.incomeAccount,
+      discountPercent: parseDiscountPercent(line.discountPercent ?? ""),
       ...(line.productId ? { productId: line.productId } : {}),
     })),
   });

@@ -62,10 +62,31 @@ export function isVatType(value: string): value is VatType {
   return (VAT_TYPES as readonly string[]).includes(value);
 }
 
-export function lineAmounts(unitPriceOre: number, quantity: number, vatType: VatType) {
-  const netOre = Math.round(unitPriceOre * quantity);
+export function lineAmounts(
+  unitPriceOre: number,
+  quantity: number,
+  vatType: VatType,
+  discountPercent = 0
+) {
+  const discountBps = Math.round(discountPercent * 100);
+  const beforeDiscount = Math.round(unitPriceOre * quantity);
+  const netOre = Math.round((beforeDiscount * (10_000 - discountBps)) / 10_000);
   const vatOre = Math.round((netOre * VAT_RATE_BPS[vatType]) / 10_000);
   return { netOre, vatOre, grossOre: netOre + vatOre };
+}
+
+/** Leser rabatt i prosent, 0 til 100. Tomt felt er 0. */
+export function parseDiscountPercent(value: string): number {
+  const normalized = value.trim().replace("%", "").replace(/\s/g, "").replace(",", ".");
+  if (normalized === "") return 0;
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    throw new InvoiceInputError("Ugyldig rabatt");
+  }
+  const percent = Number(normalized);
+  if (percent > 100) {
+    throw new InvoiceInputError("Rabatt kan ikke være over 100 %");
+  }
+  return percent;
 }
 
 /** Viser øre som norske kroner. */
