@@ -1,6 +1,15 @@
 /** Typer mot Fiken API v2. Beløp fra API-et er heltall i øre. */
 
-export const VAT_TYPES = ["HIGH", "MEDIUM", "LOW", "EXEMPT", "OUTSIDE"] as const;
+export const VAT_TYPES = [
+  "HIGH",
+  "MEDIUM",
+  "LOW",
+  "EXEMPT",
+  "EXEMPT_IMPORT_EXPORT",
+  "EXEMPT_REVERSE",
+  "OUTSIDE",
+  "NONE",
+] as const;
 
 export type VatType = (typeof VAT_TYPES)[number];
 
@@ -54,6 +63,7 @@ export type FikenBankAccount = {
   name?: string;
   accountCode?: string;
   bankAccountNumber?: string;
+  type?: string;
   inactive?: boolean;
 };
 
@@ -138,6 +148,7 @@ export type BankAccountSummary = {
   name: string;
   accountCode: string;
   bankAccountNumber: string;
+  type: string;
 };
 
 export type InvoiceSummary = {

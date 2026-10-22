@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { defaultReceivingAccount } from "@/lib/integrations/fiken/map";
 import { KundeSkjema } from "./kunde-skjema";
 import {
   formatNokFromOre,
@@ -35,6 +36,7 @@ import {
   parseDiscountPercent,
   parseQuantity,
   vatTypeForAccount,
+  vatTypeFromIncomeAccount,
   VAT_LABEL,
 } from "@/lib/integrations/fiken/money";
 import {
@@ -57,6 +59,37 @@ type DraftLine = {
   incomeAccount: string;
 };
 
+const BANK_ACCOUNT_KEY = "kks-faktura-bankkonto";
+const INCOME_ACCOUNT_KEY = "kks-faktura-inntektskonto";
+
+function readStoredBankAccount(): string | null {
+  if (typeof window === "undefined") return null;
+  const stored = window.localStorage.getItem(BANK_ACCOUNT_KEY);
+  return stored?.trim() ? stored : null;
+}
+
+function writeStoredBankAccount(accountCode: string) {
+  if (!accountCode.trim()) return;
+  window.localStorage.setItem(BANK_ACCOUNT_KEY, accountCode);
+}
+
+function initialBankAccount(accounts: BankAccountSummary[]): string {
+  const stored = readStoredBankAccount();
+  if (stored && accounts.some((account) => account.accountCode === stored)) return stored;
+  return defaultReceivingAccount(accounts);
+}
+
+function readStoredIncomeAccount(): string | null {
+  if (typeof window === "undefined") return null;
+  const stored = window.localStorage.getItem(INCOME_ACCOUNT_KEY);
+  return stored && /^\d{4}$/.test(stored) ? stored : null;
+}
+
+function writeStoredIncomeAccount(account: string) {
+  if (!/^\d{4}$/.test(account)) return;
+  window.localStorage.setItem(INCOME_ACCOUNT_KEY, account);
+}
+
 type SendFakturaPanelProps = {
   contacts: ContactSummary[];
   products: ProductSummary[];
@@ -75,18 +108,20 @@ export function SendFakturaPanel({
   const [customerQuery, setCustomerQuery] = useState("");
   const [issueDate, setIssueDate] = useState(() => isoDate(0));
   const [dueDate, setDueDate] = useState(() => isoDate(14));
-  const [bankAccountCode, setBankAccountCode] = useState(accounts[0]?.accountCode ?? "");
+  const [bankAccountCode, setBankAccountCode] = useState(() => initialBankAccount(accounts));
 
   useEffect(() => {
-    if (!bankAccountCode && accounts[0]) {
-      setBankAccountCode(accounts[0].accountCode);
-    }
-  }, [accounts, bankAccountCode]);
+    setBankAccountCode((current) => {
+      if (current && accounts.some((account) => account.accountCode === current)) return current;
+      return initialBankAccount(accounts);
+    });
+  }, [accounts]);
   const [yourReference, setYourReference] = useState("");
   const [comment, setComment] = useState("");
   const [message, setMessage] = useState("Hei, vedlagt er faktura.");
   const [delivery, setDelivery] = useState<InvoiceDelivery>("email");
   const [lines, setLines] = useState<DraftLine[]>([emptyLine()]);
+  const [defaultIncomeAccount, setDefaultIncomeAccount] = useState("3000");
   const [pending, setPending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
@@ -135,6 +170,24 @@ export function SendFakturaPanel({
   useEffect(() => {
     void loadInvoices(0);
   }, [loadInvoices]);
+
+  useEffect(() => {
+    const stored = readStoredIncomeAccount();
+    if (!stored) return;
+    setDefaultIncomeAccount(stored);
+    setLines((current) => {
+      if (current.length !== 1) return current;
+      const line = current[0];
+      if (line.productId || line.description || line.unitPriceNok || line.incomeAccount !== "3000") return current;
+      return [emptyLine(stored)];
+    });
+  }, []);
+
+  function rememberIncomeAccount(account: string) {
+    if (!/^\d{4}$/.test(account)) return;
+    setDefaultIncomeAccount(account);
+    writeStoredIncomeAccount(account);
+  }
 
   function updateLine(key: string, patch: Partial<DraftLine>) {
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
@@ -198,7 +251,7 @@ export function SendFakturaPanel({
       toast.success(
         `Faktura ${body.invoice?.invoiceNumber || ""} er sendt via ${DELIVERY_LABEL[delivery].toLowerCase()}`
       );
-      setLines([emptyLine()]);
+      setLines([emptyLine(defaultIncomeAccount)]);
       setYourReference("");
       setComment("");
       await loadInvoices(0);
@@ -268,7 +321,7 @@ export function SendFakturaPanel({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Linjer</CardTitle>
-          <Button type="button" variant="outline" onClick={() => setLines((current) => [...current, emptyLine()])}>
+          <Button type="button" variant="outline" onClick={() => setLines((current) => [...current, emptyLine(defaultIncomeAccount)])}>
             <Plus className="h-4 w-4" />
             Legg til linje
           </Button>
@@ -281,7 +334,10 @@ export function SendFakturaPanel({
               index={index}
               products={products}
               canRemove={lines.length > 1}
-              onChange={(patch) => updateLine(line.key, patch)}
+              onChange={(patch) => {
+                updateLine(line.key, patch);
+                if (patch.incomeAccount) rememberIncomeAccount(patch.incomeAccount);
+              }}
               onProduct={(productId) => applyProduct(line.key, productId)}
               onRemove={() => setLines((current) => current.filter((item) => item.key !== line.key))}
             />
@@ -321,7 +377,13 @@ export function SendFakturaPanel({
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label>Bankkonto</Label>
-            <Select value={bankAccountCode || undefined} onValueChange={setBankAccountCode}>
+            <Select
+              value={bankAccountCode || undefined}
+              onValueChange={(value) => {
+                setBankAccountCode(value);
+                writeStoredBankAccount(value);
+              }}
+            >
               <SelectTrigger aria-label="Bankkonto">
                 <SelectValue placeholder="Velg konto" />
               </SelectTrigger>
@@ -570,7 +632,11 @@ function LineEditor({
             className="w-28"
             inputMode="numeric"
             value={line.incomeAccount}
-            onChange={(event) => onChange({ incomeAccount: event.target.value })}
+            onChange={(event) => {
+              const incomeAccount = event.target.value;
+              const vatType = vatTypeFromIncomeAccount(incomeAccount);
+              onChange(vatType ? { incomeAccount, vatType } : { incomeAccount });
+            }}
           />
         </div>
         {canRemove && (
@@ -590,16 +656,16 @@ function deliverySentence(delivery: InvoiceDelivery, name: string, email: string
   return `sendes på e-post til ${email}`;
 }
 
-function emptyLine(): DraftLine {
+function emptyLine(incomeAccount = "3000"): DraftLine {
   return {
     key: crypto.randomUUID(),
     productId: "",
     description: "",
     quantity: "1",
     unitPriceNok: "",
-    vatType: "HIGH",
+    vatType: vatTypeFromIncomeAccount(incomeAccount) ?? "HIGH",
     discountPercent: "0",
-    incomeAccount: "3000",
+    incomeAccount,
   };
 }
 

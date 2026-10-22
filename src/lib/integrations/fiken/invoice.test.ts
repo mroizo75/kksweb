@@ -4,7 +4,7 @@ import { buildAuthorizeUrl, parseTokenResponse } from "./oauth";
 import { buildFikenInvoiceRequest } from "./invoice";
 import { fikenPageForNewestView, newestFirstInvoices } from "./invoice-order";
 import { decryptSecret, encryptSecret } from "./secrets";
-import { fikenMessage, idFromLocation, toContactSummary } from "./map";
+import { fikenMessage, idFromLocation, toContactSummary, toProductSummary, defaultReceivingAccount } from "./map";
 import { InvoiceInputError, lineAmounts, nokToOre, parseQuantity, vatTypeForAccount } from "./money";
 import { buildSendInvoiceRequest } from "./send";
 
@@ -188,6 +188,32 @@ test("parseTokenResponse og kryptering beholder token", () => {
   });
   assert.equal(decryptSecret(encryptSecret(token.refreshToken)), "refresh");
   assert.throws(() => parseTokenResponse({ error_description: "Ugyldig kode" }));
+});
+
+test("innbetaling går til driftskonto", () => {
+  const code = defaultReceivingAccount([
+    { name: "Skattetrekk", accountCode: "1950:10001", bankAccountNumber: "111", type: "tax_deduction" },
+    { name: "Driftskonto", accountCode: "1920:10002", bankAccountNumber: "222", type: "normal" },
+  ]);
+  assert.equal(code, "1920:10002");
+});
+
+test("varer fra Fiken beholder utenfor som mva-kode", () => {
+  const outside = toProductSummary({
+    productId: 1,
+    name: "Kurs",
+    unitPrice: 100_000,
+    incomeAccount: "3220",
+    vatType: "outside",
+  });
+  assert.equal(outside?.vatType, "OUTSIDE");
+
+  const fromAccount = toProductSummary({
+    productId: 2,
+    name: "Overnatting",
+    incomeAccount: "3050",
+  });
+  assert.equal(fromAccount?.vatType, "LOW");
 });
 
 test("konto 3220 sender unntatt mva", () => {

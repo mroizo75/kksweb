@@ -1,4 +1,4 @@
-import { isVatType } from "./money";
+import { productVatType } from "./money";
 import type {
   BankAccountSummary,
   ContactSummary,
@@ -58,7 +58,7 @@ export function toContactSummary(contact: FikenContact): ContactSummary | null {
 
 export function toProductSummary(product: FikenProduct): ProductSummary | null {
   if (!Number.isInteger(product.productId) || !product.name?.trim()) return null;
-  const vatType = product.vatType && isVatType(product.vatType) ? product.vatType : "HIGH";
+  const vatType = productVatType(product.vatType, product.incomeAccount);
   return {
     productId: product.productId,
     name: product.name.trim(),
@@ -76,7 +76,18 @@ export function toBankAccountSummary(account: FikenBankAccount): BankAccountSumm
     name: account.name?.trim() || "Bankkonto",
     accountCode,
     bankAccountNumber: account.bankAccountNumber?.trim() ?? "",
+    type: account.type?.trim() || "normal",
   };
+}
+
+/** Kontoen innbetalinger skal til. Driftskonto foran skattetrekk og kredittkort. */
+export function defaultReceivingAccount(accounts: BankAccountSummary[]): string {
+  const operating = accounts.find(
+    (account) => account.type !== "tax_deduction" && account.type !== "credit_card" && /drift/i.test(account.name)
+  );
+  if (operating) return operating.accountCode;
+  const payable = accounts.find((account) => account.type === "normal" || account.type === "foreign");
+  return payable?.accountCode ?? accounts[0]?.accountCode ?? "";
 }
 
 export function toInvoiceSummary(invoice: FikenInvoice): InvoiceSummary | null {
