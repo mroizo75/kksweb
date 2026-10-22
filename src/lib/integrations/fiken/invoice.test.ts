@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildAuthorizeUrl, parseTokenResponse } from "./oauth";
 import { buildFikenInvoiceRequest } from "./invoice";
+import { fikenPageForNewestView, newestFirstInvoices } from "./invoice-order";
 import { decryptSecret, encryptSecret } from "./secrets";
 import { fikenMessage, idFromLocation, toContactSummary } from "./map";
 import { InvoiceInputError, lineAmounts, nokToOre, parseQuantity } from "./money";
@@ -187,4 +188,21 @@ test("parseTokenResponse og kryptering beholder token", () => {
   });
   assert.equal(decryptSecret(encryptSecret(token.refreshToken)), "refresh");
   assert.throws(() => parseTokenResponse({ error_description: "Ugyldig kode" }));
+});
+
+test("nyeste faktura kommer først", () => {
+  assert.equal(fikenPageForNewestView(4, 0), 3);
+  assert.equal(fikenPageForNewestView(4, 1), 2);
+  assert.equal(fikenPageForNewestView(1, 0), 0);
+  assert.equal(fikenPageForNewestView(4, 4), null);
+
+  const ordered = newestFirstInvoices([
+    { invoiceId: 1, invoiceNumber: 100, issueDate: "2026-01-01" },
+    { invoiceId: 3, invoiceNumber: 102, issueDate: "2026-03-01" },
+    { invoiceId: 2, invoiceNumber: 101, issueDate: "2026-03-01" },
+  ]);
+  assert.deepEqual(
+    ordered.map((invoice) => invoice.invoiceId),
+    [3, 2, 1]
+  );
 });

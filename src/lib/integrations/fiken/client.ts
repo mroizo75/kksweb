@@ -1,3 +1,4 @@
+import { fikenPageForNewestView, newestFirstInvoices } from "./invoice-order";
 import { fikenMessage, idFromLocation } from "./map";
 import { FikenApiError } from "./errors";
 import { getFikenAccess } from "./connection";
@@ -66,17 +67,23 @@ export class FikenClient {
     return this.list<FikenBankAccount>(`/companies/${this.companySlug}/bankAccounts`);
   }
 
-  /** Side 0 er de nyeste fakturaene. */
+  /** Visningsside 0 er de nyeste fakturaene. Fiken selv leverer eldst først. */
   async listInvoices(page = 0): Promise<{ invoices: FikenInvoice[]; page: number; pageCount: number }> {
-    const safePage = Number.isInteger(page) && page >= 0 ? page : 0;
-    const result = await this.request<FikenInvoice[]>(
-      `/companies/${this.companySlug}/invoices?page=${safePage}&pageSize=${INVOICE_PAGE_SIZE}`
-    );
-    const invoices = Array.isArray(result.data) ? result.data : [];
+    const viewPage = Number.isInteger(page) && page >= 0 ? page : 0;
+    const probe = await this.fetchInvoicePage(0);
+    const pageCount = readPageCount(probe.headers, 0, probe.invoices.length);
+    const sourcePage = fikenPageForNewestView(pageCount, viewPage);
+    if (sourcePage === null) {
+      return { invoices: [], page: viewPage, pageCount };
+    }
+    const batch = sourcePage === 0 ? probe : await this.fetchInvoicePage(sourcePage);
+    if (batch.invoices.length === 0) {
+      return { invoices: [], page: viewPage, pageCount: viewPage };
+    }
     return {
-      invoices,
-      page: safePage,
-      pageCount: readPageCount(result.headers, safePage, invoices.length),
+      invoices: newestFirstInvoices(batch.invoices),
+      page: viewPage,
+      pageCount,
     };
   }
 
@@ -115,6 +122,16 @@ export class FikenClient {
     );
     if (!data?.productId) throw new FikenApiError(502, "Kunne ikke hente varen fra Fiken");
     return data;
+  }
+
+  private async fetchInvoicePage(page: number): Promise<{ invoices: FikenInvoice[]; headers: Headers }> {
+    const result = await this.request<FikenInvoice[]>(
+      `/companies/${this.companySlug}/invoices?page=${page}&pageSize=${INVOICE_PAGE_SIZE}`
+    );
+    return {
+      invoices: Array.isArray(result.data) ? result.data : [],
+      headers: result.headers,
+    };
   }
 
   private async getInvoice(invoiceId: number): Promise<FikenInvoice> {
