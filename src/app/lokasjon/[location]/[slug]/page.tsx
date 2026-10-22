@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { ArrowRight, Calendar, Clock, MapPin } from "lucide-react";
 import { db } from "@/lib/db";
+import { queryOrEmpty } from "@/lib/database-available";
 import { stripHtml } from "@/lib/utils";
 import { normalizeR2ImageUrl } from "@/lib/r2";
 import { getCourseCategoryLabel } from "@/lib/course-categories";
@@ -73,17 +74,21 @@ function filterSessionsByLocation<T extends { location: string }>(
 }
 
 export async function generateStaticParams() {
-  const sessions = await db.courseSession.findMany({
-    where: {
-      startsAt: { gte: new Date() },
-      status: "OPEN",
-      course: { published: true },
-    },
-    select: {
-      location: true,
-      course: { select: { slug: true } },
-    },
-  });
+  const sessions = await queryOrEmpty(
+    () =>
+      db.courseSession.findMany({
+        where: {
+          startsAt: { gte: new Date() },
+          status: "OPEN",
+          course: { published: true },
+        },
+        select: {
+          location: true,
+          course: { select: { slug: true } },
+        },
+      }),
+    []
+  );
 
   const paramSet = new Set<string>();
   for (const session of sessions) {

@@ -53,9 +53,25 @@ model User {
   auditLogs       AuditLog[]
   sentEmails      EmailLog[]
   blogPosts       BlogPost[]
+  fikenConnection FikenConnection[]
 
   @@index([email])
   @@map("users")
+}
+
+/** Én OAuth-tilkobling for foretaket. Instruktører sender faktura med denne tilgangen. */
+model FikenConnection {
+  id                String   @id @default("company")
+  accessToken       String   @db.Text
+  refreshToken      String   @db.Text
+  expiresAt         DateTime
+  companySlug       String
+  connectedByUserId String?
+  updatedAt         DateTime @updatedAt
+
+  connectedBy User? @relation(fields: [connectedByUserId], references: [id], onDelete: SetNull)
+
+  @@map("fiken_connection")
 }
 
 model Account {

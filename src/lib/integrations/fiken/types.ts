@@ -1,43 +1,149 @@
-// TODO: Implementeres i Fase 2
-// TypeScript types for Fiken API
+/** Typer mot Fiken API v2. Beløp fra API-et er heltall i øre. */
 
-export interface FikenCompany {
-  name: string;
-  organizationNumber: string;
-  slug: string;
-}
+export const VAT_TYPES = ["HIGH", "MEDIUM", "LOW", "EXEMPT"] as const;
 
-export interface FikenContact {
+export type VatType = (typeof VAT_TYPES)[number];
+
+export type FikenAddress = {
+  streetAddress?: string;
+  city?: string;
+  postCode?: string;
+  country?: string;
+};
+
+export type FikenContactWrite = {
   name: string;
   email?: string;
-  phone?: string;
-  address?: {
-    streetAddress?: string;
-    city?: string;
-    postCode?: string;
-    country?: string;
-  };
-}
+  phoneNumber?: string;
+  organizationNumber?: string;
+  customer: true;
+  language: "Norwegian";
+  currency: "NOK";
+  address?: FikenAddress;
+};
 
-export interface FikenInvoiceLine {
+export type FikenContact = {
+  contactId: number;
+  name: string;
+  email?: string;
+  phoneNumber?: string;
+  organizationNumber?: string;
+  customer?: boolean;
+  address?: FikenAddress;
+};
+
+export type FikenProductWrite = {
+  name: string;
+  unitPrice: number;
+  incomeAccount: string;
+  vatType: VatType;
+  active: true;
+};
+
+export type FikenProduct = {
+  productId: number;
+  name: string;
+  unitPrice?: number;
+  incomeAccount?: string;
+  vatType?: string;
+  active?: boolean;
+};
+
+export type FikenBankAccount = {
+  bankAccountId?: number;
+  name?: string;
+  accountCode?: string;
+  bankAccountNumber?: string;
+  inactive?: boolean;
+};
+
+export type InvoiceLineInput = {
   description: string;
-  amount: number;
-  vatType: string; // e.g., "HIGH" for 25%
-}
+  quantity: number;
+  unitPriceOre: number;
+  vatType: VatType;
+  incomeAccount: string;
+  productId?: number;
+};
 
-export interface FikenInvoice {
+export type FikenInvoiceLineRequest = {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  vatType: VatType;
+  incomeAccount: string;
+  productId?: number;
+};
+
+export type FikenInvoiceRequest = {
   issueDate: string;
   dueDate: string;
-  customerId?: number;
-  customer?: FikenContact;
-  lines: FikenInvoiceLine[];
-  currency?: string;
-}
+  customerId: number;
+  bankAccountCode: string;
+  cash: false;
+  currency: "NOK";
+  ourReference: string;
+  yourReference?: string;
+  comment?: string;
+  lines: FikenInvoiceLineRequest[];
+};
 
-export interface FikenInvoiceResponse {
+export type FikenInvoice = {
+  invoiceId: number;
+  invoiceNumber?: number | string;
+  issueDate?: string;
+  dueDate?: string;
+  net?: number;
+  vat?: number;
+  gross?: number;
+  ourReference?: string;
+  customer?: {
+    contactId?: number;
+    name?: string;
+    email?: string;
+  };
+};
+
+export type FikenSendInvoiceRequest = {
+  invoiceId: number;
+  method: Array<"email" | "ehf">;
+  recipientName: string;
+  recipientEmail?: string;
+  message?: string;
+  emailSendOption?: "attachment";
+};
+
+export type ContactSummary = {
+  contactId: number;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  organizationNumber: string;
+  streetAddress: string;
+  postCode: string;
+  city: string;
+};
+
+export type ProductSummary = {
+  productId: number;
+  name: string;
+  unitPriceOre: number;
+  vatType: VatType;
+  incomeAccount: string;
+};
+
+export type BankAccountSummary = {
+  name: string;
+  accountCode: string;
+  bankAccountNumber: string;
+};
+
+export type InvoiceSummary = {
   invoiceId: number;
   invoiceNumber: string;
-  kid?: string;
-  downloadUrl?: string;
-}
-
+  issueDate: string;
+  dueDate: string;
+  grossOre: number;
+  customerName: string;
+  ourReference: string;
+};

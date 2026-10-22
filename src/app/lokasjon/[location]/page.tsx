@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { queryOrEmpty } from "@/lib/database-available";
 import { stripHtml } from "@/lib/utils";
 import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
@@ -63,6 +64,8 @@ export async function generateMetadata(props: PageProps) {
 }
 
 export async function generateStaticParams() {
+  const reachable = await queryOrEmpty(() => db.$queryRaw`SELECT 1`, null);
+  if (reachable === null) return [];
   return supportedLocationSlugs.map((location) => ({ location }));
 }
 

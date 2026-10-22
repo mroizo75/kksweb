@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { queryOrEmpty } from "@/lib/database-available";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
@@ -18,20 +19,24 @@ export const metadata: Metadata = {
 };
 
 export default async function BloggPage() {
-  const posts = await db.blogPost.findMany({
-    where: { status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      excerpt: true,
-      image: true,
-      category: true,
-      publishedAt: true,
-      author: { select: { name: true } },
-    },
-  });
+  const posts = await queryOrEmpty(
+    () =>
+      db.blogPost.findMany({
+        where: { status: "PUBLISHED" },
+        orderBy: { publishedAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          image: true,
+          category: true,
+          publishedAt: true,
+          author: { select: { name: true } },
+        },
+      }),
+    []
+  );
 
   const categories = [...new Set(posts.map((p) => p.category))];
 

@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { db } from "@/lib/db";
+import { queryOrEmpty } from "@/lib/database-available";
 import { supportedLocationSlugs } from "@/lib/locations";
 import { getSessionLocationKeywords } from "@/lib/location-matching";
 
@@ -11,15 +12,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.kksas.no";
 
   // Hent alle publiserte kurs
-  const courses = await db.course.findMany({
-    where: {
-      published: true,
-    },
-    select: {
-      slug: true,
-      updatedAt: true,
-    },
-  });
+  const courses = await queryOrEmpty(
+    () =>
+      db.course.findMany({
+        where: {
+          published: true,
+        },
+        select: {
+          slug: true,
+          updatedAt: true,
+        },
+      }),
+    []
+  );
 
   // Lokasjonssider for lokal SEO — alle byer og kommuner
   const highPriorityLocations = new Set([
@@ -117,23 +122,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  const openSessions = await db.courseSession.findMany({
-    where: {
-      startsAt: { gte: new Date() },
-      status: "OPEN",
-      course: { published: true },
-    },
-    select: {
-      location: true,
-      updatedAt: true,
-      course: {
-        select: {
-          slug: true,
-          updatedAt: true,
+  const openSessions = await queryOrEmpty(
+    () =>
+      db.courseSession.findMany({
+        where: {
+          startsAt: { gte: new Date() },
+          status: "OPEN",
+          course: { published: true },
         },
-      },
-    },
-  });
+        select: {
+          location: true,
+          updatedAt: true,
+          course: {
+            select: {
+              slug: true,
+              updatedAt: true,
+            },
+          },
+        },
+      }),
+    []
+  );
 
   const localCoursePageMap = new Map<string, Date>();
   for (const session of openSessions) {
@@ -168,10 +177,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   );
 
-  const blogPosts = await db.blogPost.findMany({
-    where: { status: "PUBLISHED" },
-    select: { slug: true, updatedAt: true },
-  });
+  const blogPosts = await queryOrEmpty(
+    () =>
+      db.blogPost.findMany({
+        where: { status: "PUBLISHED" },
+        select: { slug: true, updatedAt: true },
+      }),
+    []
+  );
 
   const blogPages = [
     {

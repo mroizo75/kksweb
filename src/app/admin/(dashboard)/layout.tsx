@@ -3,6 +3,8 @@ import { Sidebar } from "@/components/admin/Sidebar";
 import { auth } from "@/lib/auth";
 import { SessionProvider } from "next-auth/react";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {
