@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   BankAccountSummary,
   ContactSummary,
-  InvoiceSummary,
   ProductSummary,
 } from "@/lib/integrations/fiken/types";
 import { KunderPanel } from "./kunder-panel";
@@ -20,10 +19,9 @@ type LoadState = {
   contacts: ContactSummary[];
   products: ProductSummary[];
   accounts: BankAccountSummary[];
-  invoices: InvoiceSummary[];
 };
 
-const EMPTY: LoadState = { contacts: [], products: [], accounts: [], invoices: [] };
+const EMPTY: LoadState = { contacts: [], products: [], accounts: [] };
 
 type FikenStatus = {
   connected: boolean;
@@ -55,20 +53,18 @@ export default function FakturaPage() {
       return;
     }
 
-    const [contacts, products, accounts, invoices] = await Promise.all([
+    const [contacts, products, accounts] = await Promise.all([
       fetchJson<{ contacts: ContactSummary[] }>("/api/admin/fiken/contacts"),
       fetchJson<{ products: ProductSummary[] }>("/api/admin/fiken/products"),
       fetchJson<{ accounts: BankAccountSummary[] }>("/api/admin/fiken/bank-accounts"),
-      fetchJson<{ invoices: InvoiceSummary[] }>("/api/admin/fiken/invoices"),
     ]);
 
-    const firstError = [contacts, products, accounts, invoices].find((result) => result.error)?.error ?? null;
+    const firstError = [contacts, products, accounts].find((result) => result.error)?.error ?? null;
     setError(firstError);
     setData({
       contacts: contacts.data?.contacts ?? [],
       products: products.data?.products ?? [],
       accounts: accounts.data?.accounts ?? [],
-      invoices: invoices.data?.invoices ?? [],
     });
     setLoading(false);
   }, []);
@@ -119,19 +115,11 @@ export default function FakturaPage() {
             contacts={data.contacts}
             products={data.products}
             accounts={data.accounts}
-            invoices={data.invoices}
-            onInvoiceSent={async () => {
-              const invoices = await fetchJson<{ invoices: InvoiceSummary[] }>("/api/admin/fiken/invoices");
-              if (invoices.data) {
-                setData((current) => ({ ...current, invoices: invoices.data?.invoices ?? [] }));
-              }
-            }}
             onContactCreated={(contact) => {
               setData((current) => ({
                 contacts: [contact, ...current.contacts.filter((item) => item.contactId !== contact.contactId)],
                 products: current.products,
                 accounts: current.accounts,
-                invoices: current.invoices,
               }));
             }}
           />

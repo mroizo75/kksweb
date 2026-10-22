@@ -144,7 +144,7 @@ export function toInvoiceDraft(input: CreateInvoiceInput, ourReference: string):
     lines: input.lines.map((line) => ({
       description: line.description,
       quantity: parseQuantity(line.quantity),
-      unitPriceOre: nokToOre(line.unitPriceNok),
+      unitPriceOre: nokToOre(line.unitPriceNok, { allowNegative: true }),
       vatType: line.vatType as VatType,
       incomeAccount: line.incomeAccount,
       ...(line.productId ? { productId: line.productId } : {}),

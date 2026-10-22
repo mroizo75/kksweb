@@ -24,17 +24,22 @@ export class InvoiceInputError extends Error {
   }
 }
 
-/** Parser et norsk beløp i kroner til øre uten flyttall. */
-export function nokToOre(value: string): number {
+/** Parser et norsk beløp i kroner til øre uten flyttall. Rabattlinjer kan være negative. */
+export function nokToOre(value: string, options?: { allowNegative?: boolean }): number {
   const normalized = value.trim().replace(/\s/g, "").replace(",", ".");
-  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+  const match = /^(-)?(\d+)(?:\.(\d{1,2}))?$/.exec(normalized);
+  if (!match) {
     throw new InvoiceInputError("Ugyldig beløp");
   }
 
-  const [whole, fraction = ""] = normalized.split(".");
-  const ore = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
-  if (!Number.isSafeInteger(ore) || ore <= 0) {
+  const negative = match[1] === "-";
+  if (negative && !options?.allowNegative) {
     throw new InvoiceInputError("Beløpet må være større enn 0");
+  }
+
+  const ore = (negative ? -1 : 1) * (Number(match[2]) * 100 + Number((match[3] ?? "").padEnd(2, "0")));
+  if (!Number.isSafeInteger(ore) || ore === 0) {
+    throw new InvoiceInputError(negative ? "Beløpet kan ikke være 0" : "Beløpet må være større enn 0");
   }
   return ore;
 }
@@ -73,7 +78,9 @@ export function formatNokFromOre(ore: number): string {
 
 /** Viser øre som redigerbart kronebeløp med komma. */
 export function oreToNokInput(ore: number): string {
-  const whole = Math.floor(ore / 100);
-  const fraction = String(ore % 100).padStart(2, "0");
-  return fraction === "00" ? String(whole) : `${whole},${fraction}`;
+  const abs = Math.abs(ore);
+  const whole = Math.floor(abs / 100);
+  const fraction = String(abs % 100).padStart(2, "0");
+  const amount = fraction === "00" ? String(whole) : `${whole},${fraction}`;
+  return ore < 0 ? `-${amount}` : amount;
 }

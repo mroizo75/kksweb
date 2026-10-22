@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -58,8 +58,6 @@ type SendFakturaPanelProps = {
   contacts: ContactSummary[];
   products: ProductSummary[];
   accounts: BankAccountSummary[];
-  invoices: InvoiceSummary[];
-  onInvoiceSent: () => Promise<void>;
   onContactCreated: (contact: ContactSummary) => void;
 };
 
@@ -68,8 +66,6 @@ export function SendFakturaPanel({
   contacts,
   products,
   accounts,
-  invoices,
-  onInvoiceSent,
   onContactCreated,
 }: SendFakturaPanelProps) {
   const [customerId, setCustomerId] = useState("");
@@ -91,6 +87,10 @@ export function SendFakturaPanel({
   const [pending, setPending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [invoicePage, setInvoicePage] = useState(0);
+  const [invoicePageCount, setInvoicePageCount] = useState(1);
+  const [listedInvoices, setListedInvoices] = useState<InvoiceSummary[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(false);
 
   const customer = contacts.find((item) => String(item.contactId) === customerId) ?? null;
   const canUseEhf = Boolean(customer?.organizationNumber);
@@ -105,6 +105,33 @@ export function SendFakturaPanel({
   });
 
   const totals = useMemo(() => sumLines(lines), [lines]);
+
+  const loadInvoices = useCallback(async (page: number) => {
+    setInvoicesLoading(true);
+    try {
+      const response = await fetch(`/api/admin/fiken/invoices?page=${page}`);
+      const body = (await response.json()) as {
+        invoices?: InvoiceSummary[];
+        page?: number;
+        pageCount?: number;
+      };
+      if (!response.ok) return;
+      const invoices = body.invoices ?? [];
+      if (page > 0 && invoices.length === 0) {
+        setInvoicePageCount(page);
+        return;
+      }
+      setListedInvoices(invoices);
+      setInvoicePage(body.page ?? page);
+      setInvoicePageCount(body.pageCount ?? 1);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadInvoices(0);
+  }, [loadInvoices]);
 
   function updateLine(key: string, patch: Partial<DraftLine>) {
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
@@ -161,7 +188,7 @@ export function SendFakturaPanel({
       };
       if (!response.ok) {
         toast.error(body.message ?? "Kunne ikke sende fakturaen");
-        if (body.code === "send_failed") await onInvoiceSent();
+        if (body.code === "send_failed") await loadInvoices(0);
         return;
       }
       toast.success(
@@ -170,7 +197,7 @@ export function SendFakturaPanel({
       setLines([emptyLine()]);
       setYourReference("");
       setComment("");
-      await onInvoiceSent();
+      await loadInvoices(0);
     } catch {
       toast.error("Kunne ikke sende fakturaen");
     } finally {
@@ -183,6 +210,7 @@ export function SendFakturaPanel({
     customer &&
       bankAccountCode &&
       totals &&
+      totals.grossOre > 0 &&
       (!deliveryUsesEmail(delivery) || customer.email) &&
       (!deliveryUsesEhf(delivery) || customer.organizationNumber)
   );
@@ -260,11 +288,17 @@ export function SendFakturaPanel({
                 <p>Netto {formatNokFromOre(totals.netOre)}</p>
                 <p>MVA {formatNokFromOre(totals.vatOre)}</p>
                 <p className="text-base font-semibold">Å betale {formatNokFromOre(totals.grossOre)}</p>
+                {totals.grossOre <= 0 && (
+                  <p className="text-destructive">Summen må være større enn 0 etter rabatt.</p>
+                )}
               </div>
             ) : (
               <p className="text-muted-foreground">Fyll inn antall og pris for å se summen.</p>
             )}
           </div>
+          <p className="text-sm text-muted-foreground">
+            Rabatt legges inn som en egen linje med minus foran beløpet, for eksempel -500.
+          </p>
         </CardContent>
       </Card>
 
@@ -348,11 +382,13 @@ export function SendFakturaPanel({
           <CardTitle>Siste fakturaer</CardTitle>
         </CardHeader>
         <CardContent>
-          {invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Ingen fakturaer er hentet fra Fiken.</p>
+          {listedInvoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {invoicesLoading ? "Henter fakturaer…" : "Ingen fakturaer er hentet fra Fiken."}
+            </p>
           ) : (
             <ul className="divide-y">
-              {invoices.map((invoice) => (
+              {listedInvoices.map((invoice) => (
                 <li key={invoice.invoiceId} className="flex items-start justify-between gap-4 py-3 text-sm">
                   <div>
                     <p className="font-medium">
@@ -368,6 +404,29 @@ export function SendFakturaPanel({
                 </li>
               ))}
             </ul>
+          )}
+          {invoicePageCount > 1 && (
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={invoicePage === 0 || invoicesLoading}
+                onClick={() => void loadInvoices(invoicePage - 1)}
+              >
+                Forrige
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                Side {invoicePage + 1} av {invoicePageCount}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={invoicePage + 1 >= invoicePageCount || invoicesLoading}
+                onClick={() => void loadInvoices(invoicePage + 1)}
+              >
+                Neste
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -452,6 +511,7 @@ function LineEditor({
           id={`pris-${line.key}`}
           inputMode="decimal"
           value={line.unitPriceNok}
+          placeholder="-500"
           onChange={(event) => onChange({ unitPriceNok: event.target.value })}
         />
       </div>

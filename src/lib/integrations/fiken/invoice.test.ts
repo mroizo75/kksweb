@@ -18,6 +18,13 @@ test("nokToOre avviser negative og tomme beløp", () => {
   assert.throws(() => nokToOre("1.234,50"), InvoiceInputError);
 });
 
+test("nokToOre godtar rabatt som negativt beløp", () => {
+  assert.equal(nokToOre("-200", { allowNegative: true }), -20000);
+  assert.equal(nokToOre("-200,50", { allowNegative: true }), -20050);
+  const discount = lineAmounts(-20_000, 1, "HIGH");
+  assert.deepEqual(discount, { netOre: -20_000, vatOre: -5_000, grossOre: -25_000 });
+});
+
 test("lineAmounts regner 25 prosent mva av netto", () => {
   const amounts = lineAmounts(10_000, 2, "HIGH");
   assert.deepEqual(amounts, { netOre: 20_000, vatOre: 5_000, grossOre: 25_000 });
@@ -69,6 +76,54 @@ test("buildFikenInvoiceRequest sender netto enhetspris i øre", () => {
   assert.equal(request.lines[0]?.quantity, 1.5);
   assert.equal(request.lines[0]?.productId, 44);
   assert.equal(request.cash, false);
+});
+
+test("buildFikenInvoiceRequest trekker fra rabattlinje", () => {
+  const request = buildFikenInvoiceRequest({
+    customerId: 10,
+    issueDate: "2026-10-21",
+    dueDate: "2026-11-04",
+    bankAccountCode: "1920:10001",
+    ourReference: "Kari",
+    lines: [
+      {
+        description: "Kurs",
+        quantity: 1,
+        unitPriceOre: 100000,
+        vatType: "HIGH",
+        incomeAccount: "3000",
+      },
+      {
+        description: "Rabatt",
+        quantity: 1,
+        unitPriceOre: nokToOre("-200", { allowNegative: true }),
+        vatType: "HIGH",
+        incomeAccount: "3000",
+      },
+    ],
+  });
+
+  assert.equal(request.lines[1]?.unitPrice, -20000);
+  assert.throws(
+    () =>
+      buildFikenInvoiceRequest({
+        customerId: 10,
+        issueDate: "2026-10-21",
+        dueDate: "2026-11-04",
+        bankAccountCode: "1920:10001",
+        ourReference: "Kari",
+        lines: [
+          {
+            description: "Rabatt",
+            quantity: 1,
+            unitPriceOre: -100,
+            vatType: "HIGH",
+            incomeAccount: "3000",
+          },
+        ],
+      }),
+    InvoiceInputError
+  );
 });
 
 test("idFromLocation leser siste tall i Location-headeren", () => {

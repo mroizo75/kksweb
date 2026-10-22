@@ -1,5 +1,6 @@
 import { fikenMessage, idFromLocation } from "./map";
 import { FikenApiError } from "./errors";
+import { getFikenAccess } from "./connection";
 import type {
   FikenBankAccount,
   FikenContact,
@@ -13,10 +14,12 @@ import type {
 
 const FIKEN_API_URL = "https://api.fiken.no/api/v2";
 const REQUEST_TIMEOUT_MS = 20_000;
+export const INVOICE_PAGE_SIZE = 10;
 
 type FikenResult<T> = {
   data: T | null;
   location: string | null;
+  headers: Headers;
 };
 
 export class FikenClient {
@@ -63,11 +66,18 @@ export class FikenClient {
     return this.list<FikenBankAccount>(`/companies/${this.companySlug}/bankAccounts`);
   }
 
-  async listInvoices(): Promise<FikenInvoice[]> {
-    const { data } = await this.request<FikenInvoice[]>(
-      `/companies/${this.companySlug}/invoices?page=0&pageSize=25`
+  /** Side 0 er de nyeste fakturaene. */
+  async listInvoices(page = 0): Promise<{ invoices: FikenInvoice[]; page: number; pageCount: number }> {
+    const safePage = Number.isInteger(page) && page >= 0 ? page : 0;
+    const result = await this.request<FikenInvoice[]>(
+      `/companies/${this.companySlug}/invoices?page=${safePage}&pageSize=${INVOICE_PAGE_SIZE}`
     );
-    return Array.isArray(data) ? data : [];
+    const invoices = Array.isArray(result.data) ? result.data : [];
+    return {
+      invoices,
+      page: safePage,
+      pageCount: readPageCount(result.headers, safePage, invoices.length),
+    };
   }
 
   async createInvoice(invoice: FikenInvoiceRequest): Promise<FikenInvoice> {
@@ -150,8 +160,18 @@ export class FikenClient {
     return {
       data: (body ?? null) as T | null,
       location: response.headers.get("location"),
+      headers: response.headers,
     };
   }
+}
+
+function readPageCount(headers: Headers, page: number, batchLength: number): number {
+  for (const name of ["fiken-api-page-count", "x-fiken-api-page-count"]) {
+    const count = Number(headers.get(name));
+    if (Number.isInteger(count) && count > 0) return count;
+  }
+  if (batchLength < INVOICE_PAGE_SIZE) return page + 1;
+  return page + 2;
 }
 
 function parseJson(text: string): unknown {
@@ -162,8 +182,6 @@ function parseJson(text: string): unknown {
     return { message: text.slice(0, 300) };
   }
 }
-
-import { getFikenAccess } from "./connection";
 
 /** Returnerer klienten når en administrator har koblet til Fiken. */
 export async function getFikenClient(): Promise<FikenClient> {

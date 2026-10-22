@@ -1,23 +1,28 @@
 import { NextResponse } from "next/server";
 import { ourReferenceFromSession, requireStaff, toErrorResponse } from "@/lib/integrations/fiken/access";
-import { getFikenClient } from "@/lib/integrations/fiken/client";
+import { getFikenClient, INVOICE_PAGE_SIZE } from "@/lib/integrations/fiken/client";
 import { toInvoiceSummary } from "@/lib/integrations/fiken/map";
 import { createInvoiceSchema, toInvoiceDraft } from "@/lib/integrations/fiken/schemas";
 import { buildSendInvoiceRequest } from "@/lib/integrations/fiken/send";
 
-/** Lister de siste fakturaene fra Fiken. */
-export async function GET() {
+/** Lister fakturaer fra Fiken, 10 om gangen, nyeste først. */
+export async function GET(request: Request) {
   const guard = await requireStaff();
   if (guard.response) return guard.response;
 
   try {
+    const pageParam = new URL(request.url).searchParams.get("page") ?? "0";
+    const page = /^\d+$/.test(pageParam) ? Number(pageParam) : 0;
     const client = await getFikenClient();
-    const invoices = await client.listInvoices();
+    const result = await client.listInvoices(page);
     return NextResponse.json({
-      invoices: invoices.flatMap((invoice) => {
+      invoices: result.invoices.flatMap((invoice) => {
         const summary = toInvoiceSummary(invoice);
         return summary ? [summary] : [];
       }),
+      page: result.page,
+      pageSize: INVOICE_PAGE_SIZE,
+      pageCount: result.pageCount,
     });
   } catch (error) {
     return toErrorResponse(error);

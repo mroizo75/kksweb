@@ -36,6 +36,13 @@ export function buildFikenInvoiceRequest(draft: InvoiceDraft): FikenInvoiceReque
   if (draft.lines.length === 0) {
     throw new InvoiceInputError("Fakturaen må ha minst én linje");
   }
+  const netOre = draft.lines.reduce(
+    (sum, line) => sum + Math.round(line.unitPriceOre * line.quantity),
+    0
+  );
+  if (netOre <= 0) {
+    throw new InvoiceInputError("Summen må være større enn 0 etter rabatt");
+  }
 
   return {
     issueDate: draft.issueDate,
@@ -59,7 +66,7 @@ function toLine(line: InvoiceLineInput): FikenInvoiceRequest["lines"][number] {
   if (!/^\d{4}$/.test(line.incomeAccount)) {
     throw new InvoiceInputError("Inntektskonto må være fire siffer");
   }
-  if (!Number.isInteger(line.unitPriceOre) || line.unitPriceOre <= 0) {
+  if (!Number.isInteger(line.unitPriceOre) || line.unitPriceOre === 0) {
     throw new InvoiceInputError("Ugyldig linjebeløp");
   }
 
